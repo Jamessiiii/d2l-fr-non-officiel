@@ -157,8 +157,9 @@ et les sorties techniques.
 Limites du build partiel
 ------------------------
 
-Le build HTML a réussi avec 88 avertissements attendus pour une version
-partielle :
+Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un build
+complet précédent du même état avait listé 88 avertissements attendus
+pour une version partielle :
 
 - plusieurs citations et labels pointent vers des chapitres absents du
   build partiel ;
