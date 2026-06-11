@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Implémentation concise de la régression softmax — Plonger au coeur du Deep Learning</title>
+<link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>body{max-width:1180px;margin:0 auto;padding:0 24px 48px;font-family:Arial,sans-serif;line-height:1.55}header{border-bottom:1px solid #ddd;margin-bottom:24px;padding:18px 0}nav.chapter{background:#f7f7f7;padding:12px 16px;margin:16px 0}main img{max-width:100%;height:auto}pre{overflow:auto;background:#f6f8fa;padding:12px}.pager a{margin-right:16px}</style>
+</head><body><header><a href="../index.html">Plonger au coeur du Deep Learning</a> / <strong>Implémentation concise de la régression softmax</strong></header>
+<nav class="chapter"><strong>Chapitre 4 - Classification linéaire</strong><ol><li><a href="softmax-regression.html">Régression Softmax</a></li>
+<li><a href="image-classification-dataset.html">Le jeu de données de classification d&#x27;images</a></li>
+<li><a href="classification.html">Le modèle de base pour la classification</a></li>
+<li><a href="softmax-regression-scratch.html">Mise en œuvre de la régression softmax à partir de zéro</a></li>
+<li><a href="softmax-regression-concise.html">Implémentation concise de la régression softmax</a></li>
+<li><a href="generalization-classification.html">Généralisation en classification</a></li>
+<li><a href="environment-and-distribution-shift.html">Environnement et décalage de distribution</a></li></ol></nav>
+<main><div class="sourceCode" id="cb1" data-n="1"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="implémentation-concise-de-la-régression-softmax">Implémentation
+concise de la régression softmax</h1>
+<p>:label:<code>sec_softmax_concise</code></p>
+<p>Tout comme les frameworks de deep learning de haut niveau ont
+facilité l’implémentation de la régression linéaire (voir
+:numref:<code>sec_linear_concise</code>), ils sont tout aussi pratiques
+ici.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> gluon, init, npx</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet.gluon <span class="im">import</span> nn</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.nn <span class="im">import</span> functional <span class="im">as</span> F</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flax <span class="im">import</span> linen <span class="im">as</span> nn</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> partial</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> optax</span></code></pre></div>
+<h2 id="définition-du-modèle">Définition du modèle</h2>
+<p>Comme dans la :numref:<code>sec_linear_concise</code>, nous
+construisons notre couche entièrement connectée en utilisant la couche
+intégrée. La méthode intégrée <code>__call__</code> invoque ensuite
+<code>forward</code> chaque fois que nous devons appliquer le réseau à
+une entrée.</p>
+<p>:begin_tab:<code>mxnet</code> Même si l’entrée <code>X</code> est un
+tenseur de quatrième ordre, la couche <code>Dense</code> intégrée
+convertira automatiquement <code>X</code> en un tenseur de second ordre
+en gardant la dimensionnalité le long du premier axe inchangée.
+:end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> Nous utilisons une couche
+<code>Flatten</code> pour convertir le tenseur de quatrième ordre
+<code>X</code> en second ordre en gardant la dimensionnalité le long du
+premier axe inchangée.</p>
+<p>:end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> Nous utilisons une couche
+<code>Flatten</code> pour convertir le tenseur de quatrième ordre
+<code>X</code> en gardant la dimension le long du premier axe inchangée.
+:end_tab:</p>
+<p>:begin_tab:<code>jax</code> Flax permet aux utilisateurs d’écrire la
+classe du réseau de manière plus compacte en utilisant le décorateur
+<code>@nn.compact</code>. Avec <code>@nn.compact</code>, on peut
+simplement écrire toute la logique du réseau à l’intérieur d’une seule
+méthode de “passe avant” (forward pass), sans avoir besoin de définir la
+méthode <code>setup</code> standard dans la dataclass. :end_tab:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SoftmaxRegression(d2l.Classifier):  <span class="co">#@save</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The softmax regression model.&quot;&quot;&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_outputs, lr):</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> nn.Sequential(nn.Flatten(),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                                 nn.LazyLinear(num_outputs))</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, X):</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.net(X)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, tensorflow</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SoftmaxRegression(d2l.Classifier):  <span class="co">#@save</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The softmax regression model.&quot;&quot;&quot;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_outputs, lr):</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net <span class="op">=</span> nn.Dense(num_outputs)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.initialize()</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net <span class="op">=</span> tf.keras.models.Sequential()</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.add(tf.keras.layers.Flatten())</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.add(tf.keras.layers.Dense(num_outputs))</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, X):</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.net(X)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SoftmaxRegression(d2l.Classifier):  <span class="co">#@save</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    num_outputs: <span class="bu">int</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    lr: <span class="bu">float</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">@nn.compact</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, X):</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        X <span class="op">=</span> X.reshape((X.shape[<span class="dv">0</span>], <span class="op">-</span><span class="dv">1</span>))  <span class="co"># Flatten</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        X <span class="op">=</span> nn.Dense(<span class="va">self</span>.num_outputs)(X)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> X</span></code></pre></div>
+<h2 id="softmax-revisité">Softmax revisité</h2>
+<p>:label:<code>subsec_softmax-implementation-revisited</code></p>
+<p>Dans la :numref:<code>sec_softmax_scratch</code>, nous avons calculé
+la sortie de notre modèle et appliqué la perte d’entropie croisée. Bien
+que cela soit parfaitement raisonnable d’un point de vue mathématique,
+c’est risqué d’un point de vue informatique, en raison des
+sous-passements (underflow) et dépassements (overflow) numériques dans
+l’exponentiation.</p>
+<p>Rappelons que la fonction softmax calcule les probabilités via <span
+class="math inline">\(\hat y_j = \frac{\exp(o_j)}{\sum_k
+\exp(o_k)}\)</span>. Si certains des <span
+class="math inline">\(o_k\)</span> sont très grands, c’est-à-dire très
+positifs, alors <span class="math inline">\(\exp(o_k)\)</span> pourrait
+être plus grand que le plus grand nombre que nous pouvons avoir pour
+certains types de données. C’est ce qu’on appelle un
+<em>dépassement</em> (overflow). De même, si chaque argument est un
+nombre négatif très grand, nous aurons un <em>sous-passement</em>
+(underflow). Par exemple, les nombres à virgule flottante en simple
+précision couvrent approximativement la plage de <span
+class="math inline">\(10^{-38}\)</span> à <span
+class="math inline">\(10^{38}\)</span>. Ainsi, si le terme le plus grand
+de <span class="math inline">\(\mathbf{o}\)</span> se situe en dehors de
+l’intervalle <span class="math inline">\([-90, 90]\)</span>, le résultat
+ne sera pas stable. Une façon de contourner ce problème est de
+soustraire <span class="math inline">\(\bar{o}
+\stackrel{\textrm{def}}{=} \max_k o_k\)</span> de toutes les entrées
+:</p>
+<p><span class="math display">\[
+\hat y_j = \frac{\exp o_j}{\sum_k \exp o_k} =
+\frac{\exp(o_j - \bar{o}) \exp \bar{o}}{\sum_k \exp (o_k - \bar{o}) \exp
+\bar{o}} =
+\frac{\exp(o_j - \bar{o})}{\sum_k \exp (o_k - \bar{o})}.
+\]</span></p>
+<p>Par construction, nous savons que <span class="math inline">\(o_j -
+\bar{o} \leq 0\)</span> pour tout <span
+class="math inline">\(j\)</span>. Ainsi, pour un problème de
+classification à <span class="math inline">\(q\)</span> classes, le
+dénominateur est contenu dans l’intervalle <span
+class="math inline">\([1, q]\)</span>. De plus, le numérateur ne dépasse
+jamais <span class="math inline">\(1\)</span>, empêchant ainsi le
+dépassement numérique. Le sous-passement numérique ne se produit que
+lorsque <span class="math inline">\(\exp(o_j - \bar{o})\)</span>
+s’évalue numériquement à <span class="math inline">\(0\)</span>.
+Néanmoins, quelques étapes plus loin, nous pourrions nous retrouver en
+difficulté lorsque nous voudrons calculer <span
+class="math inline">\(\log \hat{y}_j\)</span> comme <span
+class="math inline">\(\log 0\)</span>. En particulier, lors de la
+rétropropagation (backpropagation), nous pourrions nous retrouver face à
+un écran rempli des redoutables résultats <code>NaN</code> (Not a
+Number).</p>
+<p>Heureusement, nous sommes sauvés par le fait que même si nous
+calculons des fonctions exponentielles, nous avons finalement
+l’intention de prendre leur logarithme (lors du calcul de la perte
+d’entropie croisée). En combinant softmax et entropie croisée, nous
+pouvons échapper complètement aux problèmes de stabilité numérique. Nous
+avons :</p>
+<p><span class="math display">\[
+\log \hat{y}_j =
+\log \frac{\exp(o_j - \bar{o})}{\sum_k \exp (o_k - \bar{o})} =
+o_j - \bar{o} - \log \sum_k \exp (o_k - \bar{o}).
+\]</span></p>
+<p>Cela évite à la fois le dépassement et le sous-passement. Nous
+voudrons garder la fonction softmax conventionnelle à portée de main au
+cas où nous voudrions évaluer les probabilités de sortie par notre
+modèle. Mais au lieu de passer les probabilités softmax dans notre
+nouvelle fonction de perte, nous [<strong>passons simplement les logits
+et calculons le softmax et son logarithme en une seule fois à
+l’intérieur de la fonction de perte d’entropie croisée,</strong>] qui
+fait des choses intelligentes comme l’astuce <a
+href="https://en.wikipedia.org/wiki/LogSumExp">“LogSumExp
+trick”</a>.</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(d2l.Classifier)  <span class="co">#@save</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> loss(<span class="va">self</span>, Y_hat, Y, averaged<span class="op">=</span><span class="va">True</span>):</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    Y_hat <span class="op">=</span> d2l.reshape(Y_hat, (<span class="op">-</span><span class="dv">1</span>, Y_hat.shape[<span class="op">-</span><span class="dv">1</span>]))</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> d2l.reshape(Y, (<span class="op">-</span><span class="dv">1</span>,))</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        fn <span class="op">=</span> gluon.loss.SoftmaxCrossEntropyLoss()</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        l <span class="op">=</span> fn(Y_hat, Y)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> l.mean() <span class="cf">if</span> averaged <span class="cf">else</span> l</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> F.cross_entropy(</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>            Y_hat, Y, reduction<span class="op">=</span><span class="st">&#39;mean&#39;</span> <span class="cf">if</span> averaged <span class="cf">else</span> <span class="st">&#39;none&#39;</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        fn <span class="op">=</span> tf.keras.losses.SparseCategoricalCrossentropy(from_logits<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fn(Y, Y_hat)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(d2l.Classifier)  <span class="co">#@save</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="at">@partial</span>(jax.jit, static_argnums<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">5</span>))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> loss(<span class="va">self</span>, params, X, Y, state, averaged<span class="op">=</span><span class="va">True</span>):</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># To be used later (e.g., for batch norm)</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    Y_hat <span class="op">=</span> state.apply_fn({<span class="st">&#39;params&#39;</span>: params}, <span class="op">*</span>X,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                           mutable<span class="op">=</span><span class="va">False</span>, rngs<span class="op">=</span><span class="va">None</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    Y_hat <span class="op">=</span> d2l.reshape(Y_hat, (<span class="op">-</span><span class="dv">1</span>, Y_hat.shape[<span class="op">-</span><span class="dv">1</span>]))</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> d2l.reshape(Y, (<span class="op">-</span><span class="dv">1</span>,))</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    fn <span class="op">=</span> optax.softmax_cross_entropy_with_integer_labels</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># The returned empty dictionary is a placeholder for auxiliary data,</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># which will be used later (e.g., for batch norm)</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (fn(Y_hat, Y).mean(), {}) <span class="cf">if</span> averaged <span class="cf">else</span> (fn(Y_hat, Y), {})</span></code></pre></div>
+<h2 id="entraînement">Entraînement</h2>
+<p>Ensuite, nous entraînons notre modèle. Nous utilisons les images
+Fashion-MNIST, aplaties en vecteurs de caractéristiques de dimension
+784.</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">256</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> SoftmaxRegression(num_outputs<span class="op">=</span><span class="dv">10</span>, lr<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>trainer.fit(model, data)</span></code></pre></div>
+<p>Comme précédemment, cet algorithme converge vers une solution qui est
+raisonnablement précise, bien que cette fois avec moins de lignes de
+code qu’auparavant.</p>
+<h2 id="résumé">Résumé</h2>
+<p>Les API de haut niveau sont très pratiques pour masquer à
+l’utilisateur des aspects potentiellement dangereux, tels que la
+stabilité numérique. De plus, elles permettent aux utilisateurs de
+concevoir des modèles de manière concise avec très peu de lignes de
+code. C’est à la fois une bénédiction et une malédiction. L’avantage
+évident est que cela rend les choses très accessibles, même pour les
+ingénieurs qui n’ont jamais suivi un seul cours de statistiques de leur
+vie (en fait, ils font partie du public cible du livre). Mais cacher les
+bords tranchants a aussi un prix : une dissuasion à ajouter soi-même des
+composants nouveaux et différents, puisqu’il y a peu de mémoire
+musculaire pour le faire. De plus, il est plus difficile de
+<em>réparer</em> les choses dès que le rembourrage de protection d’un
+framework ne couvre pas entièrement tous les cas particuliers. Encore
+une fois, cela est dû au manque de familiarité.</p>
+<p>C’est pourquoi nous vous encourageons vivement à examiner <em>à la
+fois</em> les versions brutes et les versions élégantes de nombreuses
+implémentations qui suivent. Bien que nous mettions l’accent sur la
+facilité de compréhension, les implémentations sont néanmoins
+généralement assez performantes (les convolutions sont la grande
+exception ici). Notre intention est de vous permettre de vous appuyer
+sur celles-ci lorsque vous inventerez quelque chose de nouveau qu’aucun
+framework ne pourra vous offrir.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Le deep learning utilise de nombreux formats de nombres différents,
+notamment la double précision FP64 (utilisée extrêmement rarement), la
+simple précision FP32, BFLOAT16 (bon pour les représentations
+compressées), FP16 (très instable), TF32 (un nouveau format de NVIDIA)
+et INT8. Calculez le plus petit et le plus grand argument de la fonction
+exponentielle pour lesquels le résultat ne conduit pas à un
+sous-passement ou un dépassement numérique.</li>
+<li>INT8 est un format très limité composé de nombres non nuls de <span
+class="math inline">\(1\)</span> à <span
+class="math inline">\(255\)</span>. Comment pourriez-vous étendre sa
+plage dynamique sans utiliser plus de bits ? La multiplication et
+l’addition standard fonctionnent-elles toujours ?</li>
+<li>Augmentez le nombre d’époques pour l’entraînement. Pourquoi
+l’exactitude (accuracy) de validation pourrait-elle diminuer après un
+certain temps ? Comment pourrions-nous corriger cela ?</li>
+<li>Que se passe-t-il lorsque vous augmentez le taux d’apprentissage ?
+Comparez les courbes de perte pour plusieurs taux d’apprentissage.
+Lequel fonctionne le mieux ? Quand ?</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/52">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/53">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/260">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/17983">Discussions</a> :end_tab:</p>
+</main><p class="pager"><a href="softmax-regression-scratch.html">Précédent</a> | <a href="generalization-classification.html">Suivant</a></p></body></html>

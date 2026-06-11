@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le jeu de données de classification d&#x27;images — Plonger au coeur du Deep Learning</title>
+<link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>body{max-width:1180px;margin:0 auto;padding:0 24px 48px;font-family:Arial,sans-serif;line-height:1.55}header{border-bottom:1px solid #ddd;margin-bottom:24px;padding:18px 0}nav.chapter{background:#f7f7f7;padding:12px 16px;margin:16px 0}main img{max-width:100%;height:auto}pre{overflow:auto;background:#f6f8fa;padding:12px}.pager a{margin-right:16px}</style>
+</head><body><header><a href="../index.html">Plonger au coeur du Deep Learning</a> / <strong>Le jeu de données de classification d&#x27;images</strong></header>
+<nav class="chapter"><strong>Chapitre 4 - Classification linéaire</strong><ol><li><a href="softmax-regression.html">Régression Softmax</a></li>
+<li><a href="image-classification-dataset.html">Le jeu de données de classification d&#x27;images</a></li>
+<li><a href="classification.html">Le modèle de base pour la classification</a></li>
+<li><a href="softmax-regression-scratch.html">Mise en œuvre de la régression softmax à partir de zéro</a></li>
+<li><a href="softmax-regression-concise.html">Implémentation concise de la régression softmax</a></li>
+<li><a href="generalization-classification.html">Généralisation en classification</a></li>
+<li><a href="environment-and-distribution-shift.html">Environnement et décalage de distribution</a></li></ol></nav>
+<main><div class="sourceCode" id="cb1"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="le-jeu-de-données-de-classification-dimages">Le jeu de données
+de classification d’images</h1>
+<p>:label:<code>sec_fashion_mnist</code></p>
+<p>(<del>Le jeu de données MNIST est l’un des jeux de données les plus
+utilisés pour la classification d’images, mais il est trop simple pour
+servir de référence. Nous utiliserons le jeu de données Fashion-MNIST,
+similaire mais plus complexe</del>)</p>
+<p>L’un des jeux de données les plus utilisés pour la classification
+d’images est le <a
+href="https://en.wikipedia.org/wiki/MNIST_database">jeu de données
+MNIST</a> :cite:<code>LeCun.Bottou.Bengio.ea.1998</code> de chiffres
+manuscrits. Au moment de sa publication dans les années 1990, il
+représentait un défi redoutable pour la plupart des algorithmes
+d’apprentissage automatique, consistant en 60 000 images d’une
+résolution de <span class="math inline">\(28 \times 28\)</span> pixels
+(plus un ensemble de test de 10 000 images). Pour mettre les choses en
+perspective, en 1995, une Sun SPARCStation 5 dotée d’une mémoire vive de
+64 Mo et d’une puissance de calcul de 5 MFLOPs était considérée comme un
+équipement de pointe pour l’apprentissage automatique aux laboratoires
+AT&amp;T Bell. L’obtention d’une grande précision dans la reconnaissance
+des chiffres a été un élément clé de l’automatisation du tri du courrier
+pour l’USPS dans les années 1990. Les réseaux profonds tels que LeNet-5
+:cite:<code>LeCun.Jackel.Bottou.ea.1995</code>, les machines à vecteurs
+de support avec invariances
+:cite:<code>Scholkopf.Burges.Vapnik.1996</code> et les classifieurs à
+distance tangente :cite:<code>Simard.LeCun.Denker.ea.1998</code>
+pouvaient tous atteindre des taux d’erreur inférieurs à 1 %.</p>
+<p>Pendant plus d’une décennie, MNIST a servi de <em>point de
+référence</em> pour comparer les algorithmes d’apprentissage
+automatique. Bien qu’il ait connu un franc succès en tant que jeu de
+données de référence, même des modèles simples selon les standards
+actuels atteignent une précision de classification supérieure à 95 %, ce
+qui le rend inadapté pour distinguer les modèles performants des modèles
+plus faibles. De plus, le jeu de données permet des niveaux de précision
+<em>très</em> élevés, ce que l’on ne voit pas classiquement dans de
+nombreux problèmes de classification. Cela a orienté le développement
+algorithmique vers des familles spécifiques d’algorithmes capables de
+tirer parti de jeux de données propres, tels que les méthodes d’ensemble
+actif et les algorithmes d’ensemble actif de recherche de frontières.
+Aujourd’hui, MNIST sert davantage de test de cohérence (sanity check)
+que de référence (benchmark). ImageNet
+:cite:<code>Deng.Dong.Socher.ea.2009</code> pose un défi bien plus
+pertinent. Malheureusement, ImageNet est trop volumineux pour bon nombre
+d’exemples et d’illustrations de ce livre, car son entraînement
+prendrait trop de temps pour rendre les exemples interactifs. À titre de
+substitut, nous concentrerons notre discussion dans les sections
+suivantes sur le jeu de données Fashion-MNIST
+:cite:<code>Xiao.Rasul.Vollgraf.2017</code>, qualitativement similaire
+mais beaucoup plus petit, qui a été publié en 2017. Il contient des
+images de 10 catégories de vêtements avec une résolution de <span
+class="math inline">\(28 \times 28\)</span> pixels.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> gluon, npx</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet.gluon.data.vision <span class="im">import</span> transforms</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>d2l.use_svg_display()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torchvision</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torchvision <span class="im">import</span> transforms</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>d2l.use_svg_display()</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>d2l.use_svg_display()</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow_datasets <span class="im">as</span> tfds</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>d2l.use_svg_display()</span></code></pre></div>
+<h2 id="chargement-du-jeu-de-données">Chargement du jeu de données</h2>
+<p>Comme le jeu de données Fashion-MNIST est très utile, tous les
+principaux frameworks en proposent des versions prétraitées. Nous
+pouvons [<strong>le télécharger et le lire en mémoire à l’aide des
+utilitaires intégrés aux frameworks.</strong>]</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> FashionMNIST(d2l.DataModule):  <span class="co">#@save</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The Fashion-MNIST dataset.&quot;&quot;&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, batch_size<span class="op">=</span><span class="dv">64</span>, resize<span class="op">=</span>(<span class="dv">28</span>, <span class="dv">28</span>)):</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        trans <span class="op">=</span> transforms.Compose([transforms.Resize(resize),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                                    transforms.ToTensor()])</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.train <span class="op">=</span> gluon.data.vision.FashionMNIST(</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>            train<span class="op">=</span><span class="va">True</span>).transform_first(trans)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.val <span class="op">=</span> gluon.data.vision.FashionMNIST(</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            train<span class="op">=</span><span class="va">False</span>).transform_first(trans)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> FashionMNIST(d2l.DataModule):  <span class="co">#@save</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The Fashion-MNIST dataset.&quot;&quot;&quot;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, batch_size<span class="op">=</span><span class="dv">64</span>, resize<span class="op">=</span>(<span class="dv">28</span>, <span class="dv">28</span>)):</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        trans <span class="op">=</span> transforms.Compose([transforms.Resize(resize),</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>                                    transforms.ToTensor()])</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.train <span class="op">=</span> torchvision.datasets.FashionMNIST(</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>            root<span class="op">=</span><span class="va">self</span>.root, train<span class="op">=</span><span class="va">True</span>, transform<span class="op">=</span>trans, download<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.val <span class="op">=</span> torchvision.datasets.FashionMNIST(</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>            root<span class="op">=</span><span class="va">self</span>.root, train<span class="op">=</span><span class="va">False</span>, transform<span class="op">=</span>trans, download<span class="op">=</span><span class="va">True</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow, jax</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> FashionMNIST(d2l.DataModule):  <span class="co">#@save</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The Fashion-MNIST dataset.&quot;&quot;&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, batch_size<span class="op">=</span><span class="dv">64</span>, resize<span class="op">=</span>(<span class="dv">28</span>, <span class="dv">28</span>)):</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.train, <span class="va">self</span>.val <span class="op">=</span> tf.keras.datasets.fashion_mnist.load_data()</span></code></pre></div>
+<p>Fashion-MNIST se compose d’images de 10 catégories, chacune
+représentée par 6 000 images dans l’ensemble d’entraînement et par 1 000
+dans l’ensemble de test. Un <em>ensemble de test</em> est utilisé pour
+évaluer les performances du modèle (il ne doit pas être utilisé pour
+l’entraînement). Par conséquent, l’ensemble d’entraînement et l’ensemble
+de test contiennent respectivement 60 000 et 10 000 images.</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> FashionMNIST(resize<span class="op">=</span>(<span class="dv">32</span>, <span class="dv">32</span>))</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(data.train), <span class="bu">len</span>(data.val)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow, jax</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> FashionMNIST(resize<span class="op">=</span>(<span class="dv">32</span>, <span class="dv">32</span>))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(data.train[<span class="dv">0</span>]), <span class="bu">len</span>(data.val[<span class="dv">0</span>])</span></code></pre></div>
+<p>Les images sont en niveaux de gris et leur résolution a été augmentée
+à <span class="math inline">\(32 \times 32\)</span> pixels ci-dessus.
+C’est similaire au jeu de données MNIST original qui consistait en des
+images (binaires) en noir et blanc. Notez cependant que la plupart des
+données d’image modernes ont trois canaux (rouge, vert, bleu) et que les
+images hyperspectrales peuvent avoir plus de 100 canaux (le capteur
+HyMap en a 126). Par convention, nous stockons une image sous la forme
+d’un tenseur de dimensions <span class="math inline">\(c \times h \times
+w\)</span>, où <span class="math inline">\(c\)</span> est le nombre de
+canaux de couleur, <span class="math inline">\(h\)</span> est la hauteur
+et <span class="math inline">\(w\)</span> est la largeur.</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>data.train[<span class="dv">0</span>][<span class="dv">0</span>].shape</span></code></pre></div>
+<p>[<del>Deux fonctions utilitaires pour visualiser le jeu de
+données</del>]</p>
+<p>Les catégories de Fashion-MNIST ont des noms compréhensibles par
+l’homme. La méthode pratique suivante permet de convertir les étiquettes
+numériques en leurs noms.</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(FashionMNIST)  <span class="co">#@save</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> text_labels(<span class="va">self</span>, indices):</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Return text labels.&quot;&quot;&quot;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    labels <span class="op">=</span> [<span class="st">&#39;t-shirt&#39;</span>, <span class="st">&#39;trouser&#39;</span>, <span class="st">&#39;pullover&#39;</span>, <span class="st">&#39;dress&#39;</span>, <span class="st">&#39;coat&#39;</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>              <span class="st">&#39;sandal&#39;</span>, <span class="st">&#39;shirt&#39;</span>, <span class="st">&#39;sneaker&#39;</span>, <span class="st">&#39;bag&#39;</span>, <span class="st">&#39;ankle boot&#39;</span>]</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [labels[<span class="bu">int</span>(i)] <span class="cf">for</span> i <span class="kw">in</span> indices]</span></code></pre></div>
+<h2 id="lecture-dun-mini-lot">Lecture d’un mini-lot</h2>
+<p>Pour nous faciliter la tâche lors de la lecture des ensembles
+d’entraînement et de test, nous utilisons l’itérateur de données intégré
+plutôt que d’en créer un à partir de zéro. Rappelez-vous qu’à chaque
+itération, un itérateur de données [<strong>lit un mini-lot de données
+de taille <code>batch_size</code>.</strong>] Nous mélangeons également
+de manière aléatoire les exemples pour l’itérateur de données
+d’entraînement.</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(FashionMNIST)  <span class="co">#@save</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_dataloader(<span class="va">self</span>, train):</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> <span class="va">self</span>.train <span class="cf">if</span> train <span class="cf">else</span> <span class="va">self</span>.val</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> gluon.data.DataLoader(data, <span class="va">self</span>.batch_size, shuffle<span class="op">=</span>train,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>                                 num_workers<span class="op">=</span><span class="va">self</span>.num_workers)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(FashionMNIST)  <span class="co">#@save</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_dataloader(<span class="va">self</span>, train):</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> <span class="va">self</span>.train <span class="cf">if</span> train <span class="cf">else</span> <span class="va">self</span>.val</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> torch.utils.data.DataLoader(data, <span class="va">self</span>.batch_size, shuffle<span class="op">=</span>train,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>                                       num_workers<span class="op">=</span><span class="va">self</span>.num_workers)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow, jax</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(FashionMNIST)  <span class="co">#@save</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_dataloader(<span class="va">self</span>, train):</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> <span class="va">self</span>.train <span class="cf">if</span> train <span class="cf">else</span> <span class="va">self</span>.val</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    process <span class="op">=</span> <span class="kw">lambda</span> X, y: (tf.expand_dims(X, axis<span class="op">=</span><span class="dv">3</span>) <span class="op">/</span> <span class="dv">255</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>                            tf.cast(y, dtype<span class="op">=</span><span class="st">&#39;int32&#39;</span>))</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    resize_fn <span class="op">=</span> <span class="kw">lambda</span> X, y: (tf.image.resize_with_pad(X, <span class="op">*</span><span class="va">self</span>.resize), y)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    shuffle_buf <span class="op">=</span> <span class="bu">len</span>(data[<span class="dv">0</span>]) <span class="cf">if</span> train <span class="cf">else</span> <span class="dv">1</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> tf.data.Dataset.from_tensor_slices(process(<span class="op">*</span>data)).batch(</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.batch_size).<span class="bu">map</span>(resize_fn).shuffle(shuffle_buf)</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;jax&#39;</span>):</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> tfds.as_numpy(</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>            tf.data.Dataset.from_tensor_slices(process(<span class="op">*</span>data)).batch(</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.batch_size).<span class="bu">map</span>(resize_fn).shuffle(shuffle_buf))</span></code></pre></div>
+<p>Pour voir comment cela fonctionne, chargeons un mini-lot d’images en
+invoquant la méthode <code>train_dataloader</code>. Il contient 64
+images.</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>X, y <span class="op">=</span> <span class="bu">next</span>(<span class="bu">iter</span>(data.train_dataloader()))</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(X.shape, X.dtype, y.shape, y.dtype)</span></code></pre></div>
+<p>Regardons le temps nécessaire pour lire les images. Même s’il s’agit
+d’un chargeur intégré, il n’est pas extrêmement rapide. Néanmoins, c’est
+suffisant car le traitement des images avec un réseau profond prend
+beaucoup plus de temps. Il est donc satisfaisant que l’entraînement d’un
+réseau ne soit pas limité par les entrées/sorties (I/O).</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>tic <span class="op">=</span> time.time()</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> X, y <span class="kw">in</span> data.train_dataloader():</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">continue</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="ss">f&#39;</span><span class="sc">{</span>time<span class="sc">.</span>time() <span class="op">-</span> tic<span class="sc">:.2f}</span><span class="ss"> sec&#39;</span></span></code></pre></div>
+<h2 id="visualisation">Visualisation</h2>
+<p>Nous utiliserons souvent le jeu de données Fashion-MNIST. Une
+fonction pratique <code>show_images</code> peut être utilisée pour
+visualiser les images et les étiquettes associées. En omettant les
+détails d’implémentation, nous montrons simplement l’interface
+ci-dessous : nous avons seulement besoin de savoir comment invoquer
+<code>d2l.show_images</code> plutôt que de comprendre comment elle
+fonctionne pour de telles fonctions utilitaires.</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show_images(imgs, num_rows, num_cols, titles<span class="op">=</span><span class="va">None</span>, scale<span class="op">=</span><span class="fl">1.5</span>):  <span class="co">#@save</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Plot a list of images.&quot;&quot;&quot;</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">raise</span> <span class="pp">NotImplementedError</span></span></code></pre></div>
+<p>Mettons-la à profit. En général, c’est une bonne idée de visualiser
+et d’inspecter les données sur lesquelles vous effectuez l’entraînement.
+Les humains sont très doués pour repérer les anomalies et, de ce fait,
+la visualisation sert de protection supplémentaire contre les méprises
+et les erreurs dans la conception des expériences. Voici [<strong>les
+images et leurs étiquettes correspondantes</strong>] (sous forme de
+texte) pour les premiers exemples de l’ensemble d’entraînement.</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(FashionMNIST)  <span class="co">#@save</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> visualize(<span class="va">self</span>, batch, nrows<span class="op">=</span><span class="dv">1</span>, ncols<span class="op">=</span><span class="dv">8</span>, labels<span class="op">=</span>[]):</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    X, y <span class="op">=</span> batch</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> labels:</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>        labels <span class="op">=</span> <span class="va">self</span>.text_labels(y)</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        d2l.show_images(X.squeeze(<span class="dv">1</span>), nrows, ncols, titles<span class="op">=</span>labels)</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        d2l.show_images(tf.squeeze(X), nrows, ncols, titles<span class="op">=</span>labels)</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;jax&#39;</span>):</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>        d2l.show_images(jnp.squeeze(X), nrows, ncols, titles<span class="op">=</span>labels)</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>batch <span class="op">=</span> <span class="bu">next</span>(<span class="bu">iter</span>(data.val_dataloader()))</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>data.visualize(batch)</span></code></pre></div>
+<p>Nous sommes maintenant prêts à travailler avec le jeu de données
+Fashion-MNIST dans les sections qui suivent.</p>
+<h2 id="résumé">Résumé</h2>
+<p>Nous disposons désormais d’un jeu de données un peu plus réaliste à
+utiliser pour la classification. Fashion-MNIST est un jeu de données de
+classification de vêtements composé d’images représentant 10 catégories.
+Nous utiliserons ce jeu de données dans les sections et chapitres
+suivants pour évaluer diverses conceptions de réseaux, allant d’un
+simple modèle linéaire à des réseaux résiduels avancés. Comme nous le
+faisons couramment avec les images, nous les lisons sous la forme d’un
+tenseur de dimensions (taille du lot, nombre de canaux, hauteur,
+largeur). Pour l’instant, nous n’avons qu’un seul canal car les images
+sont en niveaux de gris (la visualisation ci-dessus utilise une palette
+de fausses couleurs pour une meilleure visibilité).</p>
+<p>Enfin, les itérateurs de données sont un composant clé pour des
+performances efficaces. Par exemple, nous pourrions utiliser des GPU
+pour une décompression d’image, un transcodage vidéo ou d’autres
+prétraitements efficaces. Dans la mesure du possible, vous devriez vous
+appuyer sur des itérateurs de données bien implémentés qui exploitent le
+calcul haute performance pour éviter de ralentir votre boucle
+d’entraînement.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Le fait de réduire la taille du lot (<code>batch_size</code>, par
+exemple à 1) affecte-t-il les performances de lecture ?</li>
+<li>La performance de l’itérateur de données est importante. Pensez-vous
+que l’implémentation actuelle soit assez rapide ? Explorez diverses
+options pour l’améliorer. Utilisez un profileur système pour identifier
+où se trouvent les goulots d’étranglement.</li>
+<li>Consultez la documentation de l’API en ligne du framework. Quels
+autres jeux de données sont disponibles ?</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/48">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/49">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/224">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/17980">Discussions</a> :end_tab:</p>
+</main><p class="pager"><a href="softmax-regression.html">Précédent</a> | <a href="classification.html">Suivant</a></p></body></html>

@@ -1,219 +1,165 @@
-
-Rapport de traduction française D2L
-===================================
+# Rapport de traduction française D2L
 
 Date : 2026-06-11
 
-Artefacts produits
-------------------
+## Artefacts produits
 
-- Sources françaises partielles :
-  ``/Users/janslou/Desktop/livre IA/d2l-fr``
-- Site HTML français partiel généré :
-  ``/Users/janslou/Desktop/livre IA/d2l-fr/_build/html``
-- Site HTML préparé pour GitHub Pages :
-  ``/Users/janslou/Desktop/livre IA/d2l-fr/docs``
-- Notebooks générés :
-  ``/Users/janslou/Desktop/livre IA/d2l-fr/notebooks``
-- Dépôt original cloné : ``/Users/janslou/Desktop/livre IA/d2l-en``
-- Dépôt GitHub personnel créé :
-  ``https://github.com/Jamessiiii/d2l-fr-non-officiel``
+- Sources françaises partielles : `/Users/janslou/Desktop/livre IA/d2l-fr`
+- Site HTML français partiel généré : `/Users/janslou/Desktop/livre IA/d2l-fr/_build/html`
+- Site HTML préparé pour GitHub Pages : `/Users/janslou/Desktop/livre IA/d2l-fr/docs`
+- Notebooks générés : `/Users/janslou/Desktop/livre IA/d2l-fr/notebooks`
+- Dépôt original cloné : `/Users/janslou/Desktop/livre IA/d2l-en`
+- Dépôt GitHub personnel créé : `https://github.com/Jamessiiii/d2l-fr-non-officiel`
 
-Build validé
-------------
+## Build validé
 
-Le pipeline D2L-Book a été validé sur un smoke test anglais, puis sur la
-version française partielle.
+Le pipeline D2L-Book a été validé sur un smoke test anglais, puis sur la version française partielle.
 
 Commandes utiles :
 
-.. raw:: latex
-
-   \diilbookstyleinputcell
-
-.. code:: bash
-
-   cd "/Users/janslou/Desktop/livre IA/d2l-fr"
-   . .venv-build/bin/activate
-   d2lbook build eval --tab all
-   d2lbook build rst --tab all
-   install -m 0644 frontpage.html _build/rst_all/frontpage.html
-   d2lbook build html --tab all
-   cp -RX _build/html docs
-   touch docs/.nojekyll
+```bash
+cd "/Users/janslou/Desktop/livre IA/d2l-fr"
+. .venv-build/bin/activate
+d2lbook build eval --tab all
+d2lbook build rst --tab all
+install -m 0644 frontpage.html _build/rst_all/frontpage.html
+d2lbook build html --tab all
+cp -RX _build/html docs
+touch docs/.nojekyll
+```
 
 Le build HTML final a réussi et produit notamment :
 
-- ``_build/html/index.html``
-- ``_build/html/chapter_preface/index.html``
-- ``_build/html/chapter_preface/translation-attribution.html``
-- ``_build/html/chapter_installation/index.html``
-- ``_build/html/chapter_introduction/index.html``
-- ``_build/html/chapter_notation/index.html``
+- `_build/html/index.html`
+- `_build/html/chapter_preface/index.html`
+- `_build/html/chapter_preface/translation-attribution.html`
+- `_build/html/chapter_installation/index.html`
+- `_build/html/chapter_introduction/index.html`
+- `_build/html/chapter_notation/index.html`
+- `_build/html/chapter_preliminaries/index.html`
+- `_build/html/chapter_linear-regression/index.html`
+- `docs/chapter_linear-classification/index.html`
 
-Vérifications locales effectuées sur ``http://localhost:4173`` :
+Vérifications locales effectuées sur `http://localhost:4173` :
 
-- page d’accueil ouverte ;
+- page d'accueil ouverte ;
 - navigation principale présente ;
 - images présentes sur les pages testées ;
 - éléments MathJax présents pour les équations ;
-- page d’attribution visible ;
-- vérification statique des liens locaux dans ``docs`` : ``missing 0``.
+- page d'attribution visible ;
+- vérification statique des liens locaux dans `docs` : `missing 0`.
 
-Traduction réalisée
--------------------
+## Traduction réalisée
 
 Traduction réalisée par agent Gemini :
 
-- ``chapter_preface/index.md`` : traduit en français par
-  ``translate_preface.txt``.
-- ``chapter_introduction/index.md`` : traduit en français par
-  ``translate_introduction.txt``.
-- ``chapter_installation/index.md`` : traduit en français par
-  ``translate_installation.txt``.
-- ``chapter_notation/index.md`` : traduit en français par
-  ``translate_notation.txt``.
-- ``chapter_preliminaries/index.md`` : traduit en français par
-  ``preliminaries_index.txt``.
-- ``chapter_preliminaries/ndarray.md`` : traduit en français par
-  ``preliminaries_ndarray.txt``.
-- ``chapter_preliminaries/pandas.md`` : traduit en français par
-  ``preliminaries_pandas.txt``.
-- ``chapter_preliminaries/linear-algebra.md`` : traduit en français par
-  ``preliminaries_linear_algebra.txt``.
-- ``chapter_preliminaries/calculus.md`` : traduit en français par
-  ``preliminaries_calculus.txt``.
-- ``chapter_preliminaries/autograd.md`` : traduit en français par
-  ``preliminaries_autograd.txt``.
-- ``chapter_preliminaries/probability.md`` : traduit en français par
-  ``preliminaries_probability.txt``.
-- ``chapter_preliminaries/lookup-api.md`` : traduit en français par
-  ``preliminaries_lookup_api.txt``.
+- `chapter_preface/index.md` : traduit en français par `translate_preface.txt`.
+- `chapter_introduction/index.md` : traduit en français par `translate_introduction.txt`.
+- `chapter_installation/index.md` : traduit en français par `translate_installation.txt`.
+- `chapter_notation/index.md` : traduit en français par `translate_notation.txt`.
+- `chapter_preliminaries/index.md` : traduit en français par `preliminaries_index.txt`.
+- `chapter_preliminaries/ndarray.md` : traduit en français par `preliminaries_ndarray.txt`.
+- `chapter_preliminaries/pandas.md` : traduit en français par `preliminaries_pandas.txt`.
+- `chapter_preliminaries/linear-algebra.md` : traduit en français par `preliminaries_linear_algebra.txt`.
+- `chapter_preliminaries/calculus.md` : traduit en français par `preliminaries_calculus.txt`.
+- `chapter_preliminaries/autograd.md` : traduit en français par `preliminaries_autograd.txt`.
+- `chapter_preliminaries/probability.md` : traduit en français par `preliminaries_probability.txt`.
+- `chapter_preliminaries/lookup-api.md` : traduit en français par `preliminaries_lookup_api.txt`.
+- `chapter_linear-regression/index.md` : traduit en français par `linear_regression_index.txt`.
+- `chapter_linear-regression/synthetic-regression-data.md` : traduit en français par `linear_regression_synthetic_regression_data.txt`.
+- `chapter_linear-regression/oo-design.md` : traduit en français par `linear_regression_oo_design.txt`.
+- `chapter_linear-regression/linear-regression.md` : traduit en français par `linear_regression_linear_regression.txt`.
+- `chapter_linear-regression/linear-regression-scratch.md` : traduit en français par `linear_regression_linear_regression_scratch.txt`.
+- `chapter_linear-regression/linear-regression-concise.md` : traduit en français par `linear_regression_linear_regression_concise.txt`.
+- `chapter_linear-regression/generalization.md` : traduit en français par `linear_regression_generalization.txt`.
+- `chapter_linear-regression/weight-decay.md` : traduit en français par `linear_regression_weight_decay.txt`.
+- `chapter_linear-classification/index.md` : traduit en français par `linear_classification_index.txt`.
+- `chapter_linear-classification/classification.md` : traduit en français par `linear_classification_classification.txt`.
+- `chapter_linear-classification/image-classification-dataset.md` : traduit en français par `linear_classification_image_classification_dataset.txt`.
+- `chapter_linear-classification/softmax-regression-concise.md` : traduit en français par `linear_classification_softmax_regression_concise.txt`.
+- `chapter_linear-classification/softmax-regression.md` : traduit en français par `linear_classification_softmax_regression.txt`.
+- `chapter_linear-classification/softmax-regression-scratch.md` : traduit en français par `linear_classification_softmax_regression_scratch.txt`.
+- `chapter_linear-classification/generalization-classification.md` : traduit en français par `linear_classification_generalization_classification.txt`.
+- `chapter_linear-classification/environment-and-distribution-shift.md` : traduit en français par `linear_classification_environment_and_distribution_shift.txt`.
 
 Ajouts manuels de structure française :
 
-- ``config.ini`` : nom du projet, titre et liens de navigation adaptés.
-- ``index.md`` : titre français et table des matières partielle.
-- ``chapter_preface/translation-attribution.md`` : page d’attribution
-  non officielle.
-- ``README.md`` et ``ATTRIBUTION.md`` : avertissement de traduction non
-  officielle, lien vers le dépôt original, crédits et licences.
-- ``docs/`` : copie du site HTML prête pour GitHub Pages.
-- ``notebooks/`` : notebooks générés à partir du build partiel.
-- ``img/polygon-circle.svg`` : figure utilisée par
-  ``chapter_preliminaries/calculus.md``.
+- `config.ini` : nom du projet, titre et liens de navigation adaptés.
+- `index.md` : titre français et table des matières partielle.
+- `chapter_preface/translation-attribution.md` : page d'attribution non officielle.
+- `README.md` et `ATTRIBUTION.md` : avertissement de traduction non officielle, lien vers le dépôt original, crédits et licences.
+- `docs/` : copie du site HTML prête pour GitHub Pages.
+- `notebooks/` : notebooks générés à partir du build partiel.
+- `img/polygon-circle.svg` : figure utilisée par `chapter_preliminaries/calculus.md`.
+- `img/capacity-vs-error.svg`, `img/fit-linreg.svg`, `img/singleneuron.svg`, `img/neuron.svg` : figures utilisées par `chapter_linear-regression`.
+- `img/softmaxreg.svg`, `img/cat-dog-train.png`, `img/cat-dog-test.png`, `img/popvssoda.png` : figures utilisées par `chapter_linear-classification`.
 
-Non traduit / restant à faire
------------------------------
+## Non traduit / restant à faire
 
 Les chapitres copiés dans cette version partielle ont été traduits.
 Restent à faire :
 
-- tous les autres chapitres du dépôt officiel non encore copiés dans
-  ``d2l-fr``.
+- tous les autres chapitres du dépôt officiel non encore copiés dans `d2l-fr`.
 
-La traduction complète du livre reste à faire chapitre par chapitre en
-lançant de nouveaux agents Gemini sur les chapitres restants.
+La traduction complète du livre reste à faire chapitre par chapitre en lançant de nouveaux agents Gemini sur les chapitres restants.
 
-Blocage rencontré puis résolu
------------------------------
+## Blocage rencontré puis résolu
 
-Le premier run Gemini a réussi pour la préface, puis s’est arrêté pour
-les autres agents :
+Le premier run Gemini a réussi pour la préface, puis s'est arrêté pour les autres agents :
 
-- ``agent_02`` (``translate_introduction.txt``) : erreur Gemini CLI
-  ``Error executing tool write_file: params must have required property 'file_path'``.
-- ``agent_03`` (``translate_installation.txt``) : demande
-  d’authentification navigateur, puis expiration.
-- ``translate_notation.txt`` n’a pas été exécuté jusqu’au bout dans le
-  run interrompu.
+- `agent_02` (`translate_introduction.txt`) : erreur Gemini CLI `Error executing tool write_file: params must have required property 'file_path'`.
+- `agent_03` (`translate_installation.txt`) : demande d'authentification navigateur, puis expiration.
+- `translate_notation.txt` n'a pas été exécuté jusqu'au bout dans le run interrompu.
 
-Tentative d’authentification :
+Tentative d'authentification :
 
 - Le CLI a ouvert une page Google OAuth.
-- La page est restée bloquée sur l’autorisation de
-  ``Gemini Code Assist and Gemini CLI``.
-- Le CLI a terminé par :
-  ``Authentication timed out after 5 minutes. The browser tab may have gotten stuck in a loading state. Please try again or use NO_BROWSER=true for manual authentication.``
-- ``NO_BROWSER=true`` a ensuite échoué avec :
-  ``Manual authorization is required but the current session is non-interactive.``
+- La page est restée bloquée sur l'autorisation de `Gemini Code Assist and Gemini CLI`.
+- Le CLI a terminé par : `Authentication timed out after 5 minutes. The browser tab may have gotten stuck in a loading state. Please try again or use NO_BROWSER=true for manual authentication.`
+- `NO_BROWSER=true` a ensuite échoué avec : `Manual authorization is required but the current session is non-interactive.`
 
-Après réactivation de l’authentification Gemini CLI, les agents
-``translate_installation.txt``, ``translate_notation.txt`` et
-``translate_introduction.txt`` ont été relancés avec succès.
+Après réactivation de l'authentification Gemini CLI, les agents `translate_installation.txt`, `translate_notation.txt` et `translate_introduction.txt` ont été relancés avec succès.
 
-Lors de la traduction de ``chapter_preliminaries``, deux agents ont
-d’abord rencontré ``MODEL_CAPACITY_EXHAUSTED`` (``ndarray`` et
-``autograd``). Ils ont été relancés avec ``--max-parallel 1``;
-``ndarray`` a terminé normalement. Le run ``autograd`` a écrit le
-fichier traduit mais s’est ensuite bloqué dans Gemini; le fichier a été
-vérifié localement et intégré au build.
+Lors de la traduction de `chapter_preliminaries`, deux agents ont d'abord rencontré `MODEL_CAPACITY_EXHAUSTED` (`ndarray` et `autograd`). Ils ont été relancés avec `--max-parallel 1`; `ndarray` a terminé normalement. Le run `autograd` a écrit le fichier traduit mais s'est ensuite bloqué dans Gemini; le fichier a été vérifié localement et intégré au build.
 
-Après traduction, les blocs de code fenced de ``chapter_preliminaries``
-ont été restaurés depuis le dépôt original anglais afin de préserver
-exactement le code, les commentaires de code, les directives tabulaires
-et les sorties techniques.
+Après traduction, les blocs de code fenced de `chapter_preliminaries` ont été restaurés depuis le dépôt original anglais afin de préserver exactement le code, les commentaires de code, les directives tabulaires et les sorties techniques.
 
-Limites du build partiel
-------------------------
+Pour `chapter_linear-regression`, huit agents Gemini ont été lancés en deux vagues. Les blocs de code fenced ont ensuite été restaurés depuis le dépôt original anglais afin de préserver le code, les commentaires de code, les directives tabulaires et les sorties techniques. Une erreur de balisage D2L produite par la traduction dans `synthetic-regression-data.md` a été corrigée avant génération RST.
 
-Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un build
-complet précédent du même état avait listé 88 avertissements attendus
-pour une version partielle :
+Pour `chapter_linear-classification`, huit agents Gemini ont été lancés en deux vagues. Les blocs de code fenced ont ensuite été restaurés depuis le dépôt original anglais. Le build `eval_all` a réussi et a généré les notebooks du chapitre. La conversion RST/Sphinx complète s'est bloquée dans l'environnement local; le chapitre a donc été publié dans `docs/chapter_linear-classification/` via une génération HTML ciblée avec MathJax et les images locales, en attendant de stabiliser le pipeline Sphinx complet.
 
-- plusieurs citations et labels pointent vers des chapitres absents du
-  build partiel ;
+## Limites du build partiel
+
+Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un build complet précédent du même état avait listé 88 avertissements attendus pour une version partielle :
+
+- plusieurs citations et labels pointent vers des chapitres absents du build partiel ;
 - le site ne contient que les chapitres copiés/traduits à ce stade.
 
-Pour le build complet, il faudra restaurer une copie complète ou des
-liens robustes vers toutes les images et tous les chapitres, puis
-rétablir ``resources`` dans ``config.ini`` pour se rapprocher du dépôt
-officiel.
+Pour le build complet, il faudra restaurer une copie complète ou des liens robustes vers toutes les images et tous les chapitres, puis rétablir `resources` dans `config.ini` pour se rapprocher du dépôt officiel.
 
-Note technique : l’ancien environnement ``.venv-build`` placé dans la
-racine du dépôt a fini par bloquer ``pkg_resources``/``notedown``. Le
-build courant utilise un environnement virtuel frais hors dépôt :
+Note technique : l'ancien environnement `.venv-build` placé dans la racine du dépôt a fini par bloquer `pkg_resources`/`notedown`. Les builds courants utilisent des environnements virtuels frais hors dépôt, notamment :
 
-.. raw:: latex
+```bash
+/Users/janslou/Desktop/livre IA/d2l-fr-venv-build-fresh
+/Users/janslou/Desktop/livre IA/d2l-fr-venv-build-run2
+```
 
-   \diilbookstyleinputcell
+Le HTML a été produit en lançant directement Sphinx sur `_build/rst_all` après génération des notebooks/RST, afin d'éviter la réécriture de deux notebooks `eval_all` vides observée pendant un run interrompu.
 
-.. code:: bash
+## État GitHub
 
-   /Users/janslou/Desktop/livre IA/d2l-fr-venv-build-fresh
+Le dépôt GitHub `Jamessiiii/d2l-fr-non-officiel` a été créé via le navigateur intégré, sans modifier le dépôt original `d2l-ai/d2l-en`.
 
-Le HTML a été produit en lançant directement Sphinx sur
-``_build/rst_all`` après génération des notebooks/RST, afin d’éviter la
-réécriture de deux notebooks ``eval_all`` vides observée pendant un run
-interrompu.
+Le dépôt local est initialisé sur `main`, avec le remote :
 
-État GitHub
------------
+```bash
+origin  https://github.com/Jamessiiii/d2l-fr-non-officiel.git
+```
 
-Le dépôt GitHub ``Jamessiiii/d2l-fr-non-officiel`` a été créé via le
-navigateur intégré, sans modifier le dépôt original ``d2l-ai/d2l-en``.
+GitHub CLI a ensuite été réauthentifié comme `Jamessiiii`. GitHub Pages est configuré pour servir le site depuis `main` / `docs` :
 
-Le dépôt local est initialisé sur ``main``, avec le remote :
+```text
+https://jamessiiii.github.io/d2l-fr-non-officiel/
+```
 
-.. raw:: latex
-
-   \diilbookstyleinputcell
-
-.. code:: bash
-
-   origin  https://github.com/Jamessiiii/d2l-fr-non-officiel.git
-
-GitHub CLI a ensuite été réauthentifié comme ``Jamessiiii``. GitHub
-Pages est configuré pour servir le site depuis ``main`` / ``docs`` :
-
-.. raw:: latex
-
-   \diilbookstyleinputcell
-
-.. code:: text
-
-   https://jamessiiii.github.io/d2l-fr-non-officiel/
-
-Le site public doit être revérifié après chaque nouveau push : page
-d'accueil, navigation, équations MathJax, figures, liens internes et
-attribution.
+Le site public doit être revérifié après chaque nouveau push : page d'accueil, navigation, équations MathJax, figures, liens internes et attribution.

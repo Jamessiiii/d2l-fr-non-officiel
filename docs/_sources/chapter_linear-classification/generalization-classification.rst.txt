@@ -1,0 +1,584 @@
+Généralisation en classification
+================================
+
+.. _chap_classification_generalization:
+
+Jusqu'à présent, nous nous sommes concentrés sur la manière d'aborder les problèmes de classification multiclasse
+en entraînant des réseaux de neurones (linéaires) avec plusieurs sorties et des fonctions softmax.
+En interprétant les sorties de notre modèle comme des prédictions probabilistes,
+nous avons motivé et dérivé la fonction de perte d'entropie croisée,
+qui calcule la log-vraisemblance négative
+que notre modèle (pour un ensemble fixe de paramètres)
+attribue aux étiquettes réelles.
+Enfin, nous avons mis ces outils en pratique
+en ajustant notre modèle à l'ensemble d'entraînement.
+Cependant, comme toujours, notre objectif est d'apprendre des *motifs généraux*,
+évalués empiriquement sur des données jusque-là invisibles (l'ensemble de test).
+Une grande précision sur l'ensemble d'entraînement ne signifie rien.
+Dès que chacune de nos entrées est unique
+(et c'est effectivement le cas pour la plupart des ensembles de données de grande dimension),
+nous pouvons atteindre une précision parfaite sur l'ensemble d'entraînement
+en mémorisant simplement l'ensemble de données lors de la première époque d'entraînement,
+puis en recherchant l'étiquette chaque fois que nous voyons une nouvelle image.
+Pourtant, mémoriser les étiquettes exactes
+associées aux exemples d'entraînement exacts
+ne nous dit pas comment classifier de nouveaux exemples.
+En l'absence d'indications supplémentaires, nous pourrions être obligés de nous rabattre
+sur une estimation aléatoire chaque fois que nous rencontrons de nouveaux exemples.
+
+Un certain nombre de questions brûlantes exigent une attention immédiate :
+
+1. De combien d'exemples de test avons-nous besoin pour donner une bonne estimation de la précision de nos classifieurs sur la population sous-jacente ?
+1. Que se passe-t-il si nous continuons à évaluer les modèles sur le même test de manière répétée ?
+1. Pourquoi devrions-nous nous attendre à ce que l'ajustement de nos modèles linéaires à l'ensemble d'entraînement
+   soit plus efficace que notre schéma de mémorisation naïf ?
+
+Alors que la :numref:`sec_generalization_basics` a introduit
+les bases du surapprentissage et de la généralisation
+dans le contexte de la régression linéaire,
+ce chapitre ira un peu plus loin,
+en présentant certaines des idées fondamentales
+de la théorie de l'apprentissage statistique.
+Il s'avère que nous pouvons souvent garantir la généralisation *a priori* :
+pour de nombreux modèles,
+et pour n'importe quelle borne supérieure souhaitée
+sur l'écart de généralisation :math:`\epsilon`,
+nous pouvons souvent déterminer un certain nombre d'échantillons requis :math:`n`
+tel que si notre ensemble d'entraînement contient au moins :math:`n`
+échantillons, notre erreur empirique se situera
+à moins de :math:`\epsilon` de l'erreur réelle,
+*pour toute distribution génératrice de données*.
+Malheureusement, il s'avère également
+que si ces types de garanties fournissent
+un ensemble profond de briques intellectuelles,
+elles sont d'une utilité pratique limitée
+pour le praticien de l'apprentissage profond.
+En bref, ces garanties suggèrent
+que garantir la généralisation
+des réseaux de neurones profonds *a priori*
+nécessite un nombre absurde d'exemples
+(peut-être des billions ou plus),
+même lorsque nous constatons que, sur les tâches qui nous intéressent,
+les réseaux de neurones profonds se généralisent généralement
+remarquablement bien avec beaucoup moins d'exemples (des milliers).
+Ainsi, les praticiens de l'apprentissage profond renoncent souvent
+aux garanties *a priori*,
+utilisant plutôt des méthodes
+qui se sont bien généralisées
+sur des problèmes similaires par le passé,
+et certifiant la généralisation *post hoc*
+par des évaluations empiriques.
+Lorsque nous arriverons au :numref:`chap_perceptrons`,
+nous reviendrons sur la généralisation
+et fournirons une introduction légère
+à la vaste littérature scientifique
+qui a surgi pour tenter
+d'expliquer pourquoi les réseaux de neurones profonds se généralisent en pratique.
+
+L'ensemble de test
+------------------
+
+Puisque nous avons déjà commencé à nous appuyer sur les ensembles de test
+comme la méthode de référence
+pour évaluer l'erreur de généralisation,
+commençons par discuter
+des propriétés de ces estimations d'erreur.
+Concentrons-nous sur un classifieur fixe :math:`f`,
+sans nous soucier de la manière dont il a été obtenu.
+Supposons de plus que nous possédions
+un ensemble de données *frais* d'exemples :math:`\mathcal{D} = {(\mathbf{x}^{(i)},y^{(i)})}_{i=1}^n`
+qui n'ont pas été utilisés pour entraîner le classifieur :math:`f`.
+L'*erreur empirique* de notre classifieur :math:`f` sur :math:`\mathcal{D}`
+est simplement la fraction d'instances
+pour lesquelles la prédiction :math:`f(\mathbf{x}^{(i)})`
+ne concorde pas avec la véritable étiquette :math:`y^{(i)}`,
+et est donnée par l'expression suivante :
+
+.. math::
+
+   \epsilon_\mathcal{D}(f) = \frac{1}{n}\sum_{i=1}^n \mathbf{1}(f(\mathbf{x}^{(i)}) \neq y^{(i)}).
+
+En revanche, l'*erreur sur la population*
+est la fraction *attendue*
+d'exemples dans la population sous-jacente
+(une distribution :math:`P(X,Y)` caractérisée
+par une fonction de densité de probabilité :math:`p(\mathbf{x},y)`)
+pour laquelle notre classifieur ne concorde pas
+avec la véritable étiquette :
+
+.. math::
+
+   \epsilon(f) =  E_{(\mathbf{x}, y) \sim P} \mathbf{1}(f(\mathbf{x}) \neq y) =
+   \int\int \mathbf{1}(f(\mathbf{x}) \neq y) p(\mathbf{x}, y) \;d\mathbf{x} dy.
+
+
+Bien que :math:`\epsilon(f)` soit la quantité qui nous intéresse réellement,
+nous ne pouvons pas l'observer directement,
+tout comme nous ne pouvons pas observer directement
+la taille moyenne d'une grande population
+sans mesurer chaque personne.
+Nous ne pouvons qu'estimer cette quantité sur la base d'échantillons.
+Parce que notre ensemble de test :math:`\mathcal{D}`
+est statistiquement représentatif
+de la population sous-jacente,
+nous pouvons considérer :math:`\epsilon_\mathcal{D}(f)` comme un estimateur statistique
+de l'erreur sur la population :math:`\epsilon(f)`.
+De plus, parce que notre quantité d'intérêt :math:`\epsilon(f)`
+est une espérance (de la variable aléatoire :math:`\mathbf{1}(f(X) \neq Y)`)
+et que l'estimateur correspondant :math:`\epsilon_\mathcal{D}(f)`
+est la moyenne de l'échantillon,
+estimer l'erreur sur la population
+est simplement le problème classique de l'estimation de la moyenne,
+que vous vous rappelez peut-être de la :numref:`sec_prob`.
+
+Un résultat classique important de la théorie des probabilités
+appelé le *théorème central limite* garantit
+que chaque fois que nous possédons :math:`n` échantillons aléatoires :math:`a_1, ..., a_n`
+tirés de n'importe quelle distribution de moyenne :math:`\mu` et d'écart-type :math:`\sigma`,
+alors, à mesure que le nombre d'échantillons :math:`n` tend vers l'infini,
+la moyenne de l'échantillon :math:`\hat{\mu}` tend approximativement
+vers une distribution normale centrée
+sur la moyenne réelle et d'écart-type :math:`\sigma/\sqrt{n}`.
+Déjà, cela nous dit quelque chose d'important :
+à mesure que le nombre d'exemples augmente,
+notre erreur de test :math:`\epsilon_\mathcal{D}(f)`
+doit approcher l'erreur réelle :math:`\epsilon(f)`
+à une vitesse de :math:`\mathcal{O}(1/\sqrt{n})`.
+Ainsi, pour estimer notre erreur de test deux fois plus précisément,
+nous devons collecter un ensemble de test quatre fois plus grand.
+Pour réduire notre erreur de test d'un facteur cent,
+nous devons collecter un ensemble de test dix mille fois plus grand.
+En général, une telle vitesse de :math:`\mathcal{O}(1/\sqrt{n})`
+est souvent le mieux que nous puissions espérer en statistique.
+
+Maintenant que nous en savons un peu plus sur la vitesse asymptotique
+à laquelle notre erreur de test :math:`\epsilon_\mathcal{D}(f)` converge vers l'erreur réelle :math:`\epsilon(f)`,
+nous pouvons nous attarder sur certains détails importants.
+Rappelons que la variable aléatoire d'intérêt
+:math:`\mathbf{1}(f(X) \neq Y)`
+ne peut prendre que les valeurs :math:`0` et :math:`1`
+et est donc une variable aléatoire de Bernoulli,
+caractérisée par un paramètre
+indiquant la probabilité qu'elle prenne la valeur :math:`1`.
+Ici, :math:`1` signifie que notre classifieur a fait une erreur,
+donc le paramètre de notre variable aléatoire
+est en fait le taux d'erreur réel :math:`\epsilon(f)`.
+La variance :math:`\sigma^2` d'une Bernoulli
+dépend de son paramètre (ici, :math:`\epsilon(f)`)
+selon l'expression :math:`\epsilon(f)(1-\epsilon(f))`.
+Bien que :math:`\epsilon(f)` soit initialement inconnue,
+nous savons qu'elle ne peut pas être supérieure à :math:`1`.
+Une petite investigation de cette fonction
+révèle que notre variance est la plus élevée
+lorsque le taux d'erreur réel est proche de :math:`0,5`
+et peut être bien plus faible lorsqu'il est
+proche de :math:`0` ou de :math:`1`.
+Cela nous dit que l'écart-type asymptotique
+de notre estimation :math:`\epsilon_\mathcal{D}(f)` de l'erreur :math:`\epsilon(f)`
+(sur le choix des :math:`n` échantillons de test)
+ne peut être supérieur à :math:`\sqrt{0,25/n}`.
+
+Si nous ignorons le fait que cette vitesse caractérise
+le comportement à mesure que la taille de l'ensemble de test tend vers l'infini
+plutôt que lorsque nous possédons des échantillons finis,
+cela nous dit que si nous voulons que notre erreur de test :math:`\epsilon_\mathcal{D}(f)`
+approche l'erreur sur la population :math:`\epsilon(f)`
+de telle sorte qu'un écart-type corresponde
+à un intervalle de :math:`\pm 0,01`,
+alors nous devrions collecter environ 2500 échantillons.
+Si nous voulons faire tenir deux écarts-types
+dans cet intervalle et être ainsi confiants à 95 %
+que :math:`\epsilon_\mathcal{D}(f) \in \epsilon(f) \pm 0,01`,
+alors nous aurons besoin de 10 000 échantillons !
+
+Il s'avère que c'est la taille des ensembles de test
+pour de nombreux benchmarks populaires en apprentissage automatique.
+Vous pourriez être surpris de découvrir que des milliers
+d'articles d'apprentissage profond appliqué sont publiés chaque année
+faisant grand cas d'améliorations du taux d'erreur de :math:`0,01` ou moins.
+Bien sûr, lorsque les taux d'erreur sont beaucoup plus proches de :math:`0`,
+une amélioration de :math:`0,01` peut en effet être très importante.
+
+Un aspect agaçant de notre analyse jusqu'à présent
+est qu'elle ne nous renseigne réellement que sur l'asymptotique,
+c'est-à-dire sur la manière dont la relation entre :math:`\epsilon_\mathcal{D}` et :math:`\epsilon`
+évolue à mesure que la taille de notre échantillon tend vers l'infini.
+Heureusement, parce que notre variable aléatoire est bornée,
+nous pouvons obtenir des bornes valides sur échantillon fini
+en appliquant une inégalité due à Hoeffding (1963) :
+
+.. math::
+
+   P(\epsilon_\mathcal{D}(f) - \epsilon(f) \geq t) < \exp\left( - 2n t^2 \right).
+
+En résolvant pour la plus petite taille d'ensemble de données
+qui nous permettrait de conclure
+avec une confiance de 95 % que la distance :math:`t`
+entre notre estimation :math:`\epsilon_\mathcal{D}(f)`
+et le taux d'erreur réel :math:`\epsilon(f)`
+ne dépasse pas :math:`0,01`,
+vous constaterez qu'environ 15 000 exemples sont requis
+contre les 10 000 exemples suggérés
+par l'analyse asymptotique ci-dessus.
+Si vous allez plus loin en statistiques,
+vous constaterez que cette tendance se vérifie généralement.
+Les garanties qui s'appliquent même sur des échantillons finis
+sont généralement un peu plus conservatives.
+Notez que dans l'ordre des choses,
+ces chiffres ne sont pas si éloignés,
+reflétant l'utilité générale
+de l'analyse asymptotique pour nous donner
+des ordres de grandeur même s'il ne s'agit pas
+de garanties absolues.
+
+Réutilisation de l'ensemble de test
+-----------------------------------
+
+Dans un certain sens, vous êtes maintenant prêt à réussir
+vos recherches empiriques en apprentissage automatique.
+Presque tous les modèles pratiques sont développés
+et validés sur la base des performances de l'ensemble de test,
+et vous êtes maintenant un maître de l'ensemble de test.
+Pour tout classifieur fixe :math:`f`,
+vous savez comment évaluer son erreur de test :math:`\epsilon_\mathcal{D}(f)`,
+et vous savez précisément ce qui peut (et ne peut pas)
+être dit sur son erreur sur la population :math:`\epsilon(f)`.
+
+Disons donc que vous utilisez ces connaissances
+et que vous vous préparez à entraîner votre premier modèle :math:`f_1`.
+Sachant quel niveau de confiance vous devez avoir
+dans la performance du taux d'erreur de votre classifieur,
+vous appliquez notre analyse ci-dessus pour déterminer
+un nombre approprié d'exemples
+à mettre de côté pour l'ensemble de test.
+De plus, supposons que vous ayez pris à cœur les leçons de la
+:numref:`sec_generalization_basics`
+et que vous vous soyez assuré de préserver le caractère sacré de l'ensemble de test
+en effectuant toutes vos analyses préliminaires,
+le réglage des hyperparamètres et même la sélection
+parmi plusieurs architectures de modèles concurrentes
+sur un ensemble de validation.
+Enfin, vous évaluez votre modèle :math:`f_1`
+sur l'ensemble de test et rapportez une estimation non biaisée
+de l'erreur sur la population
+avec un intervalle de confiance associé.
+
+Jusqu'à présent, tout semble bien se passer.
+Cependant, cette nuit-là, vous vous réveillez à 3 heures du matin
+avec une idée géniale pour une nouvelle approche de modélisation.
+Le lendemain, vous codez votre nouveau modèle,
+réglez ses hyperparamètres sur l'ensemble de validation
+et non seulement vous parvenez à faire fonctionner votre nouveau modèle :math:`f_2`,
+mais son taux d'erreur semble être bien inférieur à celui de :math:`f_1`.
+Cependant, le frisson de la découverte s'estompe soudainement
+lorsque vous vous préparez pour l'évaluation finale.
+Vous n'avez pas d'ensemble de test !
+
+Même si l'ensemble de test original :math:`\mathcal{D}`
+est toujours sur votre serveur,
+vous êtes maintenant confronté à deux problèmes redoutables.
+Premièrement, lorsque vous avez collecté votre ensemble de test,
+vous avez déterminé le niveau de précision requis
+sous l'hypothèse que vous évaluiez
+un seul classifieur :math:`f`.
+Cependant, si vous commencez à évaluer
+plusieurs classifieurs :math:`f_1, ..., f_k`
+sur le même ensemble de test,
+vous devez considérer le problème de la fausse découverte.
+Auparavant, vous auriez pu être sûr à 95 %
+que :math:`\epsilon_\mathcal{D}(f) \in \epsilon(f) \pm 0,01`
+pour un seul classifieur :math:`f`
+et ainsi la probabilité d'un résultat trompeur
+n'était que de 5 %.
+Avec :math:`k` classifieurs en jeu,
+il peut être difficile de garantir
+qu'il n'y en a pas un seul parmi eux
+dont la performance sur l'ensemble de test est trompeuse.
+Avec 20 classifieurs à l'étude,
+vous n'auriez peut-être aucun pouvoir pour exclure la possibilité
+qu'au moins l'un d'entre eux
+ait reçu un score trompeur.
+Ce problème est lié aux tests d'hypothèses multiples qui, malgré une vaste littérature en statistiques,
+restent un problème persistant qui empoisonne la recherche scientifique.
+
+Si cela ne suffit pas à vous inquiéter,
+il y a une raison particulière de se méfier
+des résultats que vous obtenez lors des évaluations ultérieures.
+Rappelons que notre analyse de la performance de l'ensemble de test
+reposait sur l'hypothèse que le classifieur
+était choisi sans aucun contact avec l'ensemble de test
+et que nous pouvions donc considérer l'ensemble de test
+comme tiré au hasard dans la population sous-jacente.
+Ici, non seulement vous testez plusieurs fonctions,
+mais la fonction suivante :math:`f_2` a été choisie
+après avoir observé la performance de :math:`f_1` sur l'ensemble de test.
+Une fois que des informations de l'ensemble de test ont fuité vers le modélisateur,
+il ne peut plus jamais être un véritable ensemble de test au sens strict.
+Ce problème est appelé *surapprentissage adaptatif* et est récemment devenu
+un sujet d'intérêt intense pour les théoriciens de l'apprentissage et les statisticiens
+:cite:`dwork2015preserving`.
+Heureusement, bien qu'il soit possible
+de faire fuiter toutes les informations d'un ensemble de validation,
+et que les scénarios théoriques les plus pessimistes soient sombres,
+ces analyses sont peut-être trop conservatives.
+En pratique, veillez à créer de véritables ensembles de test,
+à les consulter aussi rarement que possible,
+à tenir compte des tests d'hypothèses multiples
+lors de la publication des intervalles de confiance,
+et à accroître votre vigilance de manière plus agressive
+lorsque les enjeux sont élevés et que la taille de votre ensemble de données est petite.
+Lors de l'exécution d'une série de défis de benchmark,
+il est souvent de bonne pratique de maintenir
+plusieurs ensembles de test afin qu'après chaque tour,
+l'ancien ensemble de test puisse être rétrogradé en ensemble de validation.
+
+Théorie de l'apprentissage statistique
+--------------------------------------
+
+Pour dire les choses simplement, *les ensembles de test sont tout ce que nous avons réellement*,
+et pourtant ce fait semble étrangement insatisfaisant.
+Premièrement, nous possédons rarement un *véritable ensemble de test*---à moins
+que nous ne soyons ceux qui créent l'ensemble de données,
+quelqu'un d'autre a probablement déjà évalué
+son propre classifieur sur notre prétendu « ensemble de test ».
+Et même lorsque nous sommes les premiers servis,
+nous nous retrouvons vite frustrés, souhaitant pouvoir
+évaluer nos tentatives de modélisation ultérieures
+sans ce sentiment persistant
+que nous ne pouvons pas faire confiance à nos chiffres.
+De plus, même un véritable ensemble de test ne peut nous dire que *post hoc*
+si un classifieur s'est effectivement généralisé à la population,
+et non si nous avons une raison quelconque d'attendre *a priori*
+qu'il se généralise.
+
+Avec ces doutes à l'esprit,
+vous pourriez maintenant être suffisamment préparé
+pour voir l'attrait de la *théorie de l'apprentissage statistique*,
+le sous-domaine mathématique de l'apprentissage automatique
+dont les praticiens visent à élucider les
+principes fondamentaux qui expliquent
+pourquoi/quand les modèles entraînés sur des données empiriques
+peuvent/vont se généraliser à des données invisibles.
+L'un des objectifs primaires
+des chercheurs en apprentissage statistique
+a été de borner l'écart de généralisation,
+en reliant les propriétés de la classe de modèles
+au nombre d'échantillons dans l'ensemble de données.
+
+Les théoriciens de l'apprentissage visent à borner la différence
+entre l'*erreur empirique* :math:`\epsilon_\mathcal{S}(f_\mathcal{S})`
+d'un classifieur appris :math:`f_\mathcal{S}`,
+à la fois entraîné et évalué
+sur l'ensemble d'entraînement :math:`\mathcal{S}`,
+et l'erreur réelle :math:`\epsilon(f_\mathcal{S})`
+de ce même classifieur sur la population sous-jacente.
+Cela peut ressembler au problème d'évaluation
+que nous venons d'aborder, mais il y a une différence majeure.
+Auparavant, le classifieur :math:`f` était fixe
+et nous n'avions besoin d'un ensemble de données
+qu'à des fins d'évaluation.
+Et en effet, n'importe quel classifieur fixe se généralise :
+son erreur sur un ensemble de données (invisibles auparavant)
+est une estimation non biaisée de l'erreur sur la population.
+Mais que pouvons-nous dire lorsqu'un classifieur
+est entraîné et évalué sur le même ensemble de données ?
+Pouvons-nous un jour être convaincus que l'erreur d'entraînement
+sera proche de l'erreur de test ?
+
+Supposons que notre classifieur appris :math:`f_\mathcal{S}` doive être choisi
+parmi un ensemble de fonctions pré-spécifiées :math:`\mathcal{F}`.
+Rappelons de notre discussion sur les ensembles de test
+que s'il est facile d'estimer
+l'erreur d'un seul classifieur,
+les choses se compliquent lorsque nous commençons
+à considérer des collections de classifieurs.
+Même si l'erreur empirique
+de n'importe quel classifieur (fixe)
+sera proche de son erreur réelle
+avec une probabilité élevée,
+une fois que nous considérons une collection de classifieurs,
+nous devons nous inquiéter de la possibilité
+qu'un *seul* d'entre eux
+reçoive une erreur mal estimée.
+L'inquiétude est que nous pourrions choisir un tel classifieur
+et ainsi sous-estimer grossièrement
+l'erreur sur la population.
+De plus, même pour les modèles linéaires,
+parce que leurs paramètres sont à valeurs continues,
+nous choisissons généralement parmi
+une classe infinie de fonctions (:math:`|\mathcal{F}| = \infty`).
+
+Une solution ambitieuse au problème
+est de développer des outils analytiques
+pour prouver la convergence uniforme, c'est-à-dire
+qu'avec une probabilité élevée,
+le taux d'erreur empirique de chaque classifieur de la classe :math:`f\in\mathcal{F}`
+convergera *simultanément* vers son taux d'erreur réel.
+En d'autres termes, nous recherchons un principe théorique
+qui nous permettrait d'affirmer qu'avec une probabilité d'au moins :math:`1-\delta`
+(pour un certain petit :math:`\delta`)
+aucun taux d'erreur de classifieur :math:`\epsilon(f)`
+(parmi tous les classifieurs de la classe :math:`\mathcal{F}`)
+ne sera mal estimé de plus
+qu'une certaine petite quantité :math:`\alpha`.
+Clairement, nous ne pouvons pas faire de telles affirmations
+pour toutes les classes de modèles :math:`\mathcal{F}`.
+Rappelons la classe des machines de mémorisation
+qui atteignent toujours une erreur empirique de :math:`0`
+mais ne surpassent jamais l'estimation aléatoire
+sur la population sous-jacente.
+
+D'une certaine manière, la classe des mémorisateurs est trop flexible.
+Un tel résultat de convergence uniforme ne pourrait pas exister.
+D'un autre côté, un classifieur fixe est inutile---il
+se généralise parfaitement, mais ne s'ajuste ni
+aux données d'entraînement ni aux données de test.
+La question centrale de l'apprentissage
+a donc historiquement été formulée comme un compromis
+entre des classes de modèles plus flexibles (variance plus élevée)
+qui s'ajustent mieux aux données d'entraînement mais risquent le surapprentissage,
+et des classes de modèles plus rigides (biais plus élevé)
+qui se généralisent bien mais risquent le sous-apprentissage.
+Une question centrale en théorie de l'apprentissage
+a été de développer l'analyse mathématique appropriée
+pour quantifier où un modèle se situe le long de ce spectre,
+et de fournir les garanties associées.
+
+Dans une série d'articles fondateurs,
+Vapnik et Chervonenkis ont étendu
+la théorie sur la convergence
+des fréquences relatives
+à des classes de fonctions plus générales
+:cite:`VapChe64,VapChe68,VapChe71,VapChe74b,VapChe81,VapChe91`.
+L'une des contributions clés de cette lignée de travaux
+est la dimension de Vapnik-Chervonenkis (VC),
+qui mesure (une notion de)
+la complexité (flexibilité) d'une classe de modèles.
+De plus, l'un de leurs résultats clés borne
+la différence entre l'erreur empirique
+et l'erreur sur la population en fonction
+de la dimension VC et du nombre d'échantillons :
+
+.. math::
+
+   P\left(R[p, f] - R_\textrm{emp}[\mathbf{X}, \mathbf{Y}, f] < \alpha\right) \geq 1-\delta
+   \ \textrm{ pour }\ \alpha \geq c \sqrt{(\textrm{VC} - \log \delta)/n}.
+
+
+Ici :math:`\delta > 0` est la probabilité que la borne soit violée,
+:math:`\alpha` est la borne supérieure sur l'écart de généralisation,
+et :math:`n` est la taille de l'ensemble de données.
+Enfin, :math:`c > 0` est une constante qui dépend
+uniquement de l'échelle de la perte qui peut être encourue.
+Une utilisation de la borne pourrait être d'injecter des valeurs
+souhaitées de :math:`\delta` et :math:`\alpha`
+pour déterminer le nombre d'échantillons à collecter.
+La dimension VC quantifie le plus grand
+nombre de points de données pour lesquels nous pouvons attribuer
+n'importe quel étiquetage (binaire) arbitraire
+et trouver pour chacun un modèle :math:`f` dans la classe
+qui concorde avec cet étiquetage.
+Par exemple, les modèles linéaires sur des entrées de dimension :math:`d`
+ont une dimension VC de :math:`d+1`.
+Il est facile de voir qu'une droite peut attribuer
+n'importe quel étiquetage possible à trois points en deux dimensions,
+mais pas à quatre.
+Malheureusement, la théorie a tendance à être
+trop pessimiste pour les modèles plus complexes
+et l'obtention de cette garantie nécessite généralement
+bien plus d'exemples qu'il n'en faut réellement
+pour atteindre le taux d'erreur souhaité.
+Notez également qu'en fixant la classe de modèles et :math:`\delta`,
+notre taux d'erreur décroît à nouveau
+avec la vitesse habituelle :math:`\mathcal{O}(1/\sqrt{n})`.
+Il semble peu probable que nous puissions faire mieux en termes de :math:`n`.
+Cependant, à mesure que nous varions la classe de modèles,
+la dimension VC peut présenter
+une image pessimiste
+de l'écart de généralisation.
+
+Résumé
+------
+
+Le moyen le plus direct d'évaluer un modèle
+est de consulter un ensemble de test composé de données invisibles auparavant.
+Les évaluations sur ensemble de test fournissent une estimation non biaisée de l'erreur réelle
+et convergent à la vitesse souhaitée :math:`\mathcal{O}(1/\sqrt{n})` à mesure que l'ensemble de test s'agrandit.
+Nous pouvons fournir des intervalles de confiance approximatifs
+basés sur des distributions asymptotiques exactes
+ou des intervalles de confiance valides sur échantillon fini
+basés sur des garanties (plus conservatives) sur échantillon fini.
+En effet, l'évaluation sur ensemble de test est le fondement
+de la recherche moderne en apprentissage automatique.
+Cependant, les ensembles de test sont rarement de véritables ensembles de test
+(utilisés par plusieurs chercheurs encore et encore).
+Une fois que le même ensemble de test est utilisé
+pour évaluer plusieurs modèles,
+contrôler la fausse découverte peut être difficile.
+Cela peut causer d'énormes problèmes en théorie.
+En pratique, l'importance du problème
+dépend de la taille des ensembles de validation en question
+et s'ils sont simplement utilisés pour choisir les hyperparamètres
+ou s'ils font fuiter des informations plus directement.
+Néanmoins, il est de bonne pratique de conserver de véritables ensembles de test (ou plusieurs)
+et d'être aussi conservatif que possible quant à la fréquence de leur utilisation.
+
+Espérant fournir une solution plus satisfaisante,
+les théoriciens de l'apprentissage statistique ont développé des méthodes
+pour garantir la convergence uniforme sur une classe de modèles.
+Si en effet l'erreur empirique de chaque modèle converge simultanément vers son erreur réelle,
+alors nous sommes libres de choisir le modèle qui performe
+le mieux, en minimisant l'erreur d'entraînement,
+sachant qu'il performera également de manière similaire
+sur les données de validation.
+Crucialement, n'importe lequel de ces résultats doit dépendre
+d'une certaine propriété de la classe de modèles.
+Vladimir Vapnik et Alexey Chervonenkis
+ont introduit la dimension VC,
+présentant des résultats de convergence uniforme
+qui valent pour tous les modèles d'une classe VC.
+Les erreurs d'entraînement pour tous les modèles de la classe
+sont (simultanément) garanties
+d'être proches de leurs erreurs réelles,
+et garanties de s'en rapprocher encore plus
+à des vitesses de :math:`\mathcal{O}(1/\sqrt{n})`.
+Suite à la découverte révolutionnaire de la dimension VC,
+de nombreuses mesures de complexité alternatives ont été proposées,
+chacune facilitant une garantie de généralisation analogue.
+Voir :citet:`boucheron2005theory` pour une discussion détaillée
+de plusieurs méthodes avancées de mesure de la complexité des fonctions.
+Malheureusement, bien que ces mesures de complexité
+soient devenues des outils largement utiles dans la théorie statistique,
+elles s'avèrent impuissantes
+(appliquées directement)
+pour expliquer pourquoi les réseaux de neurones profonds se généralisent.
+Les réseaux de neurones profonds ont souvent des millions de paramètres (ou plus),
+et peuvent facilement attribuer des étiquettes aléatoires à de grandes collections de points.
+Néanmoins, ils se généralisent bien sur des problèmes pratiques
+et, étonnamment, ils se généralisent souvent mieux
+lorsqu'ils sont plus grands et plus profonds,
+malgré l'augmentation de leur dimension VC.
+Dans le prochain chapitre, nous reviendrons sur la généralisation
+dans le contexte de l'apprentissage profond.
+
+Exercices
+---------
+
+1. Si nous souhaitons estimer l'erreur d'un modèle fixe :math:`f`
+   à :math:`0,0001` près avec une probabilité supérieure à 99,9 %,
+   de combien d'échantillons avons-nous besoin ?
+1. Supposons que quelqu'un d'autre possède un ensemble de test étiqueté
+   :math:`\mathcal{D}` et ne rende disponibles que les entrées non étiquetées (caractéristiques).
+   Supposons maintenant que vous ne puissiez accéder aux étiquettes de l'ensemble de test
+   qu'en exécutant un modèle :math:`f` (sans aucune restriction sur la classe de modèles)
+   sur chacune des entrées non étiquetées
+   et en recevant l'erreur correspondante :math:`\epsilon_\mathcal{D}(f)`.
+   Combien de modèles devriez-vous évaluer
+   avant de faire fuiter l'intégralité de l'ensemble de test
+   et de pouvoir ainsi paraître avoir une erreur de :math:`0`,
+   quelle que soit votre erreur réelle ?
+1. Quelle est la dimension VC de la classe des polynômes de cinquième ordre ?
+1. Quelle est la dimension VC des rectangles alignés sur les axes sur des données bidimensionnelles ?
+
+[Discussions](https://discuss.d2l.ai/t/6829)
+

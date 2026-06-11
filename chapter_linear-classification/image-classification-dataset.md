@@ -1,0 +1,262 @@
+```{.python .input}
+%load_ext d2lbook.tab
+tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
+```
+
+# Le jeu de données de classification d'images
+:label:`sec_fashion_mnist`
+
+(~~Le jeu de données MNIST est l'un des jeux de données les plus utilisés pour la classification d'images, mais il est trop simple pour servir de référence. Nous utiliserons le jeu de données Fashion-MNIST, similaire mais plus complexe~~)
+
+L'un des jeux de données les plus utilisés pour la classification d'images est le [jeu de données MNIST](https://en.wikipedia.org/wiki/MNIST_database) :cite:`LeCun.Bottou.Bengio.ea.1998` de chiffres manuscrits. Au moment de sa publication dans les années 1990, il représentait un défi redoutable pour la plupart des algorithmes d'apprentissage automatique, consistant en 60 000 images d'une résolution de $28 \times 28$ pixels (plus un ensemble de test de 10 000 images). Pour mettre les choses en perspective, en 1995, une Sun SPARCStation 5 dotée d'une mémoire vive de 64 Mo et d'une puissance de calcul de 5 MFLOPs était considérée comme un équipement de pointe pour l'apprentissage automatique aux laboratoires AT&T Bell. L'obtention d'une grande précision dans la reconnaissance des chiffres a été un élément clé de l'automatisation du tri du courrier pour l'USPS dans les années 1990. Les réseaux profonds tels que LeNet-5 :cite:`LeCun.Jackel.Bottou.ea.1995`, les machines à vecteurs de support avec invariances :cite:`Scholkopf.Burges.Vapnik.1996` et les classifieurs à distance tangente :cite:`Simard.LeCun.Denker.ea.1998` pouvaient tous atteindre des taux d'erreur inférieurs à 1 %. 
+
+Pendant plus d'une décennie, MNIST a servi de *point de référence* pour comparer les algorithmes d'apprentissage automatique. 
+Bien qu'il ait connu un franc succès en tant que jeu de données de référence, même des modèles simples selon les standards actuels atteignent une précision de classification supérieure à 95 %, ce qui le rend inadapté pour distinguer les modèles performants des modèles plus faibles. De plus, le jeu de données permet des niveaux de précision *très* élevés, ce que l'on ne voit pas classiquement dans de nombreux problèmes de classification. Cela a orienté le développement algorithmique vers des familles spécifiques d'algorithmes capables de tirer parti de jeux de données propres, tels que les méthodes d'ensemble actif et les algorithmes d'ensemble actif de recherche de frontières.
+Aujourd'hui, MNIST sert davantage de test de cohérence (sanity check) que de référence (benchmark). ImageNet :cite:`Deng.Dong.Socher.ea.2009` pose un défi bien plus pertinent. Malheureusement, ImageNet est trop volumineux pour bon nombre d'exemples et d'illustrations de ce livre, car son entraînement prendrait trop de temps pour rendre les exemples interactifs. À titre de substitut, nous concentrerons notre discussion dans les sections suivantes sur le jeu de données Fashion-MNIST :cite:`Xiao.Rasul.Vollgraf.2017`, qualitativement similaire mais beaucoup plus petit, qui a été publié en 2017. Il contient des images de 10 catégories de vêtements avec une résolution de $28 \times 28$ pixels.
+
+```{.python .input}
+%%tab mxnet
+%matplotlib inline
+import time
+from d2l import mxnet as d2l
+from mxnet import gluon, npx
+from mxnet.gluon.data.vision import transforms
+npx.set_np()
+
+d2l.use_svg_display()
+```
+
+```{.python .input}
+%%tab pytorch
+%matplotlib inline
+import time
+from d2l import torch as d2l
+import torch
+import torchvision
+from torchvision import transforms
+
+d2l.use_svg_display()
+```
+
+```{.python .input}
+%%tab tensorflow
+%matplotlib inline
+import time
+from d2l import tensorflow as d2l
+import tensorflow as tf
+
+d2l.use_svg_display()
+```
+
+```{.python .input}
+%%tab jax
+%matplotlib inline
+from d2l import jax as d2l
+import jax
+from jax import numpy as jnp
+import numpy as np
+import time
+import tensorflow as tf
+import tensorflow_datasets as tfds
+
+d2l.use_svg_display()
+```
+
+## Chargement du jeu de données
+
+Comme le jeu de données Fashion-MNIST est très utile, tous les principaux frameworks en proposent des versions prétraitées. Nous pouvons [**le télécharger et le lire en mémoire à l'aide des utilitaires intégrés aux frameworks.**]
+
+```{.python .input}
+%%tab mxnet
+class FashionMNIST(d2l.DataModule):  #@save
+    """The Fashion-MNIST dataset."""
+    def __init__(self, batch_size=64, resize=(28, 28)):
+        super().__init__()
+        self.save_hyperparameters()
+        trans = transforms.Compose([transforms.Resize(resize),
+                                    transforms.ToTensor()])
+        self.train = gluon.data.vision.FashionMNIST(
+            train=True).transform_first(trans)
+        self.val = gluon.data.vision.FashionMNIST(
+            train=False).transform_first(trans)
+```
+
+```{.python .input}
+%%tab pytorch
+class FashionMNIST(d2l.DataModule):  #@save
+    """The Fashion-MNIST dataset."""
+    def __init__(self, batch_size=64, resize=(28, 28)):
+        super().__init__()
+        self.save_hyperparameters()
+        trans = transforms.Compose([transforms.Resize(resize),
+                                    transforms.ToTensor()])
+        self.train = torchvision.datasets.FashionMNIST(
+            root=self.root, train=True, transform=trans, download=True)
+        self.val = torchvision.datasets.FashionMNIST(
+            root=self.root, train=False, transform=trans, download=True)
+```
+
+```{.python .input}
+%%tab tensorflow, jax
+class FashionMNIST(d2l.DataModule):  #@save
+    """The Fashion-MNIST dataset."""
+    def __init__(self, batch_size=64, resize=(28, 28)):
+        super().__init__()
+        self.save_hyperparameters()
+        self.train, self.val = tf.keras.datasets.fashion_mnist.load_data()
+```
+
+Fashion-MNIST se compose d'images de 10 catégories, chacune représentée par 6 000 images dans l'ensemble d'entraînement et par 1 000 dans l'ensemble de test. Un *ensemble de test* est utilisé pour évaluer les performances du modèle (il ne doit pas être utilisé pour l'entraînement). Par conséquent, l'ensemble d'entraînement et l'ensemble de test contiennent respectivement 60 000 et 10 000 images.
+
+```{.python .input}
+%%tab mxnet, pytorch
+data = FashionMNIST(resize=(32, 32))
+len(data.train), len(data.val)
+```
+
+```{.python .input}
+%%tab tensorflow, jax
+data = FashionMNIST(resize=(32, 32))
+len(data.train[0]), len(data.val[0])
+```
+
+Les images sont en niveaux de gris et leur résolution a été augmentée à $32 \times 32$ pixels ci-dessus. C'est similaire au jeu de données MNIST original qui consistait en des images (binaires) en noir et blanc. Notez cependant que la plupart des données d'image modernes ont trois canaux (rouge, vert, bleu) et que les images hyperspectrales peuvent avoir plus de 100 canaux (le capteur HyMap en a 126). Par convention, nous stockons une image sous la forme d'un tenseur de dimensions $c \times h \times w$, où $c$ est le nombre de canaux de couleur, $h$ est la hauteur et $w$ est la largeur.
+
+```{.python .input}
+%%tab all
+data.train[0][0].shape
+```
+
+[~~Deux fonctions utilitaires pour visualiser le jeu de données~~]
+
+Les catégories de Fashion-MNIST ont des noms compréhensibles par l'homme. La méthode pratique suivante permet de convertir les étiquettes numériques en leurs noms.
+
+```{.python .input}
+%%tab all
+@d2l.add_to_class(FashionMNIST)  #@save
+def text_labels(self, indices):
+    """Return text labels."""
+    labels = ['t-shirt', 'trouser', 'pullover', 'dress', 'coat',
+              'sandal', 'shirt', 'sneaker', 'bag', 'ankle boot']
+    return [labels[int(i)] for i in indices]
+```
+
+## Lecture d'un mini-lot
+
+Pour nous faciliter la tâche lors de la lecture des ensembles d'entraînement et de test, nous utilisons l'itérateur de données intégré plutôt que d'en créer un à partir de zéro. Rappelez-vous qu'à chaque itération, un itérateur de données [**lit un mini-lot de données de taille `batch_size`.**] Nous mélangeons également de manière aléatoire les exemples pour l'itérateur de données d'entraînement.
+
+```{.python .input}
+%%tab mxnet
+@d2l.add_to_class(FashionMNIST)  #@save
+def get_dataloader(self, train):
+    data = self.train if train else self.val
+    return gluon.data.DataLoader(data, self.batch_size, shuffle=train,
+                                 num_workers=self.num_workers)
+```
+
+```{.python .input}
+%%tab pytorch
+@d2l.add_to_class(FashionMNIST)  #@save
+def get_dataloader(self, train):
+    data = self.train if train else self.val
+    return torch.utils.data.DataLoader(data, self.batch_size, shuffle=train,
+                                       num_workers=self.num_workers)
+```
+
+```{.python .input}
+%%tab tensorflow, jax
+@d2l.add_to_class(FashionMNIST)  #@save
+def get_dataloader(self, train):
+    data = self.train if train else self.val
+    process = lambda X, y: (tf.expand_dims(X, axis=3) / 255,
+                            tf.cast(y, dtype='int32'))
+    resize_fn = lambda X, y: (tf.image.resize_with_pad(X, *self.resize), y)
+    shuffle_buf = len(data[0]) if train else 1
+    if tab.selected('tensorflow'):
+        return tf.data.Dataset.from_tensor_slices(process(*data)).batch(
+            self.batch_size).map(resize_fn).shuffle(shuffle_buf)
+    if tab.selected('jax'):
+        return tfds.as_numpy(
+            tf.data.Dataset.from_tensor_slices(process(*data)).batch(
+                self.batch_size).map(resize_fn).shuffle(shuffle_buf))
+```
+
+Pour voir comment cela fonctionne, chargeons un mini-lot d'images en invoquant la méthode `train_dataloader`. Il contient 64 images.
+
+```{.python .input}
+%%tab all
+X, y = next(iter(data.train_dataloader()))
+print(X.shape, X.dtype, y.shape, y.dtype)
+```
+
+Regardons le temps nécessaire pour lire les images. Même s'il s'agit d'un chargeur intégré, il n'est pas extrêmement rapide. Néanmoins, c'est suffisant car le traitement des images avec un réseau profond prend beaucoup plus de temps. Il est donc satisfaisant que l'entraînement d'un réseau ne soit pas limité par les entrées/sorties (I/O).
+
+```{.python .input}
+%%tab all
+tic = time.time()
+for X, y in data.train_dataloader():
+    continue
+f'{time.time() - tic:.2f} sec'
+```
+
+## Visualisation
+
+Nous utiliserons souvent le jeu de données Fashion-MNIST. Une fonction pratique `show_images` peut être utilisée pour visualiser les images et les étiquettes associées. En omettant les détails d'implémentation, nous montrons simplement l'interface ci-dessous : nous avons seulement besoin de savoir comment invoquer `d2l.show_images` plutôt que de comprendre comment elle fonctionne pour de telles fonctions utilitaires.
+
+```{.python .input}
+%%tab all
+def show_images(imgs, num_rows, num_cols, titles=None, scale=1.5):  #@save
+    """Plot a list of images."""
+    raise NotImplementedError
+```
+
+Mettons-la à profit. En général, c'est une bonne idée de visualiser et d'inspecter les données sur lesquelles vous effectuez l'entraînement. Les humains sont très doués pour repérer les anomalies et, de ce fait, la visualisation sert de protection supplémentaire contre les méprises et les erreurs dans la conception des expériences. Voici [**les images et leurs étiquettes correspondantes**] (sous forme de texte) pour les premiers exemples de l'ensemble d'entraînement.
+
+```{.python .input}
+%%tab all
+@d2l.add_to_class(FashionMNIST)  #@save
+def visualize(self, batch, nrows=1, ncols=8, labels=[]):
+    X, y = batch
+    if not labels:
+        labels = self.text_labels(y)
+    if tab.selected('mxnet', 'pytorch'):
+        d2l.show_images(X.squeeze(1), nrows, ncols, titles=labels)
+    if tab.selected('tensorflow'):
+        d2l.show_images(tf.squeeze(X), nrows, ncols, titles=labels)
+    if tab.selected('jax'):
+        d2l.show_images(jnp.squeeze(X), nrows, ncols, titles=labels)
+
+batch = next(iter(data.val_dataloader()))
+data.visualize(batch)
+```
+
+Nous sommes maintenant prêts à travailler avec le jeu de données Fashion-MNIST dans les sections qui suivent.
+
+## Résumé
+
+Nous disposons désormais d'un jeu de données un peu plus réaliste à utiliser pour la classification. Fashion-MNIST est un jeu de données de classification de vêtements composé d'images représentant 10 catégories. Nous utiliserons ce jeu de données dans les sections et chapitres suivants pour évaluer diverses conceptions de réseaux, allant d'un simple modèle linéaire à des réseaux résiduels avancés. Comme nous le faisons couramment avec les images, nous les lisons sous la forme d'un tenseur de dimensions (taille du lot, nombre de canaux, hauteur, largeur). Pour l'instant, nous n'avons qu'un seul canal car les images sont en niveaux de gris (la visualisation ci-dessus utilise une palette de fausses couleurs pour une meilleure visibilité). 
+
+Enfin, les itérateurs de données sont un composant clé pour des performances efficaces. Par exemple, nous pourrions utiliser des GPU pour une décompression d'image, un transcodage vidéo ou d'autres prétraitements efficaces. Dans la mesure du possible, vous devriez vous appuyer sur des itérateurs de données bien implémentés qui exploitent le calcul haute performance pour éviter de ralentir votre boucle d'entraînement.
+
+
+## Exercices
+
+1. Le fait de réduire la taille du lot (`batch_size`, par exemple à 1) affecte-t-il les performances de lecture ?
+1. La performance de l'itérateur de données est importante. Pensez-vous que l'implémentation actuelle soit assez rapide ? Explorez diverses options pour l'améliorer. Utilisez un profileur système pour identifier où se trouvent les goulots d'étranglement.
+1. Consultez la documentation de l'API en ligne du framework. Quels autres jeux de données sont disponibles ?
+
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/48)
+:end_tab:
+
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/49)
+:end_tab:
+
+:begin_tab:`tensorflow`
+[Discussions](https://discuss.d2l.ai/t/224)
+:end_tab:
+
+:begin_tab:`jax`
+[Discussions](https://discuss.d2l.ai/t/17980)
+:end_tab:

@@ -1,0 +1,302 @@
+.. code:: python
+
+   %load_ext d2lbook.tab
+   tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
+
+Implémentation concise de la régression softmax
+===============================================
+
+.. _sec_softmax_concise:
+
+Tout comme les frameworks de deep learning de haut niveau ont facilité
+l’implémentation de la régression linéaire (voir
+:numref:``sec_linear_concise``), ils sont tout aussi pratiques ici.
+
+.. code:: python
+
+   %%tab mxnet
+   from d2l import mxnet as d2l
+   from mxnet import gluon, init, npx
+   from mxnet.gluon import nn
+   npx.set_np()
+
+.. code:: python
+
+   %%tab pytorch
+   from d2l import torch as d2l
+   import torch
+   from torch import nn
+   from torch.nn import functional as F
+
+.. code:: python
+
+   %%tab tensorflow
+   from d2l import tensorflow as d2l
+   import tensorflow as tf
+
+.. code:: python
+
+   %%tab jax
+   from d2l import jax as d2l
+   from flax import linen as nn
+   from functools import partial
+   import jax
+   from jax import numpy as jnp
+   import optax
+
+Définition du modèle
+--------------------
+
+Comme dans la :numref:``sec_linear_concise``, nous construisons notre
+couche entièrement connectée en utilisant la couche intégrée. La méthode
+intégrée ``__call__`` invoque ensuite ``forward`` chaque fois que nous
+devons appliquer le réseau à une entrée.
+
+:begin_tab:``mxnet`` Même si l’entrée ``X`` est un tenseur de quatrième
+ordre, la couche ``Dense`` intégrée convertira automatiquement ``X`` en
+un tenseur de second ordre en gardant la dimensionnalité le long du
+premier axe inchangée. :end_tab:
+
+:begin_tab:``pytorch`` Nous utilisons une couche ``Flatten`` pour
+convertir le tenseur de quatrième ordre ``X`` en second ordre en gardant
+la dimensionnalité le long du premier axe inchangée.
+
+:end_tab:
+
+:begin_tab:``tensorflow`` Nous utilisons une couche ``Flatten`` pour
+convertir le tenseur de quatrième ordre ``X`` en gardant la dimension le
+long du premier axe inchangée. :end_tab:
+
+:begin_tab:``jax`` Flax permet aux utilisateurs d’écrire la classe du
+réseau de manière plus compacte en utilisant le décorateur
+``@nn.compact``. Avec ``@nn.compact``, on peut simplement écrire toute
+la logique du réseau à l’intérieur d’une seule méthode de “passe avant”
+(forward pass), sans avoir besoin de définir la méthode ``setup``
+standard dans la dataclass. :end_tab:
+
+.. code:: python
+
+   %%tab pytorch
+   class SoftmaxRegression(d2l.Classifier):  #@save
+       """The softmax regression model."""
+       def __init__(self, num_outputs, lr):
+           super().__init__()
+           self.save_hyperparameters()
+           self.net = nn.Sequential(nn.Flatten(),
+                                    nn.LazyLinear(num_outputs))
+
+       def forward(self, X):
+           return self.net(X)
+
+.. code:: python
+
+   %%tab mxnet, tensorflow
+   class SoftmaxRegression(d2l.Classifier):  #@save
+       """The softmax regression model."""
+       def __init__(self, num_outputs, lr):
+           super().__init__()
+           self.save_hyperparameters()
+           if tab.selected('mxnet'):
+               self.net = nn.Dense(num_outputs)
+               self.net.initialize()
+           if tab.selected('tensorflow'):
+               self.net = tf.keras.models.Sequential()
+               self.net.add(tf.keras.layers.Flatten())
+               self.net.add(tf.keras.layers.Dense(num_outputs))
+
+       def forward(self, X):
+           return self.net(X)
+
+.. code:: python
+
+   %%tab jax
+   class SoftmaxRegression(d2l.Classifier):  #@save
+       num_outputs: int
+       lr: float
+
+       @nn.compact
+       def __call__(self, X):
+           X = X.reshape((X.shape[0], -1))  # Flatten
+           X = nn.Dense(self.num_outputs)(X)
+           return X
+
+Softmax revisité
+----------------
+
+.. _subsec_softmax-implementation-revisited:
+
+Dans la :numref:``sec_softmax_scratch``, nous avons calculé la sortie de
+notre modèle et appliqué la perte d’entropie croisée. Bien que cela soit
+parfaitement raisonnable d’un point de vue mathématique, c’est risqué
+d’un point de vue informatique, en raison des sous-passements
+(underflow) et dépassements (overflow) numériques dans l’exponentiation.
+
+Rappelons que la fonction softmax calcule les probabilités via
+:math:`\hat y_j = \frac{\exp(o_j)}{\sum_k \exp(o_k)}`. Si certains des
+:math:`o_k` sont très grands, c’est-à-dire très positifs, alors
+:math:`\exp(o_k)` pourrait être plus grand que le plus grand nombre que
+nous pouvons avoir pour certains types de données. C’est ce qu’on
+appelle un *dépassement* (overflow). De même, si chaque argument est un
+nombre négatif très grand, nous aurons un *sous-passement* (underflow).
+Par exemple, les nombres à virgule flottante en simple précision
+couvrent approximativement la plage de :math:`10^{-38}` à
+:math:`10^{38}`. Ainsi, si le terme le plus grand de :math:`\mathbf{o}`
+se situe en dehors de l’intervalle :math:`[-90, 90]`, le résultat ne
+sera pas stable. Une façon de contourner ce problème est de soustraire
+:math:`\bar{o} \stackrel{\textrm{def}}{=} \max_k o_k` de toutes les
+entrées :
+
+.. math::
+
+
+   \hat y_j = \frac{\exp o_j}{\sum_k \exp o_k} =
+   \frac{\exp(o_j - \bar{o}) \exp \bar{o}}{\sum_k \exp (o_k - \bar{o}) \exp \bar{o}} =
+   \frac{\exp(o_j - \bar{o})}{\sum_k \exp (o_k - \bar{o})}.
+
+Par construction, nous savons que :math:`o_j - \bar{o} \leq 0` pour tout
+:math:`j`. Ainsi, pour un problème de classification à :math:`q`
+classes, le dénominateur est contenu dans l’intervalle :math:`[1, q]`.
+De plus, le numérateur ne dépasse jamais :math:`1`, empêchant ainsi le
+dépassement numérique. Le sous-passement numérique ne se produit que
+lorsque :math:`\exp(o_j - \bar{o})` s’évalue numériquement à :math:`0`.
+Néanmoins, quelques étapes plus loin, nous pourrions nous retrouver en
+difficulté lorsque nous voudrons calculer :math:`\log \hat{y}_j` comme
+:math:`\log 0`. En particulier, lors de la rétropropagation
+(backpropagation), nous pourrions nous retrouver face à un écran rempli
+des redoutables résultats ``NaN`` (Not a Number).
+
+Heureusement, nous sommes sauvés par le fait que même si nous calculons
+des fonctions exponentielles, nous avons finalement l’intention de
+prendre leur logarithme (lors du calcul de la perte d’entropie croisée).
+En combinant softmax et entropie croisée, nous pouvons échapper
+complètement aux problèmes de stabilité numérique. Nous avons :
+
+.. math::
+
+
+   \log \hat{y}_j =
+   \log \frac{\exp(o_j - \bar{o})}{\sum_k \exp (o_k - \bar{o})} =
+   o_j - \bar{o} - \log \sum_k \exp (o_k - \bar{o}).
+
+Cela évite à la fois le dépassement et le sous-passement. Nous voudrons
+garder la fonction softmax conventionnelle à portée de main au cas où
+nous voudrions évaluer les probabilités de sortie par notre modèle. Mais
+au lieu de passer les probabilités softmax dans notre nouvelle fonction
+de perte, nous [**passons simplement les logits et calculons le softmax
+et son logarithme en une seule fois à l’intérieur de la fonction de
+perte d’entropie croisée,**] qui fait des choses intelligentes comme
+l’astuce `“LogSumExp
+trick” <https://en.wikipedia.org/wiki/LogSumExp>`__.
+
+.. code:: python
+
+   %%tab pytorch, mxnet, tensorflow
+   @d2l.add_to_class(d2l.Classifier)  #@save
+   def loss(self, Y_hat, Y, averaged=True):
+       Y_hat = d2l.reshape(Y_hat, (-1, Y_hat.shape[-1]))
+       Y = d2l.reshape(Y, (-1,))
+       if tab.selected('mxnet'):
+           fn = gluon.loss.SoftmaxCrossEntropyLoss()
+           l = fn(Y_hat, Y)
+           return l.mean() if averaged else l
+       if tab.selected('pytorch'):
+           return F.cross_entropy(
+               Y_hat, Y, reduction='mean' if averaged else 'none')
+       if tab.selected('tensorflow'):
+           fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+           return fn(Y, Y_hat)
+
+.. code:: python
+
+   %%tab jax
+   @d2l.add_to_class(d2l.Classifier)  #@save
+   @partial(jax.jit, static_argnums=(0, 5))
+   def loss(self, params, X, Y, state, averaged=True):
+       # To be used later (e.g., for batch norm)
+       Y_hat = state.apply_fn({'params': params}, *X,
+                              mutable=False, rngs=None)
+       Y_hat = d2l.reshape(Y_hat, (-1, Y_hat.shape[-1]))
+       Y = d2l.reshape(Y, (-1,))
+       fn = optax.softmax_cross_entropy_with_integer_labels
+       # The returned empty dictionary is a placeholder for auxiliary data,
+       # which will be used later (e.g., for batch norm)
+       return (fn(Y_hat, Y).mean(), {}) if averaged else (fn(Y_hat, Y), {})
+
+Entraînement
+------------
+
+Ensuite, nous entraînons notre modèle. Nous utilisons les images
+Fashion-MNIST, aplaties en vecteurs de caractéristiques de dimension
+784.
+
+.. code:: python
+
+   %%tab all
+   data = d2l.FashionMNIST(batch_size=256)
+   model = SoftmaxRegression(num_outputs=10, lr=0.1)
+   trainer = d2l.Trainer(max_epochs=10)
+   trainer.fit(model, data)
+
+Comme précédemment, cet algorithme converge vers une solution qui est
+raisonnablement précise, bien que cette fois avec moins de lignes de
+code qu’auparavant.
+
+Résumé
+------
+
+Les API de haut niveau sont très pratiques pour masquer à l’utilisateur
+des aspects potentiellement dangereux, tels que la stabilité numérique.
+De plus, elles permettent aux utilisateurs de concevoir des modèles de
+manière concise avec très peu de lignes de code. C’est à la fois une
+bénédiction et une malédiction. L’avantage évident est que cela rend les
+choses très accessibles, même pour les ingénieurs qui n’ont jamais suivi
+un seul cours de statistiques de leur vie (en fait, ils font partie du
+public cible du livre). Mais cacher les bords tranchants a aussi un prix
+: une dissuasion à ajouter soi-même des composants nouveaux et
+différents, puisqu’il y a peu de mémoire musculaire pour le faire. De
+plus, il est plus difficile de *réparer* les choses dès que le
+rembourrage de protection d’un framework ne couvre pas entièrement tous
+les cas particuliers. Encore une fois, cela est dû au manque de
+familiarité.
+
+C’est pourquoi nous vous encourageons vivement à examiner *à la fois*
+les versions brutes et les versions élégantes de nombreuses
+implémentations qui suivent. Bien que nous mettions l’accent sur la
+facilité de compréhension, les implémentations sont néanmoins
+généralement assez performantes (les convolutions sont la grande
+exception ici). Notre intention est de vous permettre de vous appuyer
+sur celles-ci lorsque vous inventerez quelque chose de nouveau qu’aucun
+framework ne pourra vous offrir.
+
+Exercices
+---------
+
+1. Le deep learning utilise de nombreux formats de nombres différents,
+   notamment la double précision FP64 (utilisée extrêmement rarement),
+   la simple précision FP32, BFLOAT16 (bon pour les représentations
+   compressées), FP16 (très instable), TF32 (un nouveau format de
+   NVIDIA) et INT8. Calculez le plus petit et le plus grand argument de
+   la fonction exponentielle pour lesquels le résultat ne conduit pas à
+   un sous-passement ou un dépassement numérique.
+2. INT8 est un format très limité composé de nombres non nuls de
+   :math:`1` à :math:`255`. Comment pourriez-vous étendre sa plage
+   dynamique sans utiliser plus de bits ? La multiplication et
+   l’addition standard fonctionnent-elles toujours ?
+3. Augmentez le nombre d’époques pour l’entraînement. Pourquoi
+   l’exactitude (accuracy) de validation pourrait-elle diminuer après un
+   certain temps ? Comment pourrions-nous corriger cela ?
+4. Que se passe-t-il lorsque vous augmentez le taux d’apprentissage ?
+   Comparez les courbes de perte pour plusieurs taux d’apprentissage.
+   Lequel fonctionne le mieux ? Quand ?
+
+:begin_tab:``mxnet`` `Discussions <https://discuss.d2l.ai/t/52>`__
+:end_tab:
+
+:begin_tab:``pytorch`` `Discussions <https://discuss.d2l.ai/t/53>`__
+:end_tab:
+
+:begin_tab:``tensorflow`` `Discussions <https://discuss.d2l.ai/t/260>`__
+:end_tab:
+
+:begin_tab:``jax`` `Discussions <https://discuss.d2l.ai/t/17983>`__
+:end_tab:

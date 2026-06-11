@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le modèle de base pour la classification — Plonger au coeur du Deep Learning</title>
+<link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>body{max-width:1180px;margin:0 auto;padding:0 24px 48px;font-family:Arial,sans-serif;line-height:1.55}header{border-bottom:1px solid #ddd;margin-bottom:24px;padding:18px 0}nav.chapter{background:#f7f7f7;padding:12px 16px;margin:16px 0}main img{max-width:100%;height:auto}pre{overflow:auto;background:#f6f8fa;padding:12px}.pager a{margin-right:16px}</style>
+</head><body><header><a href="../index.html">Plonger au coeur du Deep Learning</a> / <strong>Le modèle de base pour la classification</strong></header>
+<nav class="chapter"><strong>Chapitre 4 - Classification linéaire</strong><ol><li><a href="softmax-regression.html">Régression Softmax</a></li>
+<li><a href="image-classification-dataset.html">Le jeu de données de classification d&#x27;images</a></li>
+<li><a href="classification.html">Le modèle de base pour la classification</a></li>
+<li><a href="softmax-regression-scratch.html">Mise en œuvre de la régression softmax à partir de zéro</a></li>
+<li><a href="softmax-regression-concise.html">Implémentation concise de la régression softmax</a></li>
+<li><a href="generalization-classification.html">Généralisation en classification</a></li>
+<li><a href="environment-and-distribution-shift.html">Environnement et décalage de distribution</a></li></ol></nav>
+<main><div class="sourceCode" id="cb1"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="le-modèle-de-base-pour-la-classification">Le modèle de base pour
+la classification</h1>
+<p>:label:<code>sec_classification</code></p>
+<p>Vous avez peut-être remarqué que les implémentations à partir de zéro
+et l’implémentation concise utilisant les fonctionnalités du framework
+étaient assez similaires dans le cas de la régression. Il en va de même
+pour la classification. Étant donné que de nombreux modèles de ce livre
+traitent de la classification, il est utile d’ajouter des
+fonctionnalités pour prendre en charge spécifiquement ce cadre. Cette
+section fournit une classe de base pour les modèles de classification
+afin de simplifier le code futur.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> autograd, np, npx, gluon</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> partial</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> optax</span></code></pre></div>
+<h2 id="la-classe-classifier">La classe <code>Classifier</code></h2>
+<p>:begin_tab:<code>pytorch, mxnet, tensorflow</code> Nous définissons
+la classe <code>Classifier</code> ci-dessous. Dans
+<code>validation_step</code>, nous rapportons à la fois la valeur de la
+perte et l’exactitude de la classification sur un lot de validation.
+Nous effectuons une mise à jour tous les <code>num_val_batches</code>
+lots. Cela présente l’avantage de générer la perte et l’exactitude
+moyennes sur l’ensemble des données de validation. Ces chiffres moyens
+ne sont pas tout à fait corrects si le lot final contient moins
+d’exemples, mais nous ignorons cette différence mineure pour garder le
+code simple. :end_tab:</p>
+<p>:begin_tab:<code>jax</code> Nous définissons la classe
+<code>Classifier</code> ci-dessous. Dans <code>validation_step</code>,
+nous rapportons à la fois la valeur de la perte et l’exactitude de la
+classification sur un lot de validation. Nous effectuons une mise à jour
+tous les <code>num_val_batches</code> lots. Cela présente l’avantage de
+générer la perte et l’exactitude moyennes sur l’ensemble des données de
+validation. Ces chiffres moyens ne sont pas tout à fait corrects si le
+dernier lot contient moins d’exemples, mais nous ignorons cette
+différence mineure pour garder le code simple.</p>
+<p>Nous redéfinissons également la méthode <code>training_step</code>
+pour JAX, car tous les modèles qui hériteront plus tard de
+<code>Classifier</code> auront une perte qui renvoie des données
+auxiliaires. Ces données auxiliaires peuvent être utilisées pour les
+modèles avec normalisation par lots (batch normalization) (qui sera
+expliquée dans la :numref:<code>sec_batch_norm</code>), tandis que dans
+tous les autres cas, nous ferons en sorte que la perte renvoie également
+un espace réservé (placeholder) (dictionnaire vide) pour représenter les
+données auxiliaires. :end_tab:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Classifier(d2l.Module):  <span class="co">#@save</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The base class of classification models.&quot;&quot;&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> validation_step(<span class="va">self</span>, batch):</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        Y_hat <span class="op">=</span> <span class="va">self</span>(<span class="op">*</span>batch[:<span class="op">-</span><span class="dv">1</span>])</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.plot(<span class="st">&#39;loss&#39;</span>, <span class="va">self</span>.loss(Y_hat, batch[<span class="op">-</span><span class="dv">1</span>]), train<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.plot(<span class="st">&#39;acc&#39;</span>, <span class="va">self</span>.accuracy(Y_hat, batch[<span class="op">-</span><span class="dv">1</span>]), train<span class="op">=</span><span class="va">False</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Classifier(d2l.Module):  <span class="co">#@save</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The base class of classification models.&quot;&quot;&quot;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> training_step(<span class="va">self</span>, params, batch, state):</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Here value is a tuple since models with BatchNorm layers require</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># the loss to return auxiliary data</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        value, grads <span class="op">=</span> jax.value_and_grad(</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.loss, has_aux<span class="op">=</span><span class="va">True</span>)(params, batch[:<span class="op">-</span><span class="dv">1</span>], batch[<span class="op">-</span><span class="dv">1</span>], state)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        l, _ <span class="op">=</span> value</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.plot(<span class="st">&quot;loss&quot;</span>, l, train<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> value, grads</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> validation_step(<span class="va">self</span>, params, batch, state):</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Discard the second returned value. It is used for training models</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="co"># with BatchNorm layers since loss also returns auxiliary data</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        l, _ <span class="op">=</span> <span class="va">self</span>.loss(params, batch[:<span class="op">-</span><span class="dv">1</span>], batch[<span class="op">-</span><span class="dv">1</span>], state)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.plot(<span class="st">&#39;loss&#39;</span>, l, train<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.plot(<span class="st">&#39;acc&#39;</span>, <span class="va">self</span>.accuracy(params, batch[:<span class="op">-</span><span class="dv">1</span>], batch[<span class="op">-</span><span class="dv">1</span>], state),</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>                  train<span class="op">=</span><span class="va">False</span>)</span></code></pre></div>
+<p>Par défaut, nous utilisons un optimiseur de descente de gradient
+stochastique, opérant sur des mini-lots, tout comme nous l’avons fait
+dans le contexte de la régression linéaire.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(d2l.Module)  <span class="co">#@save</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> configure_optimizers(<span class="va">self</span>):</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    params <span class="op">=</span> <span class="va">self</span>.parameters()</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">isinstance</span>(params, <span class="bu">list</span>):</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> d2l.SGD(params, <span class="va">self</span>.lr)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> gluon.Trainer(params, <span class="st">&#39;sgd&#39;</span>, {<span class="st">&#39;learning_rate&#39;</span>: <span class="va">self</span>.lr})</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(d2l.Module)  <span class="co">#@save</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> configure_optimizers(<span class="va">self</span>):</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> torch.optim.SGD(<span class="va">self</span>.parameters(), lr<span class="op">=</span><span class="va">self</span>.lr)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(d2l.Module)  <span class="co">#@save</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> configure_optimizers(<span class="va">self</span>):</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tf.keras.optimizers.SGD(<span class="va">self</span>.lr)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(d2l.Module)  <span class="co">#@save</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> configure_optimizers(<span class="va">self</span>):</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> optax.sgd(<span class="va">self</span>.lr)</span></code></pre></div>
+<h2 id="exactitude">Exactitude</h2>
+<p>Étant donné la distribution de probabilité prédite
+<code>y_hat</code>, nous choisissons généralement la classe ayant la
+probabilité prédite la plus élevée chaque fois que nous devons produire
+une prédiction stricte. En effet, de nombreuses applications exigent que
+nous fassions un choix. Par exemple, Gmail doit classer un e-mail dans
+les catégories « Principale », « Réseaux sociaux », « Promotions », «
+Forums » ou « Spam ». Il peut estimer les probabilités en interne, mais
+au bout du compte, il doit choisir l’une des classes.</p>
+<p>Lorsque les prédictions sont cohérentes avec la classe de l’étiquette
+<code>y</code>, elles sont correctes. L’exactitude de la classification
+est la fraction de toutes les prédictions qui sont correctes. Bien qu’il
+puisse être difficile d’optimiser directement l’exactitude (elle n’est
+pas dérivable), c’est souvent la mesure de performance qui nous
+intéresse le plus. C’est souvent <em>la</em> quantité pertinente dans
+les benchmarks. À ce titre, nous la rapporterons presque toujours lors
+de l’entraînement de classifieurs.</p>
+<p>L’exactitude est calculée comme suit. Tout d’abord, si
+<code>y_hat</code> est une matrice, nous supposons que la deuxième
+dimension stocke les scores de prédiction pour chaque classe. Nous
+utilisons <code>argmax</code> pour obtenir la classe prédite par
+l’indice de l’entrée la plus grande dans chaque ligne. Ensuite, nous
+[<strong>comparons la classe prédite avec la vérité terrain
+<code>y</code> élément par élément.</strong>] Comme l’opérateur
+d’égalité <code>==</code> est sensible aux types de données, nous
+convertissons le type de données de <code>y_hat</code> pour qu’il
+corresponde à celui de <code>y</code>. Le résultat est un tenseur
+contenant des entrées de 0 (faux) et 1 (vrai). Faire la somme donne le
+nombre de prédictions correctes.</p>
+<div class="sourceCode" id="cb12" data-n="9"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(Classifier)  <span class="co">#@save</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> accuracy(<span class="va">self</span>, Y_hat, Y, averaged<span class="op">=</span><span class="va">True</span>):</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Compute the number of correct predictions.&quot;&quot;&quot;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    Y_hat <span class="op">=</span> d2l.reshape(Y_hat, (<span class="op">-</span><span class="dv">1</span>, Y_hat.shape[<span class="op">-</span><span class="dv">1</span>]))</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    preds <span class="op">=</span> d2l.astype(d2l.argmax(Y_hat, axis<span class="op">=</span><span class="dv">1</span>), Y.dtype)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    compare <span class="op">=</span> d2l.astype(preds <span class="op">==</span> d2l.reshape(Y, <span class="op">-</span><span class="dv">1</span>), d2l.float32)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> d2l.reduce_mean(compare) <span class="cf">if</span> averaged <span class="cf">else</span> compare</span></code></pre></div>
+<div class="sourceCode" id="cb13" data-n="9"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(Classifier)  <span class="co">#@save</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="at">@partial</span>(jax.jit, static_argnums<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">5</span>))</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> accuracy(<span class="va">self</span>, params, X, Y, state, averaged<span class="op">=</span><span class="va">True</span>):</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Compute the number of correct predictions.&quot;&quot;&quot;</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    Y_hat <span class="op">=</span> state.apply_fn({<span class="st">&#39;params&#39;</span>: params,</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                            <span class="st">&#39;batch_stats&#39;</span>: state.batch_stats},  <span class="co"># BatchNorm Only</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                           <span class="op">*</span>X)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    Y_hat <span class="op">=</span> d2l.reshape(Y_hat, (<span class="op">-</span><span class="dv">1</span>, Y_hat.shape[<span class="op">-</span><span class="dv">1</span>]))</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    preds <span class="op">=</span> d2l.astype(d2l.argmax(Y_hat, axis<span class="op">=</span><span class="dv">1</span>), Y.dtype)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    compare <span class="op">=</span> d2l.astype(preds <span class="op">==</span> d2l.reshape(Y, <span class="op">-</span><span class="dv">1</span>), d2l.float32)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> d2l.reduce_mean(compare) <span class="cf">if</span> averaged <span class="cf">else</span> compare</span></code></pre></div>
+<div class="sourceCode" id="cb14" data-n="10"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(d2l.Module)  <span class="co">#@save</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_scratch_params(<span class="va">self</span>):</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    params <span class="op">=</span> []</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> attr <span class="kw">in</span> <span class="bu">dir</span>(<span class="va">self</span>):</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        a <span class="op">=</span> <span class="bu">getattr</span>(<span class="va">self</span>, attr)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(a, np.ndarray):</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>            params.append(a)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">isinstance</span>(a, d2l.Module):</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>            params.extend(a.get_scratch_params())</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> params</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(d2l.Module)  <span class="co">#@save</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> parameters(<span class="va">self</span>):</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    params <span class="op">=</span> <span class="va">self</span>.collect_params()</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> params <span class="cf">if</span> <span class="bu">isinstance</span>(params, gluon.parameter.ParameterDict) <span class="kw">and</span> <span class="bu">len</span>(</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>        params.keys()) <span class="cf">else</span> <span class="va">self</span>.get_scratch_params()</span></code></pre></div>
+<h2 id="résumé">Résumé</h2>
+<p>La classification est un problème suffisamment courant pour justifier
+ses propres fonctions de commodité. L’exactitude du classifieur est
+d’une importance centrale dans la classification. Notez que si nous nous
+soucions souvent principalement de l’exactitude, nous entraînons les
+classifieurs pour optimiser une variété d’autres objectifs pour des
+raisons statistiques et computationnelles. Cependant, quel que soit la
+fonction de perte qui a été minimisée pendant l’entraînement, il est
+utile d’avoir une méthode pratique pour évaluer empiriquement
+l’exactitude de notre classifieur.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Notons <span class="math inline">\(L_\textrm{v}\)</span> la perte de
+validation, et soit <span
+class="math inline">\(L_\textrm{v}^\textrm{q}\)</span> son estimation
+rapide et approximative calculée par la moyenne de la fonction de perte
+dans cette section. Enfin, notons <span
+class="math inline">\(l_\textrm{v}^\textrm{b}\)</span> la perte sur le
+dernier mini-lot. Exprimez <span
+class="math inline">\(L_\textrm{v}\)</span> en fonction de <span
+class="math inline">\(L_\textrm{v}^\textrm{q}\)</span>, <span
+class="math inline">\(l_\textrm{v}^\textrm{b}\)</span>, et des tailles
+de l’échantillon et du mini-lot.</li>
+<li>Montrez que l’estimation rapide et approximative <span
+class="math inline">\(L_\textrm{v}^\textrm{q}\)</span> est sans biais.
+C’est-à-dire, montrez que <span class="math inline">\(E[L_\textrm{v}] =
+E[L_\textrm{v}^\textrm{q}]\)</span>. Pourquoi voudriez-vous tout de même
+utiliser <span class="math inline">\(L_\textrm{v}\)</span> à la place
+?</li>
+<li>Étant donné une perte de classification multiclasse, en notant <span
+class="math inline">\(l(y,y&#39;)\)</span> la pénalité liée à
+l’estimation de <span class="math inline">\(y&#39;\)</span> lorsque nous
+voyons <span class="math inline">\(y\)</span> et étant donné une
+probabilité <span class="math inline">\(p(y \mid x)\)</span>, formulez
+la règle pour une sélection optimale de <span
+class="math inline">\(y&#39;\)</span>. Indice : exprimez la perte
+attendue, en utilisant <span class="math inline">\(l\)</span> et <span
+class="math inline">\(p(y \mid x)\)</span>.</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/6808">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/6809">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/6810">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/17981">Discussions</a> :end_tab:</p>
+</main><p class="pager"><a href="image-classification-dataset.html">Précédent</a> | <a href="softmax-regression-scratch.html">Suivant</a></p></body></html>

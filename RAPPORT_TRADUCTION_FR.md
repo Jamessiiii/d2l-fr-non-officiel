@@ -38,6 +38,7 @@ Le build HTML final a réussi et produit notamment :
 - `_build/html/chapter_notation/index.html`
 - `_build/html/chapter_preliminaries/index.html`
 - `_build/html/chapter_linear-regression/index.html`
+- `docs/chapter_linear-classification/index.html`
 
 Vérifications locales effectuées sur `http://localhost:4173` :
 
@@ -72,6 +73,14 @@ Traduction réalisée par agent Gemini :
 - `chapter_linear-regression/linear-regression-concise.md` : traduit en français par `linear_regression_linear_regression_concise.txt`.
 - `chapter_linear-regression/generalization.md` : traduit en français par `linear_regression_generalization.txt`.
 - `chapter_linear-regression/weight-decay.md` : traduit en français par `linear_regression_weight_decay.txt`.
+- `chapter_linear-classification/index.md` : traduit en français par `linear_classification_index.txt`.
+- `chapter_linear-classification/classification.md` : traduit en français par `linear_classification_classification.txt`.
+- `chapter_linear-classification/image-classification-dataset.md` : traduit en français par `linear_classification_image_classification_dataset.txt`.
+- `chapter_linear-classification/softmax-regression-concise.md` : traduit en français par `linear_classification_softmax_regression_concise.txt`.
+- `chapter_linear-classification/softmax-regression.md` : traduit en français par `linear_classification_softmax_regression.txt`.
+- `chapter_linear-classification/softmax-regression-scratch.md` : traduit en français par `linear_classification_softmax_regression_scratch.txt`.
+- `chapter_linear-classification/generalization-classification.md` : traduit en français par `linear_classification_generalization_classification.txt`.
+- `chapter_linear-classification/environment-and-distribution-shift.md` : traduit en français par `linear_classification_environment_and_distribution_shift.txt`.
 
 Ajouts manuels de structure française :
 
@@ -83,6 +92,7 @@ Ajouts manuels de structure française :
 - `notebooks/` : notebooks générés à partir du build partiel.
 - `img/polygon-circle.svg` : figure utilisée par `chapter_preliminaries/calculus.md`.
 - `img/capacity-vs-error.svg`, `img/fit-linreg.svg`, `img/singleneuron.svg`, `img/neuron.svg` : figures utilisées par `chapter_linear-regression`.
+- `img/softmaxreg.svg`, `img/cat-dog-train.png`, `img/cat-dog-test.png`, `img/popvssoda.png` : figures utilisées par `chapter_linear-classification`.
 
 ## Non traduit / restant à faire
 
@@ -115,6 +125,8 @@ Lors de la traduction de `chapter_preliminaries`, deux agents ont d'abord rencon
 Après traduction, les blocs de code fenced de `chapter_preliminaries` ont été restaurés depuis le dépôt original anglais afin de préserver exactement le code, les commentaires de code, les directives tabulaires et les sorties techniques.
 
 Pour `chapter_linear-regression`, huit agents Gemini ont été lancés en deux vagues. Les blocs de code fenced ont ensuite été restaurés depuis le dépôt original anglais afin de préserver le code, les commentaires de code, les directives tabulaires et les sorties techniques. Une erreur de balisage D2L produite par la traduction dans `synthetic-regression-data.md` a été corrigée avant génération RST.
+
+Pour `chapter_linear-classification`, huit agents Gemini ont été lancés en deux vagues. Les blocs de code fenced ont ensuite été restaurés depuis le dépôt original anglais. Le build `eval_all` a réussi et a généré les notebooks du chapitre. La conversion RST/Sphinx complète s'est bloquée dans l'environnement local; le chapitre a donc été publié dans `docs/chapter_linear-classification/` via une génération HTML ciblée avec MathJax et les images locales, en attendant de stabiliser le pipeline Sphinx complet.
 
 ## Limites du build partiel
 

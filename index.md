@@ -24,4 +24,5 @@ chapter_notation/index
 chapter_introduction/index
 chapter_preliminaries/index
 chapter_linear-regression/index
+chapter_linear-classification/index
 ```

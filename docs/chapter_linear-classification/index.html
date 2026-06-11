@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Réseaux de neurones linéaires pour la classification — Plonger au coeur du Deep Learning</title>
+<link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>body{max-width:1180px;margin:0 auto;padding:0 24px 48px;font-family:Arial,sans-serif;line-height:1.55}header{border-bottom:1px solid #ddd;margin-bottom:24px;padding:18px 0}nav.chapter{background:#f7f7f7;padding:12px 16px;margin:16px 0}main img{max-width:100%;height:auto}pre{overflow:auto;background:#f6f8fa;padding:12px}.pager a{margin-right:16px}</style>
+</head><body><header><a href="../index.html">Plonger au coeur du Deep Learning</a> / <strong>Réseaux de neurones linéaires pour la classification</strong></header>
+<nav class="chapter"><strong>Chapitre 4 - Classification linéaire</strong><ol><li><a href="softmax-regression.html">Régression Softmax</a></li>
+<li><a href="image-classification-dataset.html">Le jeu de données de classification d&#x27;images</a></li>
+<li><a href="classification.html">Le modèle de base pour la classification</a></li>
+<li><a href="softmax-regression-scratch.html">Mise en œuvre de la régression softmax à partir de zéro</a></li>
+<li><a href="softmax-regression-concise.html">Implémentation concise de la régression softmax</a></li>
+<li><a href="generalization-classification.html">Généralisation en classification</a></li>
+<li><a href="environment-and-distribution-shift.html">Environnement et décalage de distribution</a></li></ol></nav>
+<main><h1 id="réseaux-de-neurones-linéaires-pour-la-classification">Réseaux de
+neurones linéaires pour la classification</h1>
+<p>:label:<code>chap_classification</code></p>
+<p>Maintenant que vous avez vu tous les mécanismes de base, vous êtes
+prêt à appliquer les compétences acquises à des types de tâches plus
+larges. Même si nous passons à la classification, l’essentiel du
+fonctionnement reste le même : charger les données, les passer à travers
+le modèle, générer la sortie, calculer la perte, calculer les gradients
+par rapport aux poids et mettre à jour le modèle. Cependant, la forme
+précise des cibles, la paramétrisation de la couche de sortie et le
+choix de la fonction de perte s’adapteront pour convenir au cadre de la
+<em>classification</em>.</p>
+<pre class="toc"><code>:maxdepth: 2
+
+softmax-regression
+image-classification-dataset
+classification
+softmax-regression-scratch
+softmax-regression-concise
+generalization-classification
+environment-and-distribution-shift</code></pre>
+<h2>Sections</h2><ol><li><a href="softmax-regression.html">Régression Softmax</a></li>
+<li><a href="image-classification-dataset.html">Le jeu de données de classification d&#x27;images</a></li>
+<li><a href="classification.html">Le modèle de base pour la classification</a></li>
+<li><a href="softmax-regression-scratch.html">Mise en œuvre de la régression softmax à partir de zéro</a></li>
+<li><a href="softmax-regression-concise.html">Implémentation concise de la régression softmax</a></li>
+<li><a href="generalization-classification.html">Généralisation en classification</a></li>
+<li><a href="environment-and-distribution-shift.html">Environnement et décalage de distribution</a></li></ol></main><p class="pager"><a href="softmax-regression.html">Suivant</a></p></body></html>
