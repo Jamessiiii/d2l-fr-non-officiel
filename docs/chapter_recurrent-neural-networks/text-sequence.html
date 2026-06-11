@@ -1,0 +1,327 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Conversion du texte brut en données séquentielles - Dive into Deep Learning FR</title><link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid #d8dee4;padding:24px 18px;background:#f6f8fa;position:sticky;top:0;height:100vh;overflow:auto}.sidebar h1{font-size:16px;margin:0 0 16px}.sidebar ol{padding-left:22px;line-height:1.55}.sidebar a,.navlinks a{color:#245a9c;text-decoration:none}.content{max-width:980px;padding:32px 44px 56px}.navlinks{display:flex;justify-content:space-between;gap:20px;margin:28px 0}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}img{max-width:100%;height:auto}@media(max-width:760px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid #d8dee4}.content{padding:24px 18px 42px}}</style></head><body><div class="layout"><nav class="sidebar"><h1><a href="../index.html">D2L français</a></h1><ol><li><a href="index.html">Réseaux de neurones récurrents</a></li>
+<li><a href="sequence.html">Travailler avec des séquences</a></li>
+<li><a href="text-sequence.html">Conversion du texte brut en données séquentielles</a></li>
+<li><a href="language-model.html">Modèles de langage</a></li>
+<li><a href="rnn.html">Réseaux de neurones récurrents</a></li>
+<li><a href="rnn-scratch.html">Implémentation de réseau de neurones récurrent à partir de zéro</a></li>
+<li><a href="rnn-concise.html">Implémentation concise des réseaux de neurones récurrents</a></li>
+<li><a href="bptt.html">Rétropropagation à travers le temps</a></li></ol></nav><main class="content"><div class="navlinks"><a class="prev" href="sequence.html">&larr; Travailler avec des séquences</a><a class="next" href="language-model.html">Modèles de langage &rarr;</a></div><h1 id="conversion-du-texte-brut-en-données-séquentielles">Conversion du
+texte brut en données séquentielles</h1>
+<p><a id="sec_text-sequence"></a> Tout au long de ce livre, nous
+travaillerons souvent avec des données textuelles représentées comme des
+séquences de mots, de caractères ou de morceaux de mots. Pour commencer,
+nous aurons besoin de quelques outils de base pour convertir le texte
+brut en séquences de la forme appropriée. Les pipelines de prétraitement
+typiques exécutent les étapes suivantes :</p>
+<ol type="1">
+<li>Charger le texte sous forme de chaînes de caractères en
+mémoire.</li>
+<li>Diviser les chaînes en jetons (par exemple, des mots ou des
+caractères).</li>
+<li>Construire un dictionnaire de vocabulaire pour associer chaque
+élément du vocabulaire à un indice numérique.</li>
+<li>Convertir le texte en séquences d’indices numériques.</li>
+</ol>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> collections</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> np, npx</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> collections</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> collections</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> collections</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span></code></pre></div>
+<h2 id="lecture-du-jeu-de-données">Lecture du jeu de données</h2>
+<p>Ici, nous travaillerons avec l’œuvre de H. G. Wells, <a
+href="http://www.gutenberg.org/ebooks/35"><em>La Machine à explorer le
+temps</em></a>, un livre contenant un peu plus de 30 000 mots. Bien que
+les applications réelles impliquent généralement des jeux de données
+nettement plus volumineux, celui-ci est suffisant pour démontrer le
+pipeline de prétraitement. La méthode <code>_download</code> suivante
+(<strong>lit le texte brut dans une chaîne de caractères</strong>).</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TimeMachine(d2l.DataModule): <span class="co">#@save</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The Time Machine dataset.&quot;&quot;&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _download(<span class="va">self</span>):</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        fname <span class="op">=</span> d2l.download(d2l.DATA_URL <span class="op">+</span> <span class="st">&#39;timemachine.txt&#39;</span>, <span class="va">self</span>.root,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                             <span class="st">&#39;090b5e7e70c295757f55df93cb0a180b9691891a&#39;</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> <span class="bu">open</span>(fname) <span class="im">as</span> f:</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> f.read()</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> TimeMachine()</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>raw_text <span class="op">=</span> data._download()</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>raw_text[:<span class="dv">60</span>]</span></code></pre></div>
+<p>Par simplicité, nous ignorons la ponctuation et la capitalisation
+lors du prétraitement du texte brut.</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(TimeMachine)  <span class="co">#@save</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _preprocess(<span class="va">self</span>, text):</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> re.sub(<span class="st">&#39;[^A-Za-z]+&#39;</span>, <span class="st">&#39; &#39;</span>, text).lower()</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>text <span class="op">=</span> data._preprocess(raw_text)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>text[:<span class="dv">60</span>]</span></code></pre></div>
+<h2 id="tokenisation">Tokenisation</h2>
+<p>Les <em>jetons</em> (ou <em>tokens</em>) sont les unités atomiques
+(indivisibles) du texte. Chaque pas de temps correspond à un jeton, mais
+ce qui constitue précisément un jeton est un choix de conception. Par
+exemple, nous pourrions représenter la phrase “Baby needs a new pair of
+shoes” comme une séquence de 7 mots, où l’ensemble de tous les mots
+constitue un large vocabulaire (généralement des dizaines ou des
+centaines de milliers de mots). Ou nous pourrions représenter la même
+phrase comme une séquence beaucoup plus longue de 30 caractères, en
+utilisant un vocabulaire beaucoup plus restreint (il n’y a que 256
+caractères ASCII distincts). Ci-dessous, nous tokenisons notre texte
+prétraité en une séquence de caractères.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(TimeMachine)  <span class="co">#@save</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _tokenize(<span class="va">self</span>, text):</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">list</span>(text)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>tokens <span class="op">=</span> data._tokenize(text)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co">&#39;,&#39;</span>.join(tokens[:<span class="dv">30</span>])</span></code></pre></div>
+<h2 id="vocabulaire">Vocabulaire</h2>
+<p>Ces jetons sont toujours des chaînes de caractères. Cependant, les
+entrées de nos modèles doivent ultimement consister en des valeurs
+numériques. <strong>Ensuite, nous introduisons une classe pour
+construire des <em>vocabulaires</em>, c’est-à-dire des objets qui
+associent chaque valeur de jeton distincte à un indice unique.</strong>
+Tout d’abord, nous déterminons l’ensemble des jetons uniques dans notre
+<em>corpus</em> d’entraînement. Nous attribuons ensuite un indice
+numérique à chaque jeton unique. Les éléments de vocabulaire rares sont
+souvent abandonnés par commodité. Chaque fois que nous rencontrons un
+jeton lors de l’entraînement ou du test qui n’a pas été vu auparavant ou
+qui a été retiré du vocabulaire, nous le représentons par un jeton
+spécial “&lt;unk&gt;”, signifiant qu’il s’agit d’une valeur
+<em>inconnue</em> (unknown).</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Vocab:  <span class="co">#@save</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Vocabulary for text.&quot;&quot;&quot;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, tokens<span class="op">=</span>[], min_freq<span class="op">=</span><span class="dv">0</span>, reserved_tokens<span class="op">=</span>[]):</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Flatten a 2D list if needed</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tokens <span class="kw">and</span> <span class="bu">isinstance</span>(tokens[<span class="dv">0</span>], <span class="bu">list</span>):</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>            tokens <span class="op">=</span> [token <span class="cf">for</span> line <span class="kw">in</span> tokens <span class="cf">for</span> token <span class="kw">in</span> line]</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Count token frequencies</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>        counter <span class="op">=</span> collections.Counter(tokens)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.token_freqs <span class="op">=</span> <span class="bu">sorted</span>(counter.items(), key<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="dv">1</span>],</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>                                  reverse<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        <span class="co"># The list of unique tokens</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.idx_to_token <span class="op">=</span> <span class="bu">list</span>(<span class="bu">sorted</span>(<span class="bu">set</span>([<span class="st">&#39;&lt;unk&gt;&#39;</span>] <span class="op">+</span> reserved_tokens <span class="op">+</span> [</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>            token <span class="cf">for</span> token, freq <span class="kw">in</span> <span class="va">self</span>.token_freqs <span class="cf">if</span> freq <span class="op">&gt;=</span> min_freq])))</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.token_to_idx <span class="op">=</span> {token: idx</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>                             <span class="cf">for</span> idx, token <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="va">self</span>.idx_to_token)}</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__len__</span>(<span class="va">self</span>):</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">len</span>(<span class="va">self</span>.idx_to_token)</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__getitem__</span>(<span class="va">self</span>, tokens):</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(tokens, (<span class="bu">list</span>, <span class="bu">tuple</span>)):</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="va">self</span>.token_to_idx.get(tokens, <span class="va">self</span>.unk)</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> [<span class="va">self</span>.<span class="fu">__getitem__</span>(token) <span class="cf">for</span> token <span class="kw">in</span> tokens]</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> to_tokens(<span class="va">self</span>, indices):</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">hasattr</span>(indices, <span class="st">&#39;__len__&#39;</span>) <span class="kw">and</span> <span class="bu">len</span>(indices) <span class="op">&gt;</span> <span class="dv">1</span>:</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> [<span class="va">self</span>.idx_to_token[<span class="bu">int</span>(index)] <span class="cf">for</span> index <span class="kw">in</span> indices]</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.idx_to_token[indices]</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">@property</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> unk(<span class="va">self</span>):  <span class="co"># Index for the unknown token</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.token_to_idx[<span class="st">&#39;&lt;unk&gt;&#39;</span>]</span></code></pre></div>
+<p>Nous pouvons maintenant <strong>construire un vocabulaire</strong>
+pour notre jeu de données, en convertissant la séquence de chaînes en
+une liste d’indices numériques. Notez que nous n’avons perdu aucune
+information et que nous pouvons facilement reconvertir notre jeu de
+données vers sa représentation originale (chaînes de caractères).</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>vocab <span class="op">=</span> Vocab(tokens)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>indices <span class="op">=</span> vocab[tokens[:<span class="dv">10</span>]]</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&#39;indices:&#39;</span>, indices)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&#39;words:&#39;</span>, vocab.to_tokens(indices))</span></code></pre></div>
+<h2 id="assemblage-final">Assemblage final</h2>
+<p>En utilisant les classes et méthodes ci-dessus, nous
+<strong>regroupons tout dans la méthode suivante <code>build</code> de
+la classe <code>TimeMachine</code></strong>, qui renvoie
+<code>corpus</code>, une liste d’indices de jetons, et
+<code>vocab</code>, le vocabulaire du corpus de <em>La Machine à
+explorer le temps</em>. Les modifications que nous avons apportées ici
+sont : (i) nous tokenisons le texte en caractères, et non en mots, pour
+simplifier l’entraînement dans les sections suivantes ; (ii)
+<code>corpus</code> est une liste unique, et non une liste de listes de
+jetons, car chaque ligne de texte dans le jeu de données de <em>La
+Machine à explorer le temps</em> n’est pas nécessairement une phrase ou
+un paragraphe.</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(TimeMachine)  <span class="co">#@save</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build(<span class="va">self</span>, raw_text, vocab<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    tokens <span class="op">=</span> <span class="va">self</span>._tokenize(<span class="va">self</span>._preprocess(raw_text))</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> vocab <span class="kw">is</span> <span class="va">None</span>: vocab <span class="op">=</span> Vocab(tokens)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    corpus <span class="op">=</span> [vocab[token] <span class="cf">for</span> token <span class="kw">in</span> tokens]</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> corpus, vocab</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>corpus, vocab <span class="op">=</span> data.build(raw_text)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="bu">len</span>(corpus), <span class="bu">len</span>(vocab)</span></code></pre></div>
+<h2 id="statistiques-exploratoires-du-langage">Statistiques
+exploratoires du langage</h2>
+<p><a id="subsec_natural-lang-stat"></a> En utilisant le corpus réel et
+la classe <code>Vocab</code> définie sur les mots, nous pouvons
+inspecter les statistiques de base concernant l’utilisation des mots
+dans notre corpus. Ci-dessous, nous construisons un vocabulaire à partir
+des mots utilisés dans <em>La Machine à explorer le temps</em> et
+affichons les dix mots les plus fréquents.</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>words <span class="op">=</span> text.split()</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>vocab <span class="op">=</span> Vocab(words)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>vocab.token_freqs[:<span class="dv">10</span>]</span></code></pre></div>
+<p>Notez que (<strong>les dix mots les plus fréquents</strong>) ne sont
+pas très descriptifs. On peut même imaginer que nous verrions une liste
+très similaire si nous avions choisi n’importe quel livre au hasard. Les
+articles comme “the” et “a”, les pronoms comme “i” et “my”, et les
+prépositions comme “of”, “to” et “in” apparaissent souvent car ils
+remplissent des rôles syntaxiques courants. De tels mots qui sont
+fréquents mais peu descriptifs sont souvent appelés (<strong><em>mots
+vides</em></strong> ou <strong><em>stop words</em></strong>) et, dans
+les générations précédentes de classificateurs de texte basés sur les
+représentations dites par sac de mots (bag-of-words), ils étaient le
+plus souvent filtrés. Cependant, ils sont porteurs de sens et il n’est
+pas nécessaire de les filtrer lorsque l’on travaille avec des modèles
+neuronaux modernes basés sur les RNN et les Transformers. Si vous
+regardez plus loin dans la liste, vous remarquerez que la fréquence des
+mots décroît rapidement. Le <span
+class="math inline">\(10^{\textrm{e}}\)</span> mot le plus fréquent est
+moins d’un cinquième aussi courant que le plus populaire. La fréquence
+des mots a tendance à suivre une distribution de loi de puissance (plus
+précisément la loi de Zipf) à mesure que l’on descend dans les rangs.
+Pour avoir une meilleure idée, nous <strong>tracons la figure de la
+fréquence des mots</strong>.</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>freqs <span class="op">=</span> [freq <span class="cf">for</span> token, freq <span class="kw">in</span> vocab.token_freqs]</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(freqs, xlabel<span class="op">=</span><span class="st">&#39;token: x&#39;</span>, ylabel<span class="op">=</span><span class="st">&#39;frequency: n(x)&#39;</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>         xscale<span class="op">=</span><span class="st">&#39;log&#39;</span>, yscale<span class="op">=</span><span class="st">&#39;log&#39;</span>)</span></code></pre></div>
+<p>Après avoir traité les premiers mots comme des exceptions, tous les
+mots restants suivent approximativement une ligne droite sur un
+graphique log-log. Ce phénomène est capturé par la <em>loi de Zipf</em>,
+qui stipule que la fréquence <span class="math inline">\(n_i\)</span> du
+<span class="math inline">\(i^{\textrm{e}}\)</span> mot le plus fréquent
+est :</p>
+<p><span class="math display">\[n_i \propto \frac{1}{i^\alpha},\]</span>
+<a id="eq_zipf_law"></a> ce qui est équivalent à</p>
+<p><span class="math display">\[\log n_i = -\alpha \log i +
+c,\]</span></p>
+<p>où <span class="math inline">\(\alpha\)</span> est l’exposant qui
+caractérise la distribution et <span class="math inline">\(c\)</span>
+est une constante. Cela devrait déjà nous donner matière à réflexion si
+nous voulons modéliser les mots par des statistiques de comptage. Après
+tout, nous surestimerons considérablement la fréquence de la traîne,
+également connue sous le nom de mots peu fréquents. Mais <strong>qu’en
+est-il des autres combinaisons de mots, comme deux mots consécutifs
+(bigrammes), trois mots consécutifs (trigrammes)</strong>, et au-delà ?
+Voyons si la fréquence des bigrammes se comporte de la même manière que
+la fréquence des mots uniques (unigrammes).</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>bigram_tokens <span class="op">=</span> [<span class="st">&#39;--&#39;</span>.join(pair) <span class="cf">for</span> pair <span class="kw">in</span> <span class="bu">zip</span>(words[:<span class="op">-</span><span class="dv">1</span>], words[<span class="dv">1</span>:])]</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>bigram_vocab <span class="op">=</span> Vocab(bigram_tokens)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>bigram_vocab.token_freqs[:<span class="dv">10</span>]</span></code></pre></div>
+<p>Une chose est notable ici. Sur les dix paires de mots les plus
+fréquentes, neuf sont composées uniquement de mots vides et une seule
+est pertinente pour le livre lui-même — “the time”. De plus, voyons si
+la fréquence des trigrammes se comporte de la même manière.</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>trigram_tokens <span class="op">=</span> [<span class="st">&#39;--&#39;</span>.join(triple) <span class="cf">for</span> triple <span class="kw">in</span> <span class="bu">zip</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    words[:<span class="op">-</span><span class="dv">2</span>], words[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>], words[<span class="dv">2</span>:])]</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>trigram_vocab <span class="op">=</span> Vocab(trigram_tokens)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>trigram_vocab.token_freqs[:<span class="dv">10</span>]</span></code></pre></div>
+<p>Maintenant, <strong>visualisons la fréquence des jetons</strong>
+parmi ces trois modèles : unigrammes, bigrammes et trigrammes.</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>bigram_freqs <span class="op">=</span> [freq <span class="cf">for</span> token, freq <span class="kw">in</span> bigram_vocab.token_freqs]</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>trigram_freqs <span class="op">=</span> [freq <span class="cf">for</span> token, freq <span class="kw">in</span> trigram_vocab.token_freqs]</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>d2l.plot([freqs, bigram_freqs, trigram_freqs], xlabel<span class="op">=</span><span class="st">&#39;token: x&#39;</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>         ylabel<span class="op">=</span><span class="st">&#39;frequency: n(x)&#39;</span>, xscale<span class="op">=</span><span class="st">&#39;log&#39;</span>, yscale<span class="op">=</span><span class="st">&#39;log&#39;</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>         legend<span class="op">=</span>[<span class="st">&#39;unigram&#39;</span>, <span class="st">&#39;bigram&#39;</span>, <span class="st">&#39;trigram&#39;</span>])</span></code></pre></div>
+<p>Cette figure est très intéressante. Premièrement, au-delà des mots
+unigrammes, les séquences de mots semblent également suivre la loi de
+Zipf, bien qu’avec un exposant <span
+class="math inline">\(\alpha\)</span> plus petit dans eq_zipf_law, selon
+la longueur de la séquence. Deuxièmement, le nombre de <span
+class="math inline">\(n\)</span>-grammes distincts n’est pas si grand.
+Cela nous donne l’espoir qu’il existe une structure importante dans le
+langage. Troisièmement, de nombreux <span
+class="math inline">\(n\)</span>-grammes apparaissent très rarement.
+Cela rend certaines méthodes inadaptées à la modélisation du langage et
+motive l’utilisation de modèles d’apprentissage profond. Nous en
+discuterons dans la section suivante.</p>
+<h2 id="résumé">Résumé</h2>
+<p>Le texte fait partie des formes les plus courantes de données
+séquentielles rencontrées en apprentissage profond. Les choix courants
+de ce qui constitue un jeton sont les caractères, les mots et les
+morceaux de mots. Pour prétraiter le texte, nous effectuons généralement
+les étapes suivantes : (i) diviser le texte en jetons ; (ii) construire
+un vocabulaire pour faire correspondre les chaînes de jetons à des
+indices numériques ; et (iii) convertir les données textuelles en
+indices de jetons pour que les modèles puissent les manipuler. En
+pratique, la fréquence des mots a tendance à suivre la loi de Zipf.
+C’est vrai non seulement pour les mots individuels (unigrammes), mais
+aussi pour les <span class="math inline">\(n\)</span>-grammes.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Dans l’expérience de cette section, tokenisez le texte en mots et
+faites varier la valeur de l’argument <code>min_freq</code> de
+l’instance <code>Vocab</code>. Caractérisez qualitativement comment les
+changements de <code>min_freq</code> impactent la taille du vocabulaire
+résultant.</li>
+<li>Estimez l’exposant de la distribution de Zipf pour les unigrammes,
+les bigrammes et les trigrammes dans ce corpus.</li>
+<li>Trouvez d’autres sources de données (téléchargez un jeu de données
+standard d’apprentissage automatique, choisissez un autre livre du
+domaine public, scrapez un site web, etc.). Pour chacune, tokenisez les
+données au niveau des mots et des caractères. Comment les tailles de
+vocabulaire se comparent-elles à celles du corpus de <em>La Machine à
+explorer le temps</em> pour des valeurs équivalentes de
+<code>min_freq</code> ? Estimez l’exposant de la distribution de Zipf
+correspondant aux distributions d’unigrammes et de bigrammes pour ces
+corpus. Comment se comparent-ils aux valeurs que vous avez observées
+pour le corpus de <em>La Machine à explorer le temps</em> ?</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/117">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/118">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/1049">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/18011">Discussions</a> :end_tab:</p>
+<div class="navlinks"><a class="prev" href="sequence.html">&larr; Travailler avec des séquences</a><a class="next" href="language-model.html">Modèles de langage &rarr;</a></div></main></div></body></html>

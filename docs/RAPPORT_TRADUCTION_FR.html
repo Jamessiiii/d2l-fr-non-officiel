@@ -40,6 +40,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <li><code>docs/chapter_builders-guide/index.html</code></li>
 <li><code>docs/chapter_convolutional-neural-networks/index.html</code></li>
 <li><code>docs/chapter_convolutional-modern/index.html</code></li>
+<li><code>docs/chapter_recurrent-neural-networks/index.html</code></li>
 </ul>
 <p>Vérifications locales effectuées sur
 <code>http://localhost:4173</code> :</p>
@@ -191,6 +192,22 @@ français par <code>conv_modern_resnet.txt</code>.</li>
 français par <code>conv_modern_densenet.txt</code>.</li>
 <li><code>chapter_convolutional-modern/cnn-design.md</code> : traduit en
 français par <code>conv_modern_cnn_design.txt</code>.</li>
+<li><code>chapter_recurrent-neural-networks/index.md</code> : traduit en
+français par <code>rnn_index.txt</code>.</li>
+<li><code>chapter_recurrent-neural-networks/sequence.md</code> : traduit
+en français par <code>rnn_sequence.txt</code>.</li>
+<li><code>chapter_recurrent-neural-networks/text-sequence.md</code> :
+traduit en français par <code>rnn_text_sequence.txt</code>.</li>
+<li><code>chapter_recurrent-neural-networks/language-model.md</code> :
+traduit en français par <code>rnn_language_model.txt</code>.</li>
+<li><code>chapter_recurrent-neural-networks/rnn.md</code> : traduit en
+français par <code>rnn_rnn.txt</code>.</li>
+<li><code>chapter_recurrent-neural-networks/rnn-scratch.md</code> :
+traduit en français par <code>rnn_rnn_scratch.txt</code>.</li>
+<li><code>chapter_recurrent-neural-networks/rnn-concise.md</code> :
+traduit en français par <code>rnn_rnn_concise.txt</code>.</li>
+<li><code>chapter_recurrent-neural-networks/bptt.md</code> : traduit en
+français par <code>rnn_bptt.txt</code>.</li>
 </ul>
 <p>Ajouts manuels de structure française :</p>
 <ul>
@@ -239,6 +256,12 @@ figures utilisées par
 <code>img/resnet18-90.svg</code>, <code>img/resnext-block.svg</code>,
 <code>img/vgg.svg</code> : figures utilisées par
 <code>chapter_convolutional-modern</code>.</li>
+<li><code>img/ftse100.png</code>, <code>img/lang-model-data.svg</code>,
+<code>img/rnn-bptt.svg</code>, <code>img/rnn-train.svg</code>,
+<code>img/rnn.svg</code>, <code>img/sequence-model.svg</code>,
+<code>img/truncated-bptt.svg</code>, <code>img/unfolded-rnn.svg</code> :
+figures utilisées par
+<code>chapter_recurrent-neural-networks</code>.</li>
 </ul>
 <h2 id="non-traduit-restant-à-faire">Non traduit / restant à faire</h2>
 <p>Les chapitres copiés dans cette version partielle ont été traduits.
@@ -338,6 +361,14 @@ Gemini, mais les fichiers traduits ont ensuite été validés localement.
 Les blocs de code fenced ont été restaurés depuis les sources
 officielles brutes avant génération des notebooks et pages HTML
 publiques.</p>
+<p>Pour <code>chapter_recurrent-neural-networks</code>, les sections ont
+été traduites une par une avec Gemini depuis le dossier parent contenant
+<code>d2l-fr</code> et <code>d2l-en</code>. <code>sequence</code>,
+<code>rnn</code> et <code>bptt</code> ont affiché des erreurs Gemini
+post-écriture ou de capacité après avoir produit le fichier traduit; les
+fichiers ont ensuite été validés localement. Les blocs de code fenced
+ont été restaurés depuis les sources officielles brutes avant génération
+des notebooks et pages HTML publiques.</p>
 <h2 id="limites-du-build-partiel">Limites du build partiel</h2>
 <p>Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un
 build complet précédent du même état avait listé 88 avertissements

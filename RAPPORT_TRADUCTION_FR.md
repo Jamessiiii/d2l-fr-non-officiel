@@ -43,6 +43,7 @@ Le build HTML final a réussi et produit notamment :
 - `docs/chapter_builders-guide/index.html`
 - `docs/chapter_convolutional-neural-networks/index.html`
 - `docs/chapter_convolutional-modern/index.html`
+- `docs/chapter_recurrent-neural-networks/index.html`
 
 Vérifications locales effectuées sur `http://localhost:4173` :
 
@@ -117,6 +118,14 @@ Traduction réalisée par agent Gemini :
 - `chapter_convolutional-modern/resnet.md` : traduit en français par `conv_modern_resnet.txt`.
 - `chapter_convolutional-modern/densenet.md` : traduit en français par `conv_modern_densenet.txt`.
 - `chapter_convolutional-modern/cnn-design.md` : traduit en français par `conv_modern_cnn_design.txt`.
+- `chapter_recurrent-neural-networks/index.md` : traduit en français par `rnn_index.txt`.
+- `chapter_recurrent-neural-networks/sequence.md` : traduit en français par `rnn_sequence.txt`.
+- `chapter_recurrent-neural-networks/text-sequence.md` : traduit en français par `rnn_text_sequence.txt`.
+- `chapter_recurrent-neural-networks/language-model.md` : traduit en français par `rnn_language_model.txt`.
+- `chapter_recurrent-neural-networks/rnn.md` : traduit en français par `rnn_rnn.txt`.
+- `chapter_recurrent-neural-networks/rnn-scratch.md` : traduit en français par `rnn_rnn_scratch.txt`.
+- `chapter_recurrent-neural-networks/rnn-concise.md` : traduit en français par `rnn_rnn_concise.txt`.
+- `chapter_recurrent-neural-networks/bptt.md` : traduit en français par `rnn_bptt.txt`.
 
 Ajouts manuels de structure française :
 
@@ -133,6 +142,7 @@ Ajouts manuels de structure française :
 - `img/blocks.svg`, `img/copyto.svg` : figures utilisées par `chapter_builders-guide`.
 - `img/conv-multi-in.svg`, `img/conv-1x1.svg`, `img/correlation.svg`, `img/field-visual.png`, `img/lenet.svg`, `img/lenet-vert.svg`, `img/conv-reuse.svg`, `img/conv-pad.svg`, `img/conv-stride.svg`, `img/pooling.svg`, `img/waldo-football.jpg`, `img/waldo-mask.jpg` : figures utilisées par `chapter_convolutional-neural-networks`.
 - `img/alexnet.svg`, `img/anynet.svg`, `img/densenet-block.svg`, `img/densenet.svg`, `img/filters.png`, `img/functionclasses.svg`, `img/inception-full-90.svg`, `img/inception.svg`, `img/nin.svg`, `img/regnet-fig.png`, `img/residual-block.svg`, `img/resnet-block.svg`, `img/resnet18-90.svg`, `img/resnext-block.svg`, `img/vgg.svg` : figures utilisées par `chapter_convolutional-modern`.
+- `img/ftse100.png`, `img/lang-model-data.svg`, `img/rnn-bptt.svg`, `img/rnn-train.svg`, `img/rnn.svg`, `img/sequence-model.svg`, `img/truncated-bptt.svg`, `img/unfolded-rnn.svg` : figures utilisées par `chapter_recurrent-neural-networks`.
 
 ## Non traduit / restant à faire
 
@@ -175,6 +185,8 @@ Pour `chapter_builders-guide`, huit agents Gemini ont été lancés en deux vagu
 Pour `chapter_convolutional-neural-networks`, les agents Gemini ont d'abord été lancés en vague parallèle. Un agent a rencontré `MODEL_CAPACITY_EXHAUSTED` et deux agents sont restés bloqués sur une invite interactive d'authentification. Les sections restantes ont donc été relancées une par une depuis le dossier parent contenant `d2l-fr` et `d2l-en`, afin de permettre à Gemini d'inspecter les sources relatives sans chemin absolu. Les blocs de code fenced ont ensuite été restaurés depuis les sources officielles brutes. Les notebooks et pages HTML publiques ont été générés à partir des sources Markdown traduites, avec MathJax et les images locales.
 
 Pour `chapter_convolutional-modern`, les sections ont été traduites une par une avec Gemini depuis le dossier parent contenant `d2l-fr` et `d2l-en`. `cnn-design` a d'abord rencontré `MODEL_CAPACITY_EXHAUSTED`, puis a réussi lors d'une relance isolée. `batch-norm` et `resnet` ont affiché des erreurs post-écriture dans la sortie Gemini, mais les fichiers traduits ont ensuite été validés localement. Les blocs de code fenced ont été restaurés depuis les sources officielles brutes avant génération des notebooks et pages HTML publiques.
+
+Pour `chapter_recurrent-neural-networks`, les sections ont été traduites une par une avec Gemini depuis le dossier parent contenant `d2l-fr` et `d2l-en`. `sequence`, `rnn` et `bptt` ont affiché des erreurs Gemini post-écriture ou de capacité après avoir produit le fichier traduit; les fichiers ont ensuite été validés localement. Les blocs de code fenced ont été restaurés depuis les sources officielles brutes avant génération des notebooks et pages HTML publiques.
 
 ## Limites du build partiel
 
