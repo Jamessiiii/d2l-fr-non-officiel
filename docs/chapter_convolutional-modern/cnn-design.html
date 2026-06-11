@@ -1,0 +1,572 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Conception d&#x27;architectures de réseaux de neurones convolutifs - Dive into Deep Learning FR</title><link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid #d8dee4;padding:24px 18px;background:#f6f8fa;position:sticky;top:0;height:100vh;overflow:auto}.sidebar h1{font-size:16px;margin:0 0 16px}.sidebar ol{padding-left:22px;line-height:1.55}.sidebar a,.navlinks a{color:#245a9c;text-decoration:none}.content{max-width:980px;padding:32px 44px 56px}.navlinks{display:flex;justify-content:space-between;gap:20px;margin:28px 0}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}img{max-width:100%;height:auto}@media(max-width:760px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid #d8dee4}.content{padding:24px 18px 42px}}</style></head><body><div class="layout"><nav class="sidebar"><h1><a href="../index.html">D2L français</a></h1><ol><li><a href="index.html">Réseaux de neurones convolutifs modernes</a></li>
+<li><a href="alexnet.html">Réseaux de neurones convolutifs profonds (AlexNet)</a></li>
+<li><a href="vgg.html">Réseaux utilisant des blocs (VGG)</a></li>
+<li><a href="nin.html">Network in Network (NiN)</a></li>
+<li><a href="googlenet.html">Réseaux à branches multiples (GoogLeNet)</a></li>
+<li><a href="batch-norm.html">Normalisation par lots</a></li>
+<li><a href="resnet.html">Réseaux résiduels (ResNet) et ResNeXt</a></li>
+<li><a href="densenet.html">Réseaux à connexions denses (DenseNet)</a></li>
+<li><a href="cnn-design.html">Conception d&#x27;architectures de réseaux de neurones convolutifs</a></li></ol></nav><main class="content"><div class="navlinks"><a class="prev" href="densenet.html">&larr; Réseaux à connexions denses (DenseNet)</a></div><div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1
+id="conception-darchitectures-de-réseaux-de-neurones-convolutifs">Conception
+d’architectures de réseaux de neurones convolutifs</h1>
+<p><a id="sec_cnn-design"></a> Les sections précédentes nous ont fait
+découvrir la conception des réseaux modernes pour la vision par
+ordinateur. Un point commun à tous les travaux que nous avons abordés
+est qu’ils reposaient largement sur l’intuition des chercheurs. De
+nombreuses architectures sont fortement influencées par la créativité
+humaine et, dans une bien moindre mesure, par une exploration
+systématique de l’espace de conception offert par les réseaux profonds.
+Néanmoins, cette approche d’<em>ingénierie de réseau</em> (network
+engineering) a connu un succès retentissant.</p>
+<p>Depuis qu’AlexNet (sec_alexnet) a détrôné les modèles de vision par
+ordinateur conventionnels sur ImageNet, il est devenu courant de
+construire des réseaux très profonds en empilant des blocs de
+convolutions, tous conçus selon le même motif. En particulier, les
+convolutions <span class="math inline">\(3 \times 3\)</span> ont été
+popularisées par les réseaux VGG (sec_vgg). NiN (sec_nin) a montré que
+même les convolutions <span class="math inline">\(1 \times 1\)</span>
+pouvaient être bénéfiques en ajoutant des non-linéarités locales. De
+plus, NiN a résolu le problème de l’agrégation de l’information en tête
+de réseau en agrégeant sur toutes les positions. GoogLeNet
+(sec_googlenet) a ajouté plusieurs branches de différentes largeurs de
+convolution, combinant les avantages de VGG et NiN dans son bloc
+Inception. Les ResNets (sec_resnet) ont orienté le biais inductif vers
+la fonction identité (au lieu de <span class="math inline">\(f(x) =
+0\)</span>). Cela a permis d’obtenir des réseaux très profonds. Près
+d’une décennie plus tard, la conception ResNet est toujours populaire,
+ce qui témoigne de sa robustesse. Enfin, ResNeXt (subsec_resnext) a
+ajouté des convolutions groupées, offrant un meilleur compromis entre
+paramètres et calcul. Précurseurs des Transformers pour la vision, les
+réseaux Squeeze-and-Excitation (SENets) permettent un transfert
+d’information efficace entre les positions [Hu.Shen.Sun.2018]. Cela a
+été accompli en calculant une fonction d’attention globale par
+canal.</p>
+<p>Jusqu’à présent, nous avons omis les réseaux obtenus via la
+<em>recherche d’architecture neuronale</em> (NAS pour <em>neural
+architecture search</em>) [zoph2016neural,liu2018darts]. Nous avons
+choisi de le faire car leur coût est généralement énorme, reposant sur
+la recherche par force brute, les algorithmes génétiques,
+l’apprentissage par renforcement ou toute autre forme d’optimisation
+d’hyperparamètres. Étant donné un espace de recherche fixe, la NAS
+utilise une stratégie de recherche pour sélectionner automatiquement une
+architecture basée sur l’estimation des performances obtenue. Le
+résultat de la NAS est une instance de réseau unique. Les EfficientNets
+sont un résultat notable de cette recherche [tan2019efficientnet].</p>
+<p>Dans ce qui suit, nous discutons d’une idée qui est assez différente
+de la quête du <em>meilleur réseau unique</em>. Elle est relativement
+peu coûteuse en termes de calcul, elle apporte des connaissances
+scientifiques en cours de route et elle est très efficace en termes de
+qualité des résultats. Passons en revue la stratégie de
+[Radosavovic.Kosaraju.Girshick.ea.2020] pour <em>concevoir des espaces
+de conception de réseaux</em>. La stratégie combine la force de la
+conception manuelle et de la NAS. Elle y parvient en opérant sur des
+<em>distributions de réseaux</em> et en optimisant les distributions de
+manière à obtenir de bonnes performances pour des familles entières de
+réseaux. Le résultat de cette approche sont les <em>RegNets</em>,
+spécifiquement RegNetX et RegNetY, ainsi qu’une série de principes
+directeurs pour la conception de CNN performants.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> np, npx, init</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet.gluon <span class="im">import</span> nn</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.nn <span class="im">import</span> functional <span class="im">as</span> F</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flax <span class="im">import</span> linen <span class="im">as</span> nn</span></code></pre></div>
+<h2 id="lespace-de-conception-anynet">L’espace de conception AnyNet</h2>
+<p><a id="subsec_the-anynet-design-space"></a> La description ci-dessous
+suit de près le raisonnement de [Radosavovic.Kosaraju.Girshick.ea.2020]
+avec quelques abréviations pour l’adapter au cadre de ce livre. Pour
+commencer, nous avons besoin d’un modèle pour la famille de réseaux à
+explorer. L’un des points communs des conceptions de ce chapitre est que
+les réseaux se composent d’une <em>tige</em> (stem), d’un <em>corps</em>
+(body) et d’une <em>tête</em> (head). La tige effectue le traitement
+initial de l’image, souvent par des convolutions avec une taille de
+fenêtre plus grande. Le corps se compose de plusieurs blocs, effectuant
+l’essentiel des transformations nécessaires pour passer des images
+brutes aux représentations d’objets. Enfin, la tête convertit cela en
+sorties souhaitées, par exemple via un régresseur softmax pour la
+classification multiclasse. Le corps, à son tour, se compose de
+plusieurs étapes (stages), opérant sur l’image à des résolutions
+décroissantes. En fait, la tige et chaque étape suivante divisent par
+quatre la résolution spatiale. Enfin, chaque étape se compose d’un ou
+plusieurs blocs. Ce motif est commun à tous les réseaux, de VGG à
+ResNeXt. En effet, pour la conception de réseaux AnyNet génériques,
+[Radosavovic.Kosaraju.Girshick.ea.2020] ont utilisé le bloc ResNeXt de
+la fig_resnext_block.</p>
+<p><img src="img/anynet.svg"
+alt="L’espace de conception AnyNet. Les nombres (\mathit{c}, \mathit{r}) le long de chaque flèche indiquent le nombre de canaux c et la résolution \mathit{r} \times \mathit{r} des images à ce point. De gauche à droite : structure générique du réseau composée d’une tige, d’un corps et d’une tête ; corps composé de quatre étapes ; structure détaillée d’une étape ; deux structures alternatives pour les blocs, l’une sans sous-échantillonnage et l’autre qui divise par deux la résolution dans chaque dimension. Les choix de conception incluent la profondeur \mathit{d_i}, le nombre de canaux de sortie \mathit{c_i}, le nombre de groupes \mathit{g_i} et le rapport de goulot d’étranglement (bottleneck ratio) \mathit{k_i} pour n’importe quelle étape \mathit{i}." />
+<a id="fig_anynet_full"></a> Examinons en détail la structure décrite
+dans la fig_anynet_full. Comme mentionné, un AnyNet se compose d’une
+tige, d’un corps et d’une tête. La tige prend en entrée des images RVB
+(3 canaux), utilise une convolution <span class="math inline">\(3 \times
+3\)</span> avec une foulée de <span class="math inline">\(2\)</span>,
+suivie d’une normalisation par lots, pour diviser par deux la résolution
+de <span class="math inline">\(r \times r\)</span> à <span
+class="math inline">\(r/2 \times r/2\)</span>. De plus, elle génère
+<span class="math inline">\(c_0\)</span> canaux qui servent d’entrée au
+corps.</p>
+<p>Puisque le réseau est conçu pour bien fonctionner avec les images
+ImageNet de forme <span class="math inline">\(224 \times 224 \times
+3\)</span>, le corps sert à réduire cela à <span class="math inline">\(7
+\times 7 \times c_4\)</span> via 4 étapes (rappelons que <span
+class="math inline">\(224 / 2^{1+4} = 7\)</span>), chacune avec une
+éventuelle foulée de <span class="math inline">\(2\)</span>. Enfin, la
+tête utilise une conception tout à fait standard via un pooling moyen
+global, similaire à NiN (sec_nin), suivi d’une couche entièrement
+connectée pour émettre un vecteur de dimension <span
+class="math inline">\(n\)</span> pour une classification à <span
+class="math inline">\(n\)</span> classes.</p>
+<p>La plupart des décisions de conception pertinentes sont inhérentes au
+corps du réseau. Il procède par étapes, où chaque étape est composée du
+même type de blocs ResNeXt que ceux que nous avons vus dans la
+subsec_resnext. La conception y est à nouveau entièrement générique :
+nous commençons par un bloc qui divise par deux la résolution en
+utilisant une foulée de <span class="math inline">\(2\)</span> (le plus
+à droite dans la fig_anynet_full). Pour s’adapter à cela, la branche
+résiduelle du bloc ResNeXt doit passer par une convolution <span
+class="math inline">\(1 \times 1\)</span>. Ce bloc est suivi d’un nombre
+variable de blocs ResNeXt supplémentaires qui laissent inchangés la
+résolution et le nombre de canaux. Notez qu’une pratique de conception
+courante consiste à ajouter un léger goulot d’étranglement (bottleneck)
+dans la conception des blocs convolutifs. En tant que tel, avec un
+rapport de goulot d’étranglement <span class="math inline">\(k_i \geq
+1\)</span>, nous allouons un certain nombre de canaux, <span
+class="math inline">\(c_i/k_i\)</span>, au sein de chaque bloc pour
+l’étape <span class="math inline">\(i\)</span> (comme le montrent les
+expériences, ce n’est pas vraiment efficace et cela devrait être évité).
+Enfin, puisque nous avons affaire à des blocs ResNeXt, nous devons
+également choisir le nombre de groupes <span
+class="math inline">\(g_i\)</span> pour les convolutions groupées à
+l’étape <span class="math inline">\(i\)</span>.</p>
+<p>Cet espace de conception apparemment générique nous offre néanmoins
+de nombreux paramètres : nous pouvons définir la largeur de bloc (nombre
+de canaux) <span class="math inline">\(c_0, \ldots c_4\)</span>, la
+profondeur (nombre de blocs) par étape <span class="math inline">\(d_1,
+\ldots d_4\)</span>, les rapports de goulot d’étranglement <span
+class="math inline">\(k_1, \ldots k_4\)</span> et les largeurs de groupe
+(nombres de groupes) <span class="math inline">\(g_1, \ldots
+g_4\)</span>. Au total, cela représente 17 paramètres, ce qui donne un
+nombre déraisonnablement élevé de configurations qu’il conviendrait
+d’explorer. Nous avons besoin d’outils pour réduire efficacement cet
+immense espace de conception. C’est là qu’intervient la beauté
+conceptuelle des espaces de conception. Avant de le faire, implémentons
+d’abord la conception générique.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AnyNet(d2l.Classifier):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> stem(<span class="va">self</span>, num_channels):</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        net <span class="op">=</span> nn.Sequential()</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        net.add(nn.Conv2D(num_channels, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                nn.BatchNorm(), nn.Activation(<span class="st">&#39;relu&#39;</span>))</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> net</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AnyNet(d2l.Classifier):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> stem(<span class="va">self</span>, num_channels):</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> nn.Sequential(</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>            nn.LazyConv2d(num_channels, kernel_size<span class="op">=</span><span class="dv">3</span>, stride<span class="op">=</span><span class="dv">2</span>, padding<span class="op">=</span><span class="dv">1</span>),</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>            nn.LazyBatchNorm2d(), nn.ReLU())</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AnyNet(d2l.Classifier):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> stem(<span class="va">self</span>, num_channels):</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> tf.keras.models.Sequential([</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            tf.keras.layers.Conv2D(num_channels, kernel_size<span class="op">=</span><span class="dv">3</span>, strides<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>                                   padding<span class="op">=</span><span class="st">&#39;same&#39;</span>),</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            tf.keras.layers.BatchNormalization(),</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>            tf.keras.layers.Activation(<span class="st">&#39;relu&#39;</span>)])</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AnyNet(d2l.Classifier):</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    arch: <span class="bu">tuple</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    stem_channels: <span class="bu">int</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    lr: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    num_classes: <span class="bu">int</span> <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    training: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> setup(<span class="va">self</span>):</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> <span class="va">self</span>.create_net()</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> stem(<span class="va">self</span>, num_channels):</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> nn.Sequential([</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>            nn.Conv(num_channels, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>),</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>                    padding<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">1</span>)),</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>            nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training),</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>            nn.relu</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>        ])</span></code></pre></div>
+<p>Chaque étape se compose de <code>depth</code> blocs ResNeXt, où
+<code>num_channels</code> spécifie la largeur du bloc. Notez que le
+premier bloc divise par deux la hauteur et la largeur des images
+d’entrée.</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(AnyNet)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> stage(<span class="va">self</span>, depth, num_channels, groups, bot_mul):</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    net <span class="op">=</span> nn.Sequential()</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(depth):</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>            net.add(d2l.ResNeXtBlock(</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                num_channels, groups, bot_mul, use_1x1conv<span class="op">=</span><span class="va">True</span>, strides<span class="op">=</span><span class="dv">2</span>))</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>            net.add(d2l.ResNeXtBlock(</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>                num_channels, num_channels, groups, bot_mul))</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> net</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(AnyNet)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> stage(<span class="va">self</span>, depth, num_channels, groups, bot_mul):</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    blk <span class="op">=</span> []</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(depth):</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>            blk.append(d2l.ResNeXtBlock(num_channels, groups, bot_mul,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>                use_1x1conv<span class="op">=</span><span class="va">True</span>, strides<span class="op">=</span><span class="dv">2</span>))</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>            blk.append(d2l.ResNeXtBlock(num_channels, groups, bot_mul))</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> nn.Sequential(<span class="op">*</span>blk)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(AnyNet)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> stage(<span class="va">self</span>, depth, num_channels, groups, bot_mul):</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    net <span class="op">=</span> tf.keras.models.Sequential()</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(depth):</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>            net.add(d2l.ResNeXtBlock(num_channels, groups, bot_mul,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>                use_1x1conv<span class="op">=</span><span class="va">True</span>, strides<span class="op">=</span><span class="dv">2</span>))</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>            net.add(d2l.ResNeXtBlock(num_channels, groups, bot_mul))</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> net</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(AnyNet)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> stage(<span class="va">self</span>, depth, num_channels, groups, bot_mul):</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    blk <span class="op">=</span> []</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(depth):</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>            blk.append(d2l.ResNeXtBlock(num_channels, groups, bot_mul,</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                use_1x1conv<span class="op">=</span><span class="va">True</span>, strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>), training<span class="op">=</span><span class="va">self</span>.training))</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>            blk.append(d2l.ResNeXtBlock(num_channels, groups, bot_mul,</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>                                        training<span class="op">=</span><span class="va">self</span>.training))</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> nn.Sequential(blk)</span></code></pre></div>
+<p>En assemblant la tige, le corps et la tête du réseau, nous complétons
+l’implémentation d’AnyNet.</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(AnyNet)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, arch, stem_channels, lr<span class="op">=</span><span class="fl">0.1</span>, num_classes<span class="op">=</span><span class="dv">10</span>):</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">super</span>(AnyNet, <span class="va">self</span>).<span class="fu">__init__</span>()</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> nn.Sequential()</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.add(<span class="va">self</span>.stem(stem_channels))</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i, s <span class="kw">in</span> <span class="bu">enumerate</span>(arch):</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.add(<span class="va">self</span>.stage(<span class="op">*</span>s))</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.add(nn.GlobalAvgPool2D(), nn.Dense(num_classes))</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.initialize(init.Xavier())</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> nn.Sequential(<span class="va">self</span>.stem(stem_channels))</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i, s <span class="kw">in</span> <span class="bu">enumerate</span>(arch):</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.add_module(<span class="ss">f&#39;stage</span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">&#39;</span>, <span class="va">self</span>.stage(<span class="op">*</span>s))</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.add_module(<span class="st">&#39;head&#39;</span>, nn.Sequential(</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>            nn.AdaptiveAvgPool2d((<span class="dv">1</span>, <span class="dv">1</span>)), nn.Flatten(),</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>            nn.LazyLinear(num_classes)))</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.<span class="bu">apply</span>(d2l.init_cnn)</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> tf.keras.models.Sequential(<span class="va">self</span>.stem(stem_channels))</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i, s <span class="kw">in</span> <span class="bu">enumerate</span>(arch):</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.add(<span class="va">self</span>.stage(<span class="op">*</span>s))</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.add(tf.keras.models.Sequential([</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>            tf.keras.layers.GlobalAvgPool2D(),</span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>            tf.keras.layers.Dense(units<span class="op">=</span>num_classes)]))</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(AnyNet)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> create_net(<span class="va">self</span>):</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    net <span class="op">=</span> nn.Sequential([<span class="va">self</span>.stem(<span class="va">self</span>.stem_channels)])</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, s <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="va">self</span>.arch):</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>        net.layers.extend([<span class="va">self</span>.stage(<span class="op">*</span>s)])</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    net.layers.extend([nn.Sequential([</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">lambda</span> x: nn.avg_pool(x, window_shape<span class="op">=</span>x.shape[<span class="dv">1</span>:<span class="dv">3</span>],</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>                            strides<span class="op">=</span>x.shape[<span class="dv">1</span>:<span class="dv">3</span>], padding<span class="op">=</span><span class="st">&#39;valid&#39;</span>),</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">lambda</span> x: x.reshape((x.shape[<span class="dv">0</span>], <span class="op">-</span><span class="dv">1</span>)),</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>        nn.Dense(<span class="va">self</span>.num_classes)])])</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> net</span></code></pre></div>
+<h2
+id="distributions-et-paramètres-des-espaces-de-conception">Distributions
+et paramètres des espaces de conception</h2>
+<p>Comme nous venons d’en discuter dans la
+subsec_the-anynet-design-space, les paramètres d’un espace de conception
+sont des hyperparamètres des réseaux dans cet espace de conception.
+Considérons le problème de l’identification de bons paramètres dans
+l’espace de conception AnyNet. Nous pourrions essayer de trouver le
+<em>meilleur choix unique</em> de paramètres pour une quantité donnée de
+calcul (par exemple, les FLOPs et le temps de calcul). Si nous
+n’autorisions même que <em>deux</em> choix possibles pour chaque
+paramètre, nous devrions explorer <span class="math inline">\(2^{17} =
+131072\)</span> combinaisons pour trouver la meilleure solution. C’est
+manifestement irréalisable en raison de son coût exorbitant. Pire
+encore, nous n’apprenons rien de cet exercice sur la manière dont on
+devrait concevoir un réseau. La prochaine fois que nous ajouterons, par
+exemple, une étape X, ou une opération de décalage, ou autre, nous
+devrions repartir de zéro. Pire encore, en raison de la stochasticité de
+l’entraînement (arrondis, mélange, erreurs de bits), il est peu probable
+que deux exécutions produisent exactement les mêmes résultats. Une
+meilleure stratégie consisterait à essayer de déterminer des lignes
+directrices générales sur la manière dont les choix de paramètres
+devraient être liés. Par exemple, le rapport de goulot d’étranglement,
+le nombre de canaux, de blocs, de groupes ou leur évolution entre les
+couches devraient idéalement être régis par une collection de règles
+simples. L’approche de [radosavovic2019network] repose sur les quatre
+hypothèses suivantes :</p>
+<ol type="1">
+<li>Nous supposons que des principes de conception généraux existent
+réellement, de sorte que de nombreux réseaux satisfaisant à ces
+exigences devraient offrir de bonnes performances. Par conséquent,
+identifier une <em>distribution</em> sur les réseaux peut être une
+stratégie judicieuse. En d’autres termes, nous supposons qu’il y a
+beaucoup de bonnes aiguilles dans la botte de foin.</li>
+<li>Il n’est pas nécessaire d’entraîner les réseaux jusqu’à convergence
+avant de pouvoir évaluer si un réseau est bon. Au lieu de cela, il
+suffit d’utiliser les résultats intermédiaires comme guide fiable pour
+la précision finale. L’utilisation de substituts (approximatifs) pour
+optimiser un objectif est appelée optimisation multi-fidélité
+[forrester2007multi]. Par conséquent, l’optimisation de la conception
+est effectuée sur la base de la précision obtenue après seulement
+quelques passages sur le jeu de données, ce qui réduit considérablement
+le coût.</li>
+<li>Les résultats obtenus à plus petite échelle (pour des réseaux plus
+petits) se généralisent aux plus grands. Par conséquent, l’optimisation
+est effectuée pour des réseaux structurellement similaires, mais avec un
+plus petit nombre de blocs, moins de canaux, etc. Ce n’est qu’à la fin
+que nous devrons vérifier que les réseaux ainsi trouvés offrent
+également de bonnes performances à grande échelle.</li>
+<li>Les aspects de la conception peuvent être approximativement
+factorisés de sorte qu’il soit possible d’inférer leur effet sur la
+qualité du résultat de manière quelque peu indépendante. En d’autres
+termes, le problème d’optimisation est modérément facile.</li>
+</ol>
+<p>Ces hypothèses nous permettent de tester de nombreux réseaux à peu de
+frais. En particulier, nous pouvons <em>échantillonner</em> uniformément
+l’espace des configurations et évaluer leurs performances. Par la suite,
+nous pouvons évaluer la qualité du choix des paramètres en examinant la
+<em>distribution</em> de l’erreur/précision qui peut être obtenue avec
+lesdits réseaux. Notons <span class="math inline">\(F(e)\)</span> la
+fonction de répartition (CDF) pour les erreurs commises par les réseaux
+d’un espace de conception donné, tirés selon la distribution de
+probabilité <span class="math inline">\(p\)</span>. C’est-à-dire :</p>
+<p><span class="math display">\[F(e, p) \stackrel{\textrm{def}}{=}
+P_{\textrm{net} \sim p} \{e(\textrm{net}) \leq e\}.\]</span></p>
+<p>Notre objectif est maintenant de trouver une distribution <span
+class="math inline">\(p\)</span> sur les <em>réseaux</em> telle que la
+plupart des réseaux aient un taux d’erreur très bas et où le support de
+<span class="math inline">\(p\)</span> soit concis. Bien entendu, cela
+est impossible à réaliser avec précision d’un point de vue informatique.
+Nous recourons à un échantillon de réseaux <span
+class="math inline">\(\mathcal{Z} \stackrel{\textrm{def}}{=}
+\{\textrm{net}_1, \ldots \textrm{net}_n\}\)</span> (avec les erreurs
+respectives <span class="math inline">\(e_1, \ldots, e_n\)</span>)
+provenant de <span class="math inline">\(p\)</span> et utilisons à la
+place la CDF empirique <span class="math inline">\(\hat{F}(e,
+\mathcal{Z})\)</span> :</p>
+<p><span class="math display">\[\hat{F}(e, \mathcal{Z}) =
+\frac{1}{n}\sum_{i=1}^n \mathbf{1}(e_i \leq e).\]</span></p>
+<p>Chaque fois que la CDF pour un ensemble de choix majore (ou égale)
+une autre CDF, il s’ensuit que son choix de paramètres est supérieur (ou
+indifférent). En conséquence, [Radosavovic.Kosaraju.Girshick.ea.2020]
+ont expérimenté avec un rapport de goulot d’étranglement partagé <span
+class="math inline">\(k_i = k\)</span> pour toutes les étapes <span
+class="math inline">\(i\)</span> du réseau. Cela élimine trois des
+quatre paramètres régissant le rapport de goulot d’étranglement. Pour
+évaluer si cela affecte (négativement) la performance, on peut tirer des
+réseaux des distributions contraintes et non contraintes et comparer les
+CDF correspondantes. Il s’avère que cette contrainte n’affecte pas du
+tout la précision de la distribution des réseaux, comme on peut le voir
+dans le premier panneau de la fig_regnet-fig.  De même, nous pourrions
+choisir de prendre la même largeur de groupe <span
+class="math inline">\(g_i = g\)</span> présente aux différentes étapes
+du réseau. Là encore, cela n’affecte pas les performances, comme on peut
+le voir dans le deuxième panneau de la fig_regnet-fig. Ces deux étapes
+combinées réduisent le nombre de paramètres libres de six.</p>
+<p><img src="img/regnet-fig.png"
+alt="Comparaison des fonctions de répartition empiriques des erreurs des espaces de conception. \textrm{AnyNet}_\mathit{A} est l’espace de conception original ; \textrm{AnyNet}_\mathit{B} lie les rapports de goulot d’étranglement, \textrm{AnyNet}_\mathit{C} lie également les largeurs de groupe, \textrm{AnyNet}_\mathit{D} augmente la profondeur du réseau à travers les étapes. De gauche à droite : (i) lier les rapports de goulot d’étranglement n’a aucun effet sur les performances ; (ii) lier les largeurs de groupe n’a aucun effet sur les performances ; (iii) augmenter les largeurs de réseau (canaux) à travers les étapes améliore les performances ; (iv) augmenter les profondeurs de réseau à travers les étapes améliore les performances. Figure avec l’aimable autorisation de [Radosavovic.Kosaraju.Girshick.ea.2020]." />
+<a id="fig_regnet-fig"></a> Ensuite, nous cherchons des moyens de
+réduire la multitude de choix potentiels pour la largeur et la
+profondeur des étapes. Il est raisonnable de supposer que, à mesure que
+nous allons plus en profondeur, le nombre de canaux devrait augmenter,
+c’est-à-dire <span class="math inline">\(c_i \geq c_{i-1}\)</span>
+(<span class="math inline">\(w_{i+1} \geq w_i\)</span> selon leur
+notation dans la fig_regnet-fig), donnant <span
+class="math inline">\(\textrm{AnyNetX}_D\)</span>. De même, il est tout
+aussi raisonnable de supposer qu’au fur et à mesure que les étapes
+progressent, elles devraient devenir plus profondes, c’est-à-dire <span
+class="math inline">\(d_i \geq d_{i-1}\)</span>, donnant <span
+class="math inline">\(\textrm{AnyNetX}_E\)</span>. Cela peut être
+vérifié expérimentalement dans les troisième et quatrième panneaux de la
+fig_regnet-fig, respectivement.</p>
+<h2 id="regnet">RegNet</h2>
+<p>L’espace de conception <span
+class="math inline">\(\textrm{AnyNetX}_E\)</span> qui en résulte se
+compose de réseaux simples suivant des principes de conception faciles à
+interpréter :</p>
+<ul>
+<li>Partager le rapport de goulot d’étranglement <span
+class="math inline">\(k_i = k\)</span> pour toutes les étapes <span
+class="math inline">\(i\)</span> ;</li>
+<li>Partager la largeur de groupe <span class="math inline">\(g_i =
+g\)</span> pour toutes les étapes <span class="math inline">\(i\)</span>
+;</li>
+<li>Augmenter la largeur du réseau à travers les étapes : <span
+class="math inline">\(c_{i} \leq c_{i+1}\)</span> ;</li>
+<li>Augmenter la profondeur du réseau à travers les étapes : <span
+class="math inline">\(d_{i} \leq d_{i+1}\)</span>.</li>
+</ul>
+<p>Cela nous laisse avec un dernier ensemble de choix : comment choisir
+les valeurs spécifiques pour les paramètres ci-dessus de l’espace de
+conception <span class="math inline">\(\textrm{AnyNetX}_E\)</span>
+final. En étudiant les réseaux les plus performants de la distribution
+dans <span class="math inline">\(\textrm{AnyNetX}_E\)</span>, on peut
+observer ce qui suit : la largeur du réseau augmente idéalement de
+manière linéaire avec l’indice de bloc à travers le réseau, c’est-à-dire
+<span class="math inline">\(c_j \approx c_0 + c_a j\)</span>, où <span
+class="math inline">\(j\)</span> est l’indice du bloc et la pente <span
+class="math inline">\(c_a &gt; 0\)</span>. Étant donné que nous ne
+pouvons choisir une largeur de bloc différente que par étape, nous
+arrivons à une fonction constante par morceaux, conçue pour correspondre
+à cette dépendance. De plus, les expériences montrent également qu’un
+rapport de goulot d’étranglement de <span class="math inline">\(k =
+1\)</span> donne les meilleurs résultats, c’est-à-dire qu’il est
+conseillé de ne pas utiliser de goulots d’étranglement du tout.</p>
+<p>Nous recommandons au lecteur intéressé de consulter plus de détails
+sur la conception de réseaux spécifiques pour différentes quantités de
+calcul en parcourant [Radosavovic.Kosaraju.Girshick.ea.2020]. Par
+exemple, une variante RegNetX efficace à 32 couches est donnée par <span
+class="math inline">\(k = 1\)</span> (pas de goulot d’étranglement),
+<span class="math inline">\(g = 16\)</span> (la largeur de groupe est de
+16), <span class="math inline">\(c_1 = 32\)</span> et <span
+class="math inline">\(c_2 = 80\)</span> canaux pour les première et
+deuxième étapes respectivement, choisies pour avoir une profondeur de
+<span class="math inline">\(d_1=4\)</span> et <span
+class="math inline">\(d_2=6\)</span> blocs. L’idée étonnante de cette
+conception est qu’elle s’applique toujours, même lors de l’étude de
+réseaux à plus grande échelle. Mieux encore, elle est même valable pour
+les conceptions de réseaux Squeeze-and-Excitation (SE) (RegNetY) qui
+possèdent une activation globale des canaux [Hu.Shen.Sun.2018].</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RegNetX32(AnyNet):</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, lr<span class="op">=</span><span class="fl">0.1</span>, num_classes<span class="op">=</span><span class="dv">10</span>):</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>        stem_channels, groups, bot_mul <span class="op">=</span> <span class="dv">32</span>, <span class="dv">16</span>, <span class="dv">1</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>        depths, channels <span class="op">=</span> (<span class="dv">4</span>, <span class="dv">6</span>), (<span class="dv">32</span>, <span class="dv">80</span>)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>            ((depths[<span class="dv">0</span>], channels[<span class="dv">0</span>], groups, bot_mul),</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>             (depths[<span class="dv">1</span>], channels[<span class="dv">1</span>], groups, bot_mul)),</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>            stem_channels, lr, num_classes)</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RegNetX32(AnyNet):</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    lr: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    num_classes: <span class="bu">int</span> <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    stem_channels: <span class="bu">int</span> <span class="op">=</span> <span class="dv">32</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    arch: <span class="bu">tuple</span> <span class="op">=</span> ((<span class="dv">4</span>, <span class="dv">32</span>, <span class="dv">16</span>, <span class="dv">1</span>), (<span class="dv">6</span>, <span class="dv">80</span>, <span class="dv">16</span>, <span class="dv">1</span>))</span></code></pre></div>
+<p>Nous pouvons voir que chaque étape RegNetX réduit progressivement la
+résolution et augmente les canaux de sortie.</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>RegNetX32().layer_summary((<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">96</span>, <span class="dv">96</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>RegNetX32().layer_summary((<span class="dv">1</span>, <span class="dv">96</span>, <span class="dv">96</span>, <span class="dv">1</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>RegNetX32(training<span class="op">=</span><span class="va">False</span>).layer_summary((<span class="dv">1</span>, <span class="dv">96</span>, <span class="dv">96</span>, <span class="dv">1</span>))</span></code></pre></div>
+<h2 id="entraînement">Entraînement</h2>
+<p>L’entraînement du RegNetX à 32 couches sur le jeu de données
+Fashion-MNIST se fait exactement comme précédemment.</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch, jax</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> RegNetX32(lr<span class="op">=</span><span class="fl">0.05</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>, num_gpus<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">128</span>, resize<span class="op">=</span>(<span class="dv">96</span>, <span class="dv">96</span>))</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>trainer.fit(model, data)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">128</span>, resize<span class="op">=</span>(<span class="dv">96</span>, <span class="dv">96</span>))</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> d2l.try_gpu():</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    model <span class="op">=</span> RegNetX32(lr<span class="op">=</span><span class="fl">0.01</span>)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    trainer.fit(model, data)</span></code></pre></div>
+<h2 id="discussion">Discussion</h2>
+<p>Avec des biais inductifs souhaitables (hypothèses ou préférences)
+comme la localité et l’invariance par translation (sec_why-conv) pour la
+vision, les CNN ont été les architectures dominantes dans ce domaine.
+Cela est resté le cas de LeNet jusqu’à ce que les Transformers
+(sec_transformer)
+[Dosovitskiy.Beyer.Kolesnikov.ea.2021,touvron2021training] commencent à
+surpasser les CNN en termes de précision. Bien qu’une grande partie des
+progrès récents concernant les Transformers pour la vision
+<em>puisse</em> être rétroportée dans les CNN [liu2022convnet], cela
+n’est possible qu’à un coût de calcul plus élevé. Tout aussi important,
+les récentes optimisations matérielles (NVIDIA Ampere et Hopper) n’ont
+fait qu’élargir l’écart en faveur des Transformers.</p>
+<p>Il est à noter que les Transformers ont un degré de biais inductif
+vers la localité et l’invariance par translation nettement inférieur à
+celui des CNN. Si les structures apprises ont prévalu, c’est notamment
+grâce à la disponibilité de vastes collections d’images, telles que
+LAION-400m et LAION-5B [schuhmann2022laion], comptant jusqu’à 5
+milliards d’images. De manière assez surprenante, certains des travaux
+les plus pertinents dans ce contexte incluent même des MLP
+[tolstikhin2021mlp].</p>
+<p>En résumé, les Transformers pour la vision (sec_vision-transformer)
+sont désormais en tête en termes de performances de pointe dans la
+classification d’images à grande échelle, montrant que <em>la
+scalabilité l’emporte sur les biais inductifs</em>
+[Dosovitskiy.Beyer.Kolesnikov.ea.2021]. Cela inclut le pré-entraînement
+de Transformers à grande échelle (sec_large-pretraining-transformers)
+avec l’auto-attention multi-têtes (sec_multihead-attention). Nous
+invitons les lecteurs à se plonger dans ces chapitres pour une
+discussion beaucoup plus détaillée.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Augmentez le nombre d’étapes à quatre. Pouvez-vous concevoir un
+RegNetX plus profond qui soit plus performant ?</li>
+<li>De-ResNeXt-ifiez les RegNets en remplaçant le bloc ResNeXt par le
+bloc ResNet. Quelles sont les performances de votre nouveau modèle
+?</li>
+<li>Implémentez plusieurs instances d’une famille « VioNet » en
+<em>enfreignant</em> les principes de conception de RegNetX. Quelles
+sont leurs performances ? Lequel des facteurs (<span
+class="math inline">\(d_i\)</span>, <span
+class="math inline">\(c_i\)</span>, <span
+class="math inline">\(g_i\)</span>, <span
+class="math inline">\(b_i\)</span>) est le plus important ?</li>
+<li>Votre objectif est de concevoir le MLP « parfait ». Pouvez-vous
+utiliser les principes de conception présentés ci-dessus pour trouver de
+bonnes architectures ? Est-il possible d’extrapoler des petits réseaux
+aux grands ?</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/7462">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/7463">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/8738">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/18009">Discussions</a> :end_tab:</p>
+<div class="navlinks"><a class="prev" href="densenet.html">&larr; Réseaux à connexions denses (DenseNet)</a></div></main></div></body></html>

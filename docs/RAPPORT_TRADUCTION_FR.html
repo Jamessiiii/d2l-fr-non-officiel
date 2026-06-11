@@ -1,9 +1,4 @@
-<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rapport de traduction française D2L</title>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;max-width:980px;margin:32px auto;padding:0 20px;line-height:1.55;color:#20242a}pre{overflow:auto;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px;padding:12px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}a{color:#245a9c}</style>
-</head><body><h1 id="rapport-de-traduction-française-d2l">Rapport de traduction
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rapport de traduction française D2L</title><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;max-width:980px;margin:32px auto;padding:0 20px;line-height:1.55;color:#20242a}pre{overflow:auto;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px;padding:12px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}a{color:#245a9c}</style></head><body><h1 id="rapport-de-traduction-française-d2l">Rapport de traduction
 française D2L</h1>
 <p>Date : 2026-06-11</p>
 <h2 id="artefacts-produits">Artefacts produits</h2>
@@ -44,6 +39,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <li><code>docs/chapter_multilayer-perceptrons/index.html</code></li>
 <li><code>docs/chapter_builders-guide/index.html</code></li>
 <li><code>docs/chapter_convolutional-neural-networks/index.html</code></li>
+<li><code>docs/chapter_convolutional-modern/index.html</code></li>
 </ul>
 <p>Vérifications locales effectuées sur
 <code>http://localhost:4173</code> :</p>
@@ -177,6 +173,24 @@ traduit en français par <code>cnn_retry_channels.txt</code>.</li>
 traduit en français par <code>cnn_retry_pooling.txt</code>.</li>
 <li><code>chapter_convolutional-neural-networks/lenet.md</code> :
 traduit en français par <code>cnn_retry_lenet.txt</code>.</li>
+<li><code>chapter_convolutional-modern/index.md</code> : traduit en
+français par <code>conv_modern_index.txt</code>.</li>
+<li><code>chapter_convolutional-modern/alexnet.md</code> : traduit en
+français par <code>conv_modern_alexnet.txt</code>.</li>
+<li><code>chapter_convolutional-modern/vgg.md</code> : traduit en
+français par <code>conv_modern_vgg.txt</code>.</li>
+<li><code>chapter_convolutional-modern/nin.md</code> : traduit en
+français par <code>conv_modern_nin.txt</code>.</li>
+<li><code>chapter_convolutional-modern/googlenet.md</code> : traduit en
+français par <code>conv_modern_googlenet.txt</code>.</li>
+<li><code>chapter_convolutional-modern/batch-norm.md</code> : traduit en
+français par <code>conv_modern_batch_norm.txt</code>.</li>
+<li><code>chapter_convolutional-modern/resnet.md</code> : traduit en
+français par <code>conv_modern_resnet.txt</code>.</li>
+<li><code>chapter_convolutional-modern/densenet.md</code> : traduit en
+français par <code>conv_modern_densenet.txt</code>.</li>
+<li><code>chapter_convolutional-modern/cnn-design.md</code> : traduit en
+français par <code>conv_modern_cnn_design.txt</code>.</li>
 </ul>
 <p>Ajouts manuels de structure française :</p>
 <ul>
@@ -216,6 +230,15 @@ utilisées par <code>chapter_builders-guide</code>.</li>
 <code>img/waldo-football.jpg</code>, <code>img/waldo-mask.jpg</code> :
 figures utilisées par
 <code>chapter_convolutional-neural-networks</code>.</li>
+<li><code>img/alexnet.svg</code>, <code>img/anynet.svg</code>,
+<code>img/densenet-block.svg</code>, <code>img/densenet.svg</code>,
+<code>img/filters.png</code>, <code>img/functionclasses.svg</code>,
+<code>img/inception-full-90.svg</code>, <code>img/inception.svg</code>,
+<code>img/nin.svg</code>, <code>img/regnet-fig.png</code>,
+<code>img/residual-block.svg</code>, <code>img/resnet-block.svg</code>,
+<code>img/resnet18-90.svg</code>, <code>img/resnext-block.svg</code>,
+<code>img/vgg.svg</code> : figures utilisées par
+<code>chapter_convolutional-modern</code>.</li>
 </ul>
 <h2 id="non-traduit-restant-à-faire">Non traduit / restant à faire</h2>
 <p>Les chapitres copiés dans cette version partielle ont été traduits.
@@ -305,6 +328,16 @@ d’inspecter les sources relatives sans chemin absolu. Les blocs de code
 fenced ont ensuite été restaurés depuis les sources officielles brutes.
 Les notebooks et pages HTML publiques ont été générés à partir des
 sources Markdown traduites, avec MathJax et les images locales.</p>
+<p>Pour <code>chapter_convolutional-modern</code>, les sections ont été
+traduites une par une avec Gemini depuis le dossier parent contenant
+<code>d2l-fr</code> et <code>d2l-en</code>. <code>cnn-design</code> a
+d’abord rencontré <code>MODEL_CAPACITY_EXHAUSTED</code>, puis a réussi
+lors d’une relance isolée. <code>batch-norm</code> et
+<code>resnet</code> ont affiché des erreurs post-écriture dans la sortie
+Gemini, mais les fichiers traduits ont ensuite été validés localement.
+Les blocs de code fenced ont été restaurés depuis les sources
+officielles brutes avant génération des notebooks et pages HTML
+publiques.</p>
 <h2 id="limites-du-build-partiel">Limites du build partiel</h2>
 <p>Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un
 build complet précédent du même état avait listé 88 avertissements

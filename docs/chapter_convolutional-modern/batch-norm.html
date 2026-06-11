@@ -1,0 +1,973 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Normalisation par lots - Dive into Deep Learning FR</title><link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid #d8dee4;padding:24px 18px;background:#f6f8fa;position:sticky;top:0;height:100vh;overflow:auto}.sidebar h1{font-size:16px;margin:0 0 16px}.sidebar ol{padding-left:22px;line-height:1.55}.sidebar a,.navlinks a{color:#245a9c;text-decoration:none}.content{max-width:980px;padding:32px 44px 56px}.navlinks{display:flex;justify-content:space-between;gap:20px;margin:28px 0}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}img{max-width:100%;height:auto}@media(max-width:760px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid #d8dee4}.content{padding:24px 18px 42px}}</style></head><body><div class="layout"><nav class="sidebar"><h1><a href="../index.html">D2L français</a></h1><ol><li><a href="index.html">Réseaux de neurones convolutifs modernes</a></li>
+<li><a href="alexnet.html">Réseaux de neurones convolutifs profonds (AlexNet)</a></li>
+<li><a href="vgg.html">Réseaux utilisant des blocs (VGG)</a></li>
+<li><a href="nin.html">Network in Network (NiN)</a></li>
+<li><a href="googlenet.html">Réseaux à branches multiples (GoogLeNet)</a></li>
+<li><a href="batch-norm.html">Normalisation par lots</a></li>
+<li><a href="resnet.html">Réseaux résiduels (ResNet) et ResNeXt</a></li>
+<li><a href="densenet.html">Réseaux à connexions denses (DenseNet)</a></li>
+<li><a href="cnn-design.html">Conception d&#x27;architectures de réseaux de neurones convolutifs</a></li></ol></nav><main class="content"><div class="navlinks"><a class="prev" href="googlenet.html">&larr; Réseaux à branches multiples (GoogLeNet)</a><a class="next" href="resnet.html">Réseaux résiduels (ResNet) et ResNeXt &rarr;</a></div><div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="normalisation-par-lots">Normalisation par lots</h1>
+<p><a id="sec_batch_norm"></a> L’entraînement de réseaux de neurones
+profonds est difficile. Réussir à les faire converger dans un temps
+raisonnable peut être délicat. Dans cette section, nous décrivons la
+<em>normalisation par lots</em> (batch normalization), une technique
+populaire et efficace qui accélère systématiquement la convergence des
+réseaux profonds [Ioffe.Szegedy.2015]. Avec les blocs résiduels —
+abordés plus tard dans la sec_resnet — la normalisation par lots a
+permis aux praticiens d’entraîner couramment des réseaux de plus de 100
+couches. Un avantage secondaire (fortuit) de la normalisation par lots
+réside dans sa régularisation intrinsèque.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> autograd, np, npx, init</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet.gluon <span class="im">import</span> nn</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flax <span class="im">import</span> linen <span class="im">as</span> nn</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functools <span class="im">import</span> partial</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> optax</span></code></pre></div>
+<h2 id="entraîner-des-réseaux-profonds">Entraîner des réseaux
+profonds</h2>
+<p>Lorsque nous travaillons avec des données, nous effectuons souvent un
+prétraitement avant l’entraînement. Les choix concernant le
+prétraitement des données font souvent une énorme différence dans les
+résultats finaux. Rappelez-vous notre application des MLP à la
+prédiction des prix des maisons (sec_kaggle_house). Notre première étape
+lors du travail avec des données réelles était de normaliser nos
+caractéristiques d’entrée pour avoir une moyenne nulle <span
+class="math inline">\(\boldsymbol{\mu} = 0\)</span> et une variance
+unitaire <span class="math inline">\(\boldsymbol{\Sigma} =
+\boldsymbol{1}\)</span> à travers plusieurs observations
+[friedman1987exploratory], en redimensionnant fréquemment cette dernière
+pour que la diagonale soit l’unité, c’est-à-dire <span
+class="math inline">\(\Sigma_{ii} = 1\)</span>. Une autre stratégie
+consiste à redimensionner les vecteurs à une longueur unitaire,
+éventuellement avec une moyenne nulle <em>par observation</em>. Cela
+peut bien fonctionner, par exemple, pour les données de capteurs
+spatiaux. Ces techniques de prétraitement et bien d’autres sont
+bénéfiques pour garder le problème d’estimation bien contrôlé. Pour une
+revue de la sélection et de l’extraction de caractéristiques, voir
+l’article de [guyon2008feature], par exemple. La normalisation des
+vecteurs a également l’effet secondaire agréable de contraindre la
+complexité des fonctions qui agissent sur eux. Par exemple, la célèbre
+borne rayon-marge [Vapnik95] dans les machines à vecteurs de support
+(SVM) et le théorème de convergence du Perceptron [Novikoff62] reposent
+sur des entrées de norme bornée.</p>
+<p>Intuitivement, cette normalisation s’accorde bien avec nos
+optimiseurs car elle place les paramètres <em>a priori</em> sur une
+échelle similaire. Il est donc tout naturel de se demander si une étape
+de normalisation correspondante <em>à l’intérieur</em> d’un réseau
+profond ne pourrait pas être bénéfique. Bien que ce ne soit pas tout à
+fait le raisonnement qui a conduit à l’invention de la normalisation par
+lots [Ioffe.Szegedy.2015], c’est une façon utile de la comprendre, ainsi
+que sa cousine, la normalisation par couche [Ba.Kiros.Hinton.2016], au
+sein d’un cadre unifié.</p>
+<p>Deuxièmement, pour un MLP ou un CNN typique, au fur et à mesure que
+nous entraînons, les variables dans les couches intermédiaires (par
+exemple, les sorties des transformations affines dans un MLP) peuvent
+prendre des valeurs avec des magnitudes variant considérablement : que
+ce soit le long des couches de l’entrée vers la sortie, à travers les
+unités d’une même couche, et au fil du temps en raison de nos mises à
+jour des paramètres du modèle. Les inventeurs de la normalisation par
+lots ont postulé de manière informelle que cette dérive dans la
+distribution de ces variables pourrait entraver la convergence du
+réseau. Intuitivement, nous pourrions conjecturer que si une couche
+possède des activations de variables 100 fois supérieures à celles d’une
+autre couche, cela pourrait nécessiter des ajustements compensatoires
+dans les taux d’apprentissage. Des solveurs adaptatifs tels qu’AdaGrad
+[Duchi.Hazan.Singer.2011], Adam [Kingma.Ba.2014], Yogi
+[Zaheer.Reddi.Sachan.ea.2018], ou Distributed Shampoo [anil2020scalable]
+visent à traiter cela du point de vue de l’optimisation, par exemple en
+ajoutant des aspects des méthodes de second ordre. L’alternative est
+d’empêcher le problème de se produire, simplement par une normalisation
+adaptative.</p>
+<p>Troisièmement, les réseaux plus profonds sont complexes et ont
+tendance à être plus sujets au surapprentissage. Cela signifie que la
+régularisation devient plus critique. Une technique courante de
+régularisation est l’injection de bruit. Cela est connu depuis
+longtemps, par exemple en ce qui concerne l’injection de bruit pour les
+entrées [Bishop.1995]. Cela constitue également la base du dropout dans
+la sec_dropout. Il s’avère que, de manière tout à fait fortuite, la
+normalisation par lots apporte ces trois avantages : prétraitement,
+stabilité numérique et régularisation.</p>
+<p>La normalisation par lots est appliquée à des couches individuelles,
+ou optionnellement, à toutes les couches : À chaque itération
+d’entraînement, nous normalisons d’abord les entrées (de la
+normalisation par lots) en soustrayant leur moyenne et en les divisant
+par leur écart-type, où les deux sont estimés sur la base des
+statistiques du mini-lot actuel. Ensuite, nous appliquons un coefficient
+d’échelle et un décalage pour récupérer les degrés de liberté perdus.
+C’est précisément en raison de cette <em>normalisation</em> basée sur
+les statistiques de <em>lot</em> que la <em>normalisation par lots</em>
+tire son nom.</p>
+<p>Notez que si nous essayions d’appliquer la normalisation par lots
+avec des mini-lots de taille 1, nous ne pourrions rien apprendre. C’est
+parce qu’après avoir soustrait les moyennes, chaque unité cachée
+prendrait la valeur 0. Comme vous pouvez le deviner, puisque nous
+consacrons une section entière à la normalisation par lots, avec des
+mini-lots suffisamment grands, l’approche s’avère efficace et stable. Un
+point à retenir ici est que lors de l’application de la normalisation
+par lots, le choix de la taille du lot est encore plus significatif que
+sans normalisation par lots, ou du moins, un étalonnage approprié est
+nécessaire car nous pourrions ajuster la taille du lot.</p>
+<p>Notons par <span class="math inline">\(\mathcal{B}\)</span> un
+mini-lot et soit <span class="math inline">\(\mathbf{x} \in
+\mathcal{B}\)</span> une entrée de la normalisation par lots (<span
+class="math inline">\(\textrm{BN}\)</span>). Dans ce cas, la
+normalisation par lots est définie comme suit :</p>
+<p><span class="math display">\[\textrm{BN}(\mathbf{x}) =
+\boldsymbol{\gamma} \odot \frac{\mathbf{x} -
+\hat{\boldsymbol{\mu}}_\mathcal{B}}{\hat{\boldsymbol{\sigma}}_\mathcal{B}}
++ \boldsymbol{\beta}.\]</span> :eqlabel:<code>eq_batchnorm</code></p>
+<p>Dans l’ :eqref:<code>eq_batchnorm</code>, <span
+class="math inline">\(\hat{\boldsymbol{\mu}}_\mathcal{B}\)</span> est la
+moyenne de l’échantillon et <span
+class="math inline">\(\hat{\boldsymbol{\sigma}}_\mathcal{B}\)</span> est
+l’écart-type de l’échantillon du mini-lot <span
+class="math inline">\(\mathcal{B}\)</span>. Après avoir appliqué la
+normalisation, le mini-lot résultant a une moyenne nulle et une variance
+unitaire. Le choix d’une variance unitaire (plutôt qu’un autre nombre
+magique) est arbitraire. Nous récupérons ce degré de liberté en incluant
+un <em>paramètre d’échelle</em> <span
+class="math inline">\(\boldsymbol{\gamma}\)</span> et un <em>paramètre
+de décalage</em> <span class="math inline">\(\boldsymbol{\beta}\)</span>
+appliqués élément par élément, qui ont la même forme que <span
+class="math inline">\(\mathbf{x}\)</span>. Les deux sont des paramètres
+qui doivent être appris dans le cadre de l’entraînement du modèle.</p>
+<p>Les magnitudes des variables pour les couches intermédiaires ne
+peuvent pas diverger pendant l’entraînement car la normalisation par
+lots les centre activement et les redimensionne selon une moyenne et une
+taille données (via <span
+class="math inline">\(\hat{\boldsymbol{\mu}}_\mathcal{B}\)</span> et
+<span
+class="math inline">\({\hat{\boldsymbol{\sigma}}_\mathcal{B}}\)</span>).
+L’expérience pratique confirme que, comme suggéré lors de la discussion
+sur le redimensionnement des caractéristiques, la normalisation par lots
+semble permettre des taux d’apprentissage plus agressifs. Nous calculons
+<span class="math inline">\(\hat{\boldsymbol{\mu}}_\mathcal{B}\)</span>
+et <span
+class="math inline">\({\hat{\boldsymbol{\sigma}}_\mathcal{B}}\)</span>
+dans l’ :eqref:<code>eq_batchnorm</code> comme suit :</p>
+<p><span class="math display">\[\hat{\boldsymbol{\mu}}_\mathcal{B} =
+\frac{1}{|\mathcal{B}|} \sum_{\mathbf{x} \in \mathcal{B}} \mathbf{x}
+\textrm{ et }
+\hat{\boldsymbol{\sigma}}_\mathcal{B}^2 = \frac{1}{|\mathcal{B}|}
+\sum_{\mathbf{x} \in \mathcal{B}} (\mathbf{x} -
+\hat{\boldsymbol{\mu}}_{\mathcal{B}})^2 + \epsilon.\]</span></p>
+<p>Notez que nous ajoutons une petite constante <span
+class="math inline">\(\epsilon &gt; 0\)</span> à l’estimation de la
+variance pour garantir que nous ne tentons jamais une division par zéro,
+même dans les cas où l’estimation de la variance empirique pourrait être
+très petite ou nulle. Les estimations <span
+class="math inline">\(\hat{\boldsymbol{\mu}}_\mathcal{B}\)</span> et
+<span
+class="math inline">\({\hat{\boldsymbol{\sigma}}_\mathcal{B}}\)</span>
+neutralisent le problème d’échelle en utilisant des estimations bruitées
+de la moyenne et de la variance. Vous pourriez penser que ce bruit
+devrait être un problème. Au contraire, il est en fait bénéfique.</p>
+<p>Cela s’avère être un thème récurrent dans l’apprentissage profond.
+Pour des raisons qui ne sont pas encore bien caractérisées
+théoriquement, diverses sources de bruit dans l’optimisation conduisent
+souvent à un entraînement plus rapide et à moins de surapprentissage :
+cette variation semble agir comme une forme de régularisation.
+[Teye.Azizpour.Smith.2018] et [Luo.Wang.Shao.ea.2018] ont relié les
+propriétés de la normalisation par lots aux priors bayésiens et aux
+pénalités, respectivement. En particulier, cela apporte un certain
+éclairage sur l’énigme de savoir pourquoi la normalisation par lots
+fonctionne mieux pour des tailles de mini-lot modérées, de l’ordre de 50
+à 100. Cette taille particulière de mini-lot semble injecter juste la
+“bonne quantité” de bruit par couche, tant en termes d’échelle via <span
+class="math inline">\(\hat{\boldsymbol{\sigma}}\)</span> qu’en termes de
+décalage via <span class="math inline">\(\hat{\boldsymbol{\mu}}\)</span>
+: un mini-lot plus grand régularise moins en raison d’estimations plus
+stables, tandis que de tout petits mini-lots détruisent le signal utile
+en raison d’une variance élevée. En explorant davantage cette direction,
+l’examen d’autres types de prétraitement et de filtrage pourrait encore
+mener à d’autres types de régularisation efficaces.</p>
+<p>En fixant un modèle entraîné, vous pourriez penser que nous
+préférerions utiliser l’ensemble du jeu de données pour estimer la
+moyenne et la variance. Une fois l’entraînement terminé, pourquoi
+voudrions-nous que la même image soit classée différemment, selon le lot
+dans lequel elle se trouve ? Pendant l’entraînement, un tel calcul exact
+est irréalisable car les variables intermédiaires pour tous les exemples
+de données changent à chaque fois que nous mettons à jour notre modèle.
+Cependant, une fois le modèle entraîné, nous pouvons calculer les
+moyennes et les variances des variables de chaque couche sur la base de
+l’ensemble du jeu de données. C’est en effet une pratique courante pour
+les modèles employant la normalisation par lots ; ainsi, les couches de
+normalisation par lots fonctionnent différemment en <em>mode
+entraînement</em> (normalisation par les statistiques du mini-lot) qu’en
+<em>mode prédiction</em> (normalisation par les statistiques du jeu de
+données). Sous cette forme, elles ressemblent étroitement au
+comportement de la régularisation par dropout de la sec_dropout, où le
+bruit n’est injecté que pendant l’entraînement.</p>
+<h2 id="couches-de-normalisation-par-lots">Couches de normalisation par
+lots</h2>
+<p>Les implémentations de la normalisation par lots pour les couches
+entièrement connectées et les couches convolutives sont légèrement
+différentes. Une différence clé entre la normalisation par lots et les
+autres couches est que, puisque la première opère sur un mini-lot
+complet à la fois, nous ne pouvons pas simplement ignorer la dimension
+du lot comme nous le faisions auparavant lors de l’introduction d’autres
+couches.</p>
+<h3 id="couches-entièrement-connectées">Couches entièrement
+connectées</h3>
+<p>Lors de l’application de la normalisation par lots aux couches
+entièrement connectées, [Ioffe.Szegedy.2015], dans leur article
+original, ont inséré la normalisation par lots après la transformation
+affine et <em>avant</em> la fonction d’activation non linéaire. Des
+applications ultérieures ont expérimenté l’insertion de la normalisation
+par lots juste <em>après</em> les fonctions d’activation. En notant
+<span class="math inline">\(\mathbf{x}\)</span> l’entrée de la couche
+entièrement connectée, <span class="math inline">\(\mathbf{W}\mathbf{x}
++ \mathbf{b}\)</span> la transformation affine (avec le paramètre de
+poids <span class="math inline">\(\mathbf{W}\)</span> et le paramètre de
+biais <span class="math inline">\(\mathbf{b}\)</span>), et <span
+class="math inline">\(\phi\)</span> la fonction d’activation, nous
+pouvons exprimer le calcul de la sortie <span
+class="math inline">\(\mathbf{h}\)</span> d’une couche entièrement
+connectée avec normalisation par lots comme suit :</p>
+<p><span class="math display">\[\mathbf{h} =
+\phi(\textrm{BN}(\mathbf{W}\mathbf{x} + \mathbf{b}) ).\]</span></p>
+<p>Rappelez-vous que la moyenne et la variance sont calculées sur le
+<em>même</em> mini-lot sur lequel la transformation est appliquée.</p>
+<h3 id="couches-convolutives">Couches convolutives</h3>
+<p>De même, avec les couches convolutives, nous pouvons appliquer la
+normalisation par lots après la convolution mais avant la fonction
+d’activation non linéaire. La principale différence par rapport à la
+normalisation par lots dans les couches entièrement connectées est que
+nous appliquons l’opération sur une base par canal <em>sur tous les
+emplacements</em>. Cela est compatible avec notre hypothèse d’invariance
+par translation qui a conduit aux convolutions : nous avons supposé que
+l’emplacement spécifique d’un motif dans une image n’était pas critique
+pour la compréhension.</p>
+<p>Supposons que nos mini-lots contiennent <span
+class="math inline">\(m\)</span> exemples et que pour chaque canal, la
+sortie de la convolution ait une hauteur <span
+class="math inline">\(p\)</span> et une largeur <span
+class="math inline">\(q\)</span>. Pour les couches convolutives, nous
+effectuons chaque normalisation par lots simultanément sur les <span
+class="math inline">\(m \cdot p \cdot q\)</span> éléments par canal de
+sortie. Ainsi, nous collectons les valeurs sur tous les emplacements
+spatiaux lors du calcul de la moyenne et de la variance et appliquons
+par conséquent la même moyenne et la même variance au sein d’un canal
+donné pour normaliser la valeur à chaque emplacement spatial. Chaque
+canal a ses propres paramètres d’échelle et de décalage, qui sont tous
+deux des scalaires.</p>
+<h3 id="normalisation-par-couche">Normalisation par couche</h3>
+<p><a id="subsec_layer-normalization-in-bn"></a> Notez que dans le
+contexte des convolutions, la normalisation par lots est bien définie
+même pour des mini-lots de taille 1 : après tout, nous avons tous les
+emplacements à travers une image pour faire la moyenne. Par conséquent,
+la moyenne et la variance sont bien définies, même s’il ne s’agit que
+d’une seule observation. Cette considération a conduit
+[Ba.Kiros.Hinton.2016] à introduire la notion de <em>normalisation par
+couche</em> (layer normalization). Elle fonctionne exactement comme une
+normalisation par lots, si ce n’est qu’elle est appliquée à une seule
+observation à la fois. Par conséquent, le décalage et le facteur
+d’échelle sont tous deux des scalaires. Pour un vecteur <span
+class="math inline">\(\mathbf{x}\)</span> de dimension <span
+class="math inline">\(n\)</span>, les normalisations par couche sont
+données par</p>
+<p><span class="math display">\[\mathbf{x} \rightarrow
+\textrm{LN}(\mathbf{x}) =  \frac{\mathbf{x} -
+\hat{\mu}}{\hat\sigma},\]</span></p>
+<p>où l’échelle et le décalage sont appliqués coefficient par
+coefficient et donnés par</p>
+<p><span class="math display">\[\hat{\mu} \stackrel{\textrm{def}}{=}
+\frac{1}{n} \sum_{i=1}^n x_i \textrm{ et }
+\hat{\sigma}^2 \stackrel{\textrm{def}}{=} \frac{1}{n} \sum_{i=1}^n (x_i
+- \hat{\mu})^2 + \epsilon.\]</span></p>
+<p>Comme précédemment, nous ajoutons un petit décalage <span
+class="math inline">\(\epsilon &gt; 0\)</span> pour éviter la division
+par zéro. L’un des avantages majeurs de l’utilisation de la
+normalisation par couche est qu’elle empêche la divergence. Après tout,
+en ignorant <span class="math inline">\(\epsilon\)</span>, la sortie de
+la normalisation par couche est indépendante de l’échelle. C’est-à-dire
+que nous avons <span class="math inline">\(\textrm{LN}(\mathbf{x})
+\approx \textrm{LN}(\alpha \mathbf{x})\)</span> pour tout choix de <span
+class="math inline">\(\alpha \neq 0\)</span>. Cela devient une égalité
+pour <span class="math inline">\(|\alpha| \to \infty\)</span> (l’égalité
+approximative est due au décalage <span
+class="math inline">\(\epsilon\)</span> pour la variance).</p>
+<p>Un autre avantage de la normalisation par couche est qu’elle ne
+dépend pas de la taille du mini-lot. Elle est également indépendante de
+savoir si nous sommes en régime d’entraînement ou de test. En d’autres
+termes, il s’agit simplement d’une transformation déterministe qui
+normalise les activations à une échelle donnée. Cela peut être très
+bénéfique pour prévenir la divergence dans l’optimisation. Nous passons
+sur les détails supplémentaires et recommandons aux lecteurs intéressés
+de consulter l’article original.</p>
+<h3 id="normalisation-par-lots-pendant-la-prédiction">Normalisation par
+lots pendant la prédiction</h3>
+<p>Comme nous l’avons mentionné précédemment, la normalisation par lots
+se comporte généralement différemment en mode entraînement qu’en mode
+prédiction. Premièrement, le bruit dans la moyenne et la variance de
+l’échantillon provenant de l’estimation de chacune sur des mini-lots
+n’est plus souhaitable une fois que nous avons entraîné le modèle.
+Deuxièmement, nous n’avons peut-être pas le luxe de calculer des
+statistiques de normalisation par lot. Par exemple, nous pourrions avoir
+besoin d’appliquer notre modèle pour faire une prédiction à la fois.</p>
+<p>Généralement, après l’entraînement, nous utilisons l’ensemble du jeu
+de données pour calculer des estimations stables des statistiques des
+variables puis nous les fixons au moment de la prédiction. Par
+conséquent, la normalisation par lots se comporte différemment pendant
+l’entraînement qu’au moment du test. Rappelez-vous que le dropout
+présente également cette caractéristique.</p>
+<h2 id="implémentation-à-partir-de-zéro">(<strong>Implémentation à
+partir de zéro</strong>)</h2>
+<p>Pour voir comment la normalisation par lots fonctionne en pratique,
+nous en implémentons une à partir de zéro ci-dessous.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> batch_norm(X, gamma, beta, moving_mean, moving_var, eps, momentum):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Use autograd to determine whether we are in training mode</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> autograd.is_training():</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="co"># In prediction mode, use mean and variance obtained by moving average</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        X_hat <span class="op">=</span> (X <span class="op">-</span> moving_mean) <span class="op">/</span> np.sqrt(moving_var <span class="op">+</span> eps)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">len</span>(X.shape) <span class="kw">in</span> (<span class="dv">2</span>, <span class="dv">4</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(X.shape) <span class="op">==</span> <span class="dv">2</span>:</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>            <span class="co"># When using a fully connected layer, calculate the mean and</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>            <span class="co"># variance on the feature dimension</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            mean <span class="op">=</span> X.mean(axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            var <span class="op">=</span> ((X <span class="op">-</span> mean) <span class="op">**</span> <span class="dv">2</span>).mean(axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>            <span class="co"># When using a two-dimensional convolutional layer, calculate the</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>            <span class="co"># mean and variance on the channel dimension (axis=1). Here we</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>            <span class="co"># need to maintain the shape of X, so that the broadcasting</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>            <span class="co"># operation can be carried out later</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>            mean <span class="op">=</span> X.mean(axis<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">3</span>), keepdims<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>            var <span class="op">=</span> ((X <span class="op">-</span> mean) <span class="op">**</span> <span class="dv">2</span>).mean(axis<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">3</span>), keepdims<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        <span class="co"># In training mode, the current mean and variance are used </span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        X_hat <span class="op">=</span> (X <span class="op">-</span> mean) <span class="op">/</span> np.sqrt(var <span class="op">+</span> eps)</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Update the mean and variance using moving average</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        moving_mean <span class="op">=</span> (<span class="fl">1.0</span> <span class="op">-</span> momentum) <span class="op">*</span> moving_mean <span class="op">+</span> momentum <span class="op">*</span> mean</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>        moving_var <span class="op">=</span> (<span class="fl">1.0</span> <span class="op">-</span> momentum) <span class="op">*</span> moving_var <span class="op">+</span> momentum <span class="op">*</span> var</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> gamma <span class="op">*</span> X_hat <span class="op">+</span> beta  <span class="co"># Scale and shift</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Y, moving_mean, moving_var</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> batch_norm(X, gamma, beta, moving_mean, moving_var, eps, momentum):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Use is_grad_enabled to determine whether we are in training mode</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> torch.is_grad_enabled():</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="co"># In prediction mode, use mean and variance obtained by moving average</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        X_hat <span class="op">=</span> (X <span class="op">-</span> moving_mean) <span class="op">/</span> torch.sqrt(moving_var <span class="op">+</span> eps)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">len</span>(X.shape) <span class="kw">in</span> (<span class="dv">2</span>, <span class="dv">4</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(X.shape) <span class="op">==</span> <span class="dv">2</span>:</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>            <span class="co"># When using a fully connected layer, calculate the mean and</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>            <span class="co"># variance on the feature dimension</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>            mean <span class="op">=</span> X.mean(dim<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>            var <span class="op">=</span> ((X <span class="op">-</span> mean) <span class="op">**</span> <span class="dv">2</span>).mean(dim<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>            <span class="co"># When using a two-dimensional convolutional layer, calculate the</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>            <span class="co"># mean and variance on the channel dimension (axis=1). Here we</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>            <span class="co"># need to maintain the shape of X, so that the broadcasting</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>            <span class="co"># operation can be carried out later</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>            mean <span class="op">=</span> X.mean(dim<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">3</span>), keepdim<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>            var <span class="op">=</span> ((X <span class="op">-</span> mean) <span class="op">**</span> <span class="dv">2</span>).mean(dim<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">3</span>), keepdim<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        <span class="co"># In training mode, the current mean and variance are used </span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        X_hat <span class="op">=</span> (X <span class="op">-</span> mean) <span class="op">/</span> torch.sqrt(var <span class="op">+</span> eps)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Update the mean and variance using moving average</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        moving_mean <span class="op">=</span> (<span class="fl">1.0</span> <span class="op">-</span> momentum) <span class="op">*</span> moving_mean <span class="op">+</span> momentum <span class="op">*</span> mean</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>        moving_var <span class="op">=</span> (<span class="fl">1.0</span> <span class="op">-</span> momentum) <span class="op">*</span> moving_var <span class="op">+</span> momentum <span class="op">*</span> var</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> gamma <span class="op">*</span> X_hat <span class="op">+</span> beta  <span class="co"># Scale and shift</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Y, moving_mean.data, moving_var.data</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> batch_norm(X, gamma, beta, moving_mean, moving_var, eps):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute reciprocal of square root of the moving variance elementwise</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    inv <span class="op">=</span> tf.cast(tf.math.rsqrt(moving_var <span class="op">+</span> eps), X.dtype)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Scale and shift</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    inv <span class="op">*=</span> gamma</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> X <span class="op">*</span> inv <span class="op">+</span> (beta <span class="op">-</span> moving_mean <span class="op">*</span> inv)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Y</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> batch_norm(X, deterministic, gamma, beta, moving_mean, moving_var, eps,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>               momentum):</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Use `deterministic` to determine whether the current mode is training</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># mode or prediction mode</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> deterministic:</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        <span class="co"># In prediction mode, use mean and variance obtained by moving average</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># `linen.Module.variables` have a `value` attribute containing the array</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>        X_hat <span class="op">=</span> (X <span class="op">-</span> moving_mean.value) <span class="op">/</span> jnp.sqrt(moving_var.value <span class="op">+</span> eps)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">len</span>(X.shape) <span class="kw">in</span> (<span class="dv">2</span>, <span class="dv">4</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(X.shape) <span class="op">==</span> <span class="dv">2</span>:</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>            <span class="co"># When using a fully connected layer, calculate the mean and</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>            <span class="co"># variance on the feature dimension</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>            mean <span class="op">=</span> X.mean(axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>            var <span class="op">=</span> ((X <span class="op">-</span> mean) <span class="op">**</span> <span class="dv">2</span>).mean(axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>            <span class="co"># When using a two-dimensional convolutional layer, calculate the</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>            <span class="co"># mean and variance on the channel dimension (axis=1). Here we</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>            <span class="co"># need to maintain the shape of `X`, so that the broadcasting</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>            <span class="co"># operation can be carried out later</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>            mean <span class="op">=</span> X.mean(axis<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">3</span>), keepdims<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>            var <span class="op">=</span> ((X <span class="op">-</span> mean) <span class="op">**</span> <span class="dv">2</span>).mean(axis<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">3</span>), keepdims<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>        <span class="co"># In training mode, the current mean and variance are used</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        X_hat <span class="op">=</span> (X <span class="op">-</span> mean) <span class="op">/</span> jnp.sqrt(var <span class="op">+</span> eps)</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Update the mean and variance using moving average</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>        moving_mean.value <span class="op">=</span> momentum <span class="op">*</span> moving_mean.value <span class="op">+</span> (<span class="fl">1.0</span> <span class="op">-</span> momentum) <span class="op">*</span> mean</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>        moving_var.value <span class="op">=</span> momentum <span class="op">*</span> moving_var.value <span class="op">+</span> (<span class="fl">1.0</span> <span class="op">-</span> momentum) <span class="op">*</span> var</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> gamma <span class="op">*</span> X_hat <span class="op">+</span> beta  <span class="co"># Scale and shift</span></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Y</span></code></pre></div>
+<p>Nous pouvons maintenant <strong>créer une véritable couche
+<code>BatchNorm</code>.</strong> Notre couche maintiendra les paramètres
+appropriés pour l’échelle <code>gamma</code> et le décalage
+<code>beta</code>, qui seront tous deux mis à jour au cours de
+l’entraînement. De plus, notre couche maintiendra des moyennes mobiles
+des moyennes et des variances pour une utilisation ultérieure lors de la
+prédiction du modèle.</p>
+<p>En mettant de côté les détails algorithmiques, notez le modèle de
+conception sous-jacent à notre implémentation de la couche.
+Généralement, nous définissons les mathématiques dans une fonction
+séparée, par exemple <code>batch_norm</code>. Nous intégrons ensuite
+cette fonctionnalité dans une couche personnalisée, dont le code
+s’occupe principalement des questions de gestion, telles que le
+déplacement des données vers le bon contexte de périphérique,
+l’allocation et l’initialisation des variables requises, le suivi des
+moyennes mobiles (ici pour la moyenne et la variance), et ainsi de
+suite. Ce modèle permet une séparation claire des mathématiques du code
+répétitif. Notez également que, par souci de commodité, nous ne nous
+sommes pas souciés d’inférer automatiquement la forme de l’entrée ici ;
+nous devons donc spécifier le nombre de caractéristiques partout.
+Désormais, tous les frameworks d’apprentissage profond modernes
+proposent une détection automatique de la taille et de la forme dans les
+API de normalisation par lots de haut niveau (en pratique, nous
+utiliserons plutôt celles-ci).</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BatchNorm(nn.Block):</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># `num_features`: the number of outputs for a fully connected layer</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># or the number of output channels for a convolutional layer. `num_dims`:</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 2 for a fully connected layer and 4 for a convolutional layer</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_features, num_dims, <span class="op">**</span>kwargs):</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(<span class="op">**</span>kwargs)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> num_dims <span class="op">==</span> <span class="dv">2</span>:</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>            shape <span class="op">=</span> (<span class="dv">1</span>, num_features)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>            shape <span class="op">=</span> (<span class="dv">1</span>, num_features, <span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        <span class="co"># The scale parameter and the shift parameter (model parameters) are</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>        <span class="co"># initialized to 1 and 0, respectively</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.gamma <span class="op">=</span> <span class="va">self</span>.params.get(<span class="st">&#39;gamma&#39;</span>, shape<span class="op">=</span>shape, init<span class="op">=</span>init.One())</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.beta <span class="op">=</span> <span class="va">self</span>.params.get(<span class="st">&#39;beta&#39;</span>, shape<span class="op">=</span>shape, init<span class="op">=</span>init.Zero())</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># The variables that are not model parameters are initialized to 0 and</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 1</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.moving_mean <span class="op">=</span> np.zeros(shape)</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.moving_var <span class="op">=</span> np.ones(shape)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, X):</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>        <span class="co"># If `X` is not on the main memory, copy `moving_mean` and</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># `moving_var` to the device where `X` is located</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.moving_mean.ctx <span class="op">!=</span> X.ctx:</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.moving_mean <span class="op">=</span> <span class="va">self</span>.moving_mean.copyto(X.ctx)</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.moving_var <span class="op">=</span> <span class="va">self</span>.moving_var.copyto(X.ctx)</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Save the updated `moving_mean` and `moving_var`</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>        Y, <span class="va">self</span>.moving_mean, <span class="va">self</span>.moving_var <span class="op">=</span> batch_norm(</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>            X, <span class="va">self</span>.gamma.data(), <span class="va">self</span>.beta.data(), <span class="va">self</span>.moving_mean,</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.moving_var, eps<span class="op">=</span><span class="fl">1e-12</span>, momentum<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Y</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BatchNorm(nn.Module):</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># num_features: the number of outputs for a fully connected layer or the</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># number of output channels for a convolutional layer. num_dims: 2 for a</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># fully connected layer and 4 for a convolutional layer</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_features, num_dims):</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> num_dims <span class="op">==</span> <span class="dv">2</span>:</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>            shape <span class="op">=</span> (<span class="dv">1</span>, num_features)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>            shape <span class="op">=</span> (<span class="dv">1</span>, num_features, <span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>        <span class="co"># The scale parameter and the shift parameter (model parameters) are</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>        <span class="co"># initialized to 1 and 0, respectively</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.gamma <span class="op">=</span> nn.Parameter(torch.ones(shape))</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.beta <span class="op">=</span> nn.Parameter(torch.zeros(shape))</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># The variables that are not model parameters are initialized to 0 and</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 1</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.moving_mean <span class="op">=</span> torch.zeros(shape)</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.moving_var <span class="op">=</span> torch.ones(shape)</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, X):</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>        <span class="co"># If X is not on the main memory, copy moving_mean and moving_var to</span></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># the device where X is located</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.moving_mean.device <span class="op">!=</span> X.device:</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.moving_mean <span class="op">=</span> <span class="va">self</span>.moving_mean.to(X.device)</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.moving_var <span class="op">=</span> <span class="va">self</span>.moving_var.to(X.device)</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Save the updated moving_mean and moving_var</span></span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>        Y, <span class="va">self</span>.moving_mean, <span class="va">self</span>.moving_var <span class="op">=</span> batch_norm(</span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>            X, <span class="va">self</span>.gamma, <span class="va">self</span>.beta, <span class="va">self</span>.moving_mean,</span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.moving_var, eps<span class="op">=</span><span class="fl">1e-5</span>, momentum<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Y</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BatchNorm(tf.keras.layers.Layer):</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, <span class="op">**</span>kwargs):</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>(BatchNorm, <span class="va">self</span>).<span class="fu">__init__</span>(<span class="op">**</span>kwargs)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> build(<span class="va">self</span>, input_shape):</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        weight_shape <span class="op">=</span> [input_shape[<span class="op">-</span><span class="dv">1</span>], ]</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># The scale parameter and the shift parameter (model parameters) are</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># initialized to 1 and 0, respectively</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.gamma <span class="op">=</span> <span class="va">self</span>.add_weight(name<span class="op">=</span><span class="st">&#39;gamma&#39;</span>, shape<span class="op">=</span>weight_shape,</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>            initializer<span class="op">=</span>tf.initializers.ones, trainable<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.beta <span class="op">=</span> <span class="va">self</span>.add_weight(name<span class="op">=</span><span class="st">&#39;beta&#39;</span>, shape<span class="op">=</span>weight_shape,</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>            initializer<span class="op">=</span>tf.initializers.zeros, trainable<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># The variables that are not model parameters are initialized to 0</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.moving_mean <span class="op">=</span> <span class="va">self</span>.add_weight(name<span class="op">=</span><span class="st">&#39;moving_mean&#39;</span>,</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>            shape<span class="op">=</span>weight_shape, initializer<span class="op">=</span>tf.initializers.zeros,</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>            trainable<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.moving_variance <span class="op">=</span> <span class="va">self</span>.add_weight(name<span class="op">=</span><span class="st">&#39;moving_variance&#39;</span>,</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>            shape<span class="op">=</span>weight_shape, initializer<span class="op">=</span>tf.initializers.ones,</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>            trainable<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>(BatchNorm, <span class="va">self</span>).build(input_shape)</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> assign_moving_average(<span class="va">self</span>, variable, value):</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>        momentum <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>        delta <span class="op">=</span> (<span class="fl">1.0</span> <span class="op">-</span> momentum) <span class="op">*</span> variable <span class="op">+</span> momentum <span class="op">*</span> value</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> variable.assign(delta)</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">@tf.function</span></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> call(<span class="va">self</span>, inputs, training):</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> training:</span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>            axes <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="bu">len</span>(inputs.shape) <span class="op">-</span> <span class="dv">1</span>))</span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>            batch_mean <span class="op">=</span> tf.reduce_mean(inputs, axes, keepdims<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>            batch_variance <span class="op">=</span> tf.reduce_mean(tf.math.squared_difference(</span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>                inputs, tf.stop_gradient(batch_mean)), axes, keepdims<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>            batch_mean <span class="op">=</span> tf.squeeze(batch_mean, axes)</span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>            batch_variance <span class="op">=</span> tf.squeeze(batch_variance, axes)</span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>            mean_update <span class="op">=</span> <span class="va">self</span>.assign_moving_average(</span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.moving_mean, batch_mean)</span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>            variance_update <span class="op">=</span> <span class="va">self</span>.assign_moving_average(</span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.moving_variance, batch_variance)</span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.add_update(mean_update)</span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.add_update(variance_update)</span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>            mean, variance <span class="op">=</span> batch_mean, batch_variance</span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a>            mean, variance <span class="op">=</span> <span class="va">self</span>.moving_mean, <span class="va">self</span>.moving_variance</span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a>        output <span class="op">=</span> batch_norm(inputs, moving_mean<span class="op">=</span>mean, moving_var<span class="op">=</span>variance,</span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>            beta<span class="op">=</span><span class="va">self</span>.beta, gamma<span class="op">=</span><span class="va">self</span>.gamma, eps<span class="op">=</span><span class="fl">1e-5</span>)</span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> output</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BatchNorm(nn.Module):</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># `num_features`: the number of outputs for a fully connected layer</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># or the number of output channels for a convolutional layer.</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># `num_dims`: 2 for a fully connected layer and 4 for a convolutional layer</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Use `deterministic` to determine whether the current mode is training</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># mode or prediction mode</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    num_features: <span class="bu">int</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    num_dims: <span class="bu">int</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    deterministic: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">@nn.compact</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, X):</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.num_dims <span class="op">==</span> <span class="dv">2</span>:</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>            shape <span class="op">=</span> (<span class="dv">1</span>, <span class="va">self</span>.num_features)</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>            shape <span class="op">=</span> (<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="va">self</span>.num_features)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>        <span class="co"># The scale parameter and the shift parameter (model parameters) are</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>        <span class="co"># initialized to 1 and 0, respectively</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>        gamma <span class="op">=</span> <span class="va">self</span>.param(<span class="st">&#39;gamma&#39;</span>, jax.nn.initializers.ones, shape)</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>        beta <span class="op">=</span> <span class="va">self</span>.param(<span class="st">&#39;beta&#39;</span>, jax.nn.initializers.zeros, shape)</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>        <span class="co"># The variables that are not model parameters are initialized to 0 and</span></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 1. Save them to the &#39;batch_stats&#39; collection</span></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>        moving_mean <span class="op">=</span> <span class="va">self</span>.variable(<span class="st">&#39;batch_stats&#39;</span>, <span class="st">&#39;moving_mean&#39;</span>, jnp.zeros, shape)</span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>        moving_var <span class="op">=</span> <span class="va">self</span>.variable(<span class="st">&#39;batch_stats&#39;</span>, <span class="st">&#39;moving_var&#39;</span>, jnp.ones, shape)</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> batch_norm(X, <span class="va">self</span>.deterministic, gamma, beta,</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>                       moving_mean, moving_var, eps<span class="op">=</span><span class="fl">1e-5</span>, momentum<span class="op">=</span><span class="fl">0.9</span>)</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> Y</span></code></pre></div>
+<p>Nous avons utilisé <code>momentum</code> pour régir l’agrégation sur
+les estimations passées de la moyenne et de la variance. C’est un peu un
+abus de langage car cela n’a rien à voir avec le terme de
+<em>momentum</em> de l’optimisation. Néanmoins, c’est le nom couramment
+adopté pour ce terme et, par respect pour la convention de nommage des
+API, nous utilisons le même nom de variable dans notre code.</p>
+<h2 id="lenet-avec-normalisation-par-lots"><strong>LeNet avec
+normalisation par lots</strong></h2>
+<p>Pour voir comment appliquer <code>BatchNorm</code> en contexte, nous
+l’appliquons ci-dessous à un modèle LeNet traditionnel (sec_lenet).
+Rappelez-vous que la normalisation par lots est appliquée après les
+couches convolutives ou les couches entièrement connectées mais avant
+les fonctions d’activation correspondantes.</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BNLeNetScratch(d2l.Classifier):</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, lr<span class="op">=</span><span class="fl">0.1</span>, num_classes<span class="op">=</span><span class="dv">10</span>):</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net <span class="op">=</span> nn.Sequential()</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.add(</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>                nn.Conv2D(<span class="dv">6</span>, kernel_size<span class="op">=</span><span class="dv">5</span>), BatchNorm(<span class="dv">6</span>, num_dims<span class="op">=</span><span class="dv">4</span>),</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>                nn.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>                nn.AvgPool2D(pool_size<span class="op">=</span><span class="dv">2</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>                nn.Conv2D(<span class="dv">16</span>, kernel_size<span class="op">=</span><span class="dv">5</span>), BatchNorm(<span class="dv">16</span>, num_dims<span class="op">=</span><span class="dv">4</span>),</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>                nn.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>                nn.AvgPool2D(pool_size<span class="op">=</span><span class="dv">2</span>, strides<span class="op">=</span><span class="dv">2</span>), nn.Dense(<span class="dv">120</span>),</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>                BatchNorm(<span class="dv">120</span>, num_dims<span class="op">=</span><span class="dv">2</span>), nn.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>                nn.Dense(<span class="dv">84</span>), BatchNorm(<span class="dv">84</span>, num_dims<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>                nn.Activation(<span class="st">&#39;sigmoid&#39;</span>), nn.Dense(num_classes))</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.initialize()</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net <span class="op">=</span> nn.Sequential(</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>                nn.LazyConv2d(<span class="dv">6</span>, kernel_size<span class="op">=</span><span class="dv">5</span>), BatchNorm(<span class="dv">6</span>, num_dims<span class="op">=</span><span class="dv">4</span>),</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>                nn.Sigmoid(), nn.AvgPool2d(kernel_size<span class="op">=</span><span class="dv">2</span>, stride<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>                nn.LazyConv2d(<span class="dv">16</span>, kernel_size<span class="op">=</span><span class="dv">5</span>), BatchNorm(<span class="dv">16</span>, num_dims<span class="op">=</span><span class="dv">4</span>),</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>                nn.Sigmoid(), nn.AvgPool2d(kernel_size<span class="op">=</span><span class="dv">2</span>, stride<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>                nn.Flatten(), nn.LazyLinear(<span class="dv">120</span>),</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>                BatchNorm(<span class="dv">120</span>, num_dims<span class="op">=</span><span class="dv">2</span>), nn.Sigmoid(), nn.LazyLinear(<span class="dv">84</span>),</span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>                BatchNorm(<span class="dv">84</span>, num_dims<span class="op">=</span><span class="dv">2</span>), nn.Sigmoid(),</span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>                nn.LazyLinear(num_classes))</span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net <span class="op">=</span> tf.keras.models.Sequential([</span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Conv2D(filters<span class="op">=</span><span class="dv">6</span>, kernel_size<span class="op">=</span><span class="dv">5</span>,</span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>                                       input_shape<span class="op">=</span>(<span class="dv">28</span>, <span class="dv">28</span>, <span class="dv">1</span>)),</span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>                BatchNorm(), tf.keras.layers.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.AvgPool2D(pool_size<span class="op">=</span><span class="dv">2</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Conv2D(filters<span class="op">=</span><span class="dv">16</span>, kernel_size<span class="op">=</span><span class="dv">5</span>),</span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>                BatchNorm(), tf.keras.layers.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.AvgPool2D(pool_size<span class="op">=</span><span class="dv">2</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Flatten(), tf.keras.layers.Dense(<span class="dv">120</span>),</span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>                BatchNorm(), tf.keras.layers.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Dense(<span class="dv">84</span>), BatchNorm(),</span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Dense(num_classes)])</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BNLeNetScratch(d2l.Classifier):</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    lr: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    num_classes: <span class="bu">int</span> <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    training: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> setup(<span class="va">self</span>):</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> nn.Sequential([</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>            nn.Conv(<span class="dv">6</span>, kernel_size<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>)),</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>            BatchNorm(<span class="dv">6</span>, num_dims<span class="op">=</span><span class="dv">4</span>, deterministic<span class="op">=</span><span class="kw">not</span> <span class="va">self</span>.training),</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>            nn.sigmoid,</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>            <span class="kw">lambda</span> x: nn.avg_pool(x, window_shape<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>)),</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>            nn.Conv(<span class="dv">16</span>, kernel_size<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>)),</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>            BatchNorm(<span class="dv">16</span>, num_dims<span class="op">=</span><span class="dv">4</span>, deterministic<span class="op">=</span><span class="kw">not</span> <span class="va">self</span>.training),</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>            nn.sigmoid,</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>            <span class="kw">lambda</span> x: nn.avg_pool(x, window_shape<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>)),</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>            <span class="kw">lambda</span> x: x.reshape((x.shape[<span class="dv">0</span>], <span class="op">-</span><span class="dv">1</span>)),</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>            nn.Dense(<span class="dv">120</span>),</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>            BatchNorm(<span class="dv">120</span>, num_dims<span class="op">=</span><span class="dv">2</span>, deterministic<span class="op">=</span><span class="kw">not</span> <span class="va">self</span>.training),</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>            nn.sigmoid,</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>            nn.Dense(<span class="dv">84</span>),</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>            BatchNorm(<span class="dv">84</span>, num_dims<span class="op">=</span><span class="dv">2</span>, deterministic<span class="op">=</span><span class="kw">not</span> <span class="va">self</span>.training),</span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>            nn.sigmoid,</span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>            nn.Dense(<span class="va">self</span>.num_classes)])</span></code></pre></div>
+<p>:begin_tab:<code>jax</code> Étant donné que les couches
+<code>BatchNorm</code> doivent calculer les statistiques de lot (moyenne
+et variance), Flax assure le suivi du dictionnaire
+<code>batch_stats</code>, en les mettant à jour avec chaque mini-lot.
+Les collections comme <code>batch_stats</code> peuvent être stockées
+dans l’objet <code>TrainState</code> (dans la classe
+<code>d2l.Trainer</code> définie dans la oo-design-training) comme un
+attribut et, lors de la passe avant du modèle, celles-ci doivent être
+passées à l’argument <code>mutable</code>, afin que Flax renvoie les
+variables mutées. :end_tab:</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(d2l.Classifier)  <span class="co">#@save</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="at">@partial</span>(jax.jit, static_argnums<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">5</span>))</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> loss(<span class="va">self</span>, params, X, Y, state, averaged<span class="op">=</span><span class="va">True</span>):</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    Y_hat, updates <span class="op">=</span> state.apply_fn({<span class="st">&#39;params&#39;</span>: params,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>                                     <span class="st">&#39;batch_stats&#39;</span>: state.batch_stats},</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>                                    <span class="op">*</span>X, mutable<span class="op">=</span>[<span class="st">&#39;batch_stats&#39;</span>],</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>                                    rngs<span class="op">=</span>{<span class="st">&#39;dropout&#39;</span>: state.dropout_rng})</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    Y_hat <span class="op">=</span> d2l.reshape(Y_hat, (<span class="op">-</span><span class="dv">1</span>, Y_hat.shape[<span class="op">-</span><span class="dv">1</span>]))</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> d2l.reshape(Y, (<span class="op">-</span><span class="dv">1</span>,))</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    fn <span class="op">=</span> optax.softmax_cross_entropy_with_integer_labels</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (fn(Y_hat, Y).mean(), updates) <span class="cf">if</span> averaged <span class="cf">else</span> (fn(Y_hat, Y), updates)</span></code></pre></div>
+<p>Comme précédemment, nous allons <strong>entraîner notre réseau sur le
+jeu de données Fashion-MNIST</strong>. Ce code est pratiquement
+identique à celui de la première fois que nous avons entraîné LeNet.</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch, jax</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>, num_gpus<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">128</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> BNLeNetScratch(lr<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    model.apply_init([<span class="bu">next</span>(<span class="bu">iter</span>(data.get_dataloader(<span class="va">True</span>)))[<span class="dv">0</span>]], d2l.init_cnn)</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>trainer.fit(model, data)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">128</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> d2l.try_gpu():</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    model <span class="op">=</span> BNLeNetScratch(lr<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    trainer.fit(model, data)</span></code></pre></div>
+<p>Jetons <strong>un coup d’œil au paramètre d’échelle
+<code>gamma</code> et au paramètre de décalage
+<code>beta</code></strong> appris de la première couche de normalisation
+par lots.</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>model.net[<span class="dv">1</span>].gamma.data().reshape(<span class="op">-</span><span class="dv">1</span>,), model.net[<span class="dv">1</span>].beta.data().reshape(<span class="op">-</span><span class="dv">1</span>,)</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>model.net[<span class="dv">1</span>].gamma.reshape((<span class="op">-</span><span class="dv">1</span>,)), model.net[<span class="dv">1</span>].beta.reshape((<span class="op">-</span><span class="dv">1</span>,))</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>tf.reshape(model.net.layers[<span class="dv">1</span>].gamma, (<span class="op">-</span><span class="dv">1</span>,)), tf.reshape(</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    model.net.layers[<span class="dv">1</span>].beta, (<span class="op">-</span><span class="dv">1</span>,))</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>trainer.state.params[<span class="st">&#39;net&#39;</span>][<span class="st">&#39;layers_1&#39;</span>][<span class="st">&#39;gamma&#39;</span>].reshape((<span class="op">-</span><span class="dv">1</span>,)), <span class="op">\</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>trainer.state.params[<span class="st">&#39;net&#39;</span>][<span class="st">&#39;layers_1&#39;</span>][<span class="st">&#39;beta&#39;</span>].reshape((<span class="op">-</span><span class="dv">1</span>,))</span></code></pre></div>
+<h2 id="implémentation-concise"><strong>Implémentation
+concise</strong></h2>
+<p>Par rapport à la classe <code>BatchNorm</code> que nous venons de
+définir nous-mêmes, nous pouvons utiliser directement la classe
+<code>BatchNorm</code> définie dans les API de haut niveau du framework
+d’apprentissage profond. Le code semble pratiquement identique à notre
+implémentation ci-dessus, sauf que nous n’avons plus besoin de fournir
+des arguments supplémentaires pour que les dimensions soient
+correctes.</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, tensorflow, mxnet</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BNLeNet(d2l.Classifier):</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, lr<span class="op">=</span><span class="fl">0.1</span>, num_classes<span class="op">=</span><span class="dv">10</span>):</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net <span class="op">=</span> nn.Sequential()</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.add(</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>                nn.Conv2D(<span class="dv">6</span>, kernel_size<span class="op">=</span><span class="dv">5</span>), nn.BatchNorm(),</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>                nn.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>                nn.AvgPool2D(pool_size<span class="op">=</span><span class="dv">2</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>                nn.Conv2D(<span class="dv">16</span>, kernel_size<span class="op">=</span><span class="dv">5</span>), nn.BatchNorm(),</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>                nn.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>                nn.AvgPool2D(pool_size<span class="op">=</span><span class="dv">2</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>                nn.Dense(<span class="dv">120</span>), nn.BatchNorm(), nn.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>                nn.Dense(<span class="dv">84</span>), nn.BatchNorm(), nn.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a>                nn.Dense(num_classes))</span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.initialize()</span>
+<span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb23-20"><a href="#cb23-20" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net <span class="op">=</span> nn.Sequential(</span>
+<span id="cb23-21"><a href="#cb23-21" aria-hidden="true" tabindex="-1"></a>                nn.LazyConv2d(<span class="dv">6</span>, kernel_size<span class="op">=</span><span class="dv">5</span>), nn.LazyBatchNorm2d(),</span>
+<span id="cb23-22"><a href="#cb23-22" aria-hidden="true" tabindex="-1"></a>                nn.Sigmoid(), nn.AvgPool2d(kernel_size<span class="op">=</span><span class="dv">2</span>, stride<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb23-23"><a href="#cb23-23" aria-hidden="true" tabindex="-1"></a>                nn.LazyConv2d(<span class="dv">16</span>, kernel_size<span class="op">=</span><span class="dv">5</span>), nn.LazyBatchNorm2d(),</span>
+<span id="cb23-24"><a href="#cb23-24" aria-hidden="true" tabindex="-1"></a>                nn.Sigmoid(), nn.AvgPool2d(kernel_size<span class="op">=</span><span class="dv">2</span>, stride<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb23-25"><a href="#cb23-25" aria-hidden="true" tabindex="-1"></a>                nn.Flatten(), nn.LazyLinear(<span class="dv">120</span>), nn.LazyBatchNorm1d(),</span>
+<span id="cb23-26"><a href="#cb23-26" aria-hidden="true" tabindex="-1"></a>                nn.Sigmoid(), nn.LazyLinear(<span class="dv">84</span>), nn.LazyBatchNorm1d(),</span>
+<span id="cb23-27"><a href="#cb23-27" aria-hidden="true" tabindex="-1"></a>                nn.Sigmoid(), nn.LazyLinear(num_classes))</span>
+<span id="cb23-28"><a href="#cb23-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb23-29"><a href="#cb23-29" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net <span class="op">=</span> tf.keras.models.Sequential([</span>
+<span id="cb23-30"><a href="#cb23-30" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Conv2D(filters<span class="op">=</span><span class="dv">6</span>, kernel_size<span class="op">=</span><span class="dv">5</span>,</span>
+<span id="cb23-31"><a href="#cb23-31" aria-hidden="true" tabindex="-1"></a>                                       input_shape<span class="op">=</span>(<span class="dv">28</span>, <span class="dv">28</span>, <span class="dv">1</span>)),</span>
+<span id="cb23-32"><a href="#cb23-32" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.BatchNormalization(),</span>
+<span id="cb23-33"><a href="#cb23-33" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb23-34"><a href="#cb23-34" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.AvgPool2D(pool_size<span class="op">=</span><span class="dv">2</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb23-35"><a href="#cb23-35" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Conv2D(filters<span class="op">=</span><span class="dv">16</span>, kernel_size<span class="op">=</span><span class="dv">5</span>),</span>
+<span id="cb23-36"><a href="#cb23-36" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.BatchNormalization(),</span>
+<span id="cb23-37"><a href="#cb23-37" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb23-38"><a href="#cb23-38" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.AvgPool2D(pool_size<span class="op">=</span><span class="dv">2</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb23-39"><a href="#cb23-39" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Flatten(), tf.keras.layers.Dense(<span class="dv">120</span>),</span>
+<span id="cb23-40"><a href="#cb23-40" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.BatchNormalization(),</span>
+<span id="cb23-41"><a href="#cb23-41" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb23-42"><a href="#cb23-42" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Dense(<span class="dv">84</span>),</span>
+<span id="cb23-43"><a href="#cb23-43" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.BatchNormalization(),</span>
+<span id="cb23-44"><a href="#cb23-44" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Activation(<span class="st">&#39;sigmoid&#39;</span>),</span>
+<span id="cb23-45"><a href="#cb23-45" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Dense(num_classes)])</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BNLeNet(d2l.Classifier):</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    lr: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    num_classes: <span class="bu">int</span> <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    training: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> setup(<span class="va">self</span>):</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> nn.Sequential([</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>            nn.Conv(<span class="dv">6</span>, kernel_size<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>)),</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>            nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training),</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>            nn.sigmoid,</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>            <span class="kw">lambda</span> x: nn.avg_pool(x, window_shape<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>)),</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>            nn.Conv(<span class="dv">16</span>, kernel_size<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>)),</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>            nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training),</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>            nn.sigmoid,</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>            <span class="kw">lambda</span> x: nn.avg_pool(x, window_shape<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>)),</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>            <span class="kw">lambda</span> x: x.reshape((x.shape[<span class="dv">0</span>], <span class="op">-</span><span class="dv">1</span>)),</span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>            nn.Dense(<span class="dv">120</span>),</span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>            nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training),</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>            nn.sigmoid,</span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>            nn.Dense(<span class="dv">84</span>),</span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>            nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training),</span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>            nn.sigmoid,</span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>            nn.Dense(<span class="va">self</span>.num_classes)])</span></code></pre></div>
+<p>Ci-dessous, nous <strong>utilisons les mêmes hyperparamètres pour
+entraîner notre modèle.</strong> Notez que, comme d’habitude, la
+variante de l’API de haut niveau s’exécute beaucoup plus rapidement car
+son code a été compilé en C++ ou CUDA tandis que notre implémentation
+personnalisée doit être interprétée par Python.</p>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch, jax</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>, num_gpus<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">128</span>)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> BNLeNet(lr<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    model.apply_init([<span class="bu">next</span>(<span class="bu">iter</span>(data.get_dataloader(<span class="va">True</span>)))[<span class="dv">0</span>]], d2l.init_cnn)</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>trainer.fit(model, data)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">128</span>)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> d2l.try_gpu():</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    model <span class="op">=</span> BNLeNet(lr<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    trainer.fit(model, data)</span></code></pre></div>
+<h2 id="discussion">Discussion</h2>
+<p>Intuitivement, on pense que la normalisation par lots rend le paysage
+d’optimisation plus lisse. Cependant, nous devons faire attention à
+distinguer les intuitions spéculatives des véritables explications des
+phénomènes que nous observons lors de l’entraînement de modèles
+profonds. Rappelez-vous que nous ne savons même pas pourquoi les réseaux
+de neurones profonds plus simples (MLP et CNN conventionnels)
+généralisent bien en premier lieu. Même avec le dropout et le déclin des
+poids (weight decay), ils restent si flexibles que leur capacité à
+généraliser à des données invisibles nécessite probablement des
+garanties de généralisation théorique bien plus raffinées.</p>
+<p>L’article original proposant la normalisation par lots
+[Ioffe.Szegedy.2015], en plus d’introduire un outil puissant et utile,
+proposait une explication sur la raison pour laquelle elle fonctionne :
+en réduisant le <em>décalage de covariable interne</em> (internal
+covariate shift). Vraisemblablement, par <em>décalage de covariable
+interne</em>, ils entendaient quelque chose comme l’intuition exprimée
+ci-dessus — la notion que la distribution des valeurs des variables
+change au cours de l’entraînement. Cependant, deux problèmes se posaient
+avec cette explication : i) Cette dérive est très différente du
+<em>décalage de covariable</em>, ce qui fait du nom un abus de langage.
+Si quoi que ce soit, elle est plus proche de la dérive de concept
+(concept drift). ii) L’explication offre une intuition sous-spécifiée
+mais laisse la question de <em>pourquoi précisément cette technique
+fonctionne</em> en suspens, en attente d’une explication rigoureuse.
+Tout au long de ce livre, nous visons à transmettre les intuitions que
+les praticiens utilisent pour guider leur développement de réseaux de
+neurones profonds. Cependant, nous pensons qu’il est important de
+séparer ces intuitions directrices des faits scientifiques établis. À
+terme, lorsque vous maîtriserez ce sujet et commencerez à rédiger vos
+propres articles de recherche, vous voudrez délimiter clairement entre
+les affirmations techniques et les intuitions.</p>
+<p>Suite au succès de la normalisation par lots, son explication en
+termes de <em>décalage de covariable interne</em> a refait surface à
+plusieurs reprises dans les débats de la littérature technique et dans
+le discours plus large sur la manière de présenter la recherche en
+apprentissage automatique. Dans un discours mémorable prononcé lors de
+la remise d’un Test of Time Award à la conférence NeurIPS 2017, Ali
+Rahimi a utilisé le <em>décalage de covariable interne</em> comme point
+central d’un argument comparant la pratique moderne de l’apprentissage
+profond à l’alchimie. Par la suite, l’exemple a été réexaminé en détail
+dans un document de position soulignant des tendances troublantes dans
+l’apprentissage automatique [Lipton.Steinhardt.2018]. D’autres auteurs
+ont proposé des explications alternatives au succès de la normalisation
+par lots, certains [Santurkar.Tsipras.Ilyas.ea.2018] affirmant que le
+succès de la normalisation par lots survient malgré un comportement qui
+est à certains égards opposé à ceux revendiqués dans l’article
+original.</p>
+<p>Nous notons que le <em>décalage de covariable interne</em> n’est pas
+plus digne de critique que n’importe laquelle des milliers
+d’affirmations tout aussi vagues faites chaque année dans la littérature
+technique de l’apprentissage automatique. Vraisemblablement, sa
+résonance en tant que point focal de ces débats tient à sa grande
+reconnaissance auprès du public cible. La normalisation par lots s’est
+avérée être une méthode indispensable, appliquée dans presque tous les
+classificateurs d’images déployés, valant à l’article qui a introduit la
+technique des dizaines de milliers de citations. Nous conjecturons
+cependant que les principes directeurs de régularisation par injection
+de bruit, d’accélération par redimensionnement et enfin de prétraitement
+pourraient bien mener à d’autres inventions de couches et de techniques
+à l’avenir.</p>
+<p>Sur une note plus pratique, il y a un certain nombre d’aspects dont
+il vaut la peine de se souvenir concernant la normalisation par lots
+:</p>
+<ul>
+<li>Pendant l’entraînement du modèle, la normalisation par lots ajuste
+continuellement la sortie intermédiaire du réseau en utilisant la
+moyenne et l’écart-type du mini-lot, de sorte que les valeurs de la
+sortie intermédiaire de chaque couche dans tout le réseau de neurones
+soient plus stables.</li>
+<li>La normalisation par lots est légèrement différente pour les couches
+entièrement connectées que pour les couches convolutives. En fait, pour
+les couches convolutives, la normalisation par couche peut parfois être
+utilisée comme alternative.</li>
+<li>Comme une couche de dropout, les couches de normalisation par lots
+ont des comportements différents en mode entraînement qu’en mode
+prédiction.</li>
+<li>La normalisation par lots est utile pour la régularisation et
+l’amélioration de la convergence dans l’optimisation. En revanche, la
+motivation originale de réduire le décalage de covariable interne ne
+semble pas être une explication valide.</li>
+<li>Pour des modèles plus robustes et moins sensibles aux perturbations
+d’entrée, envisagez de supprimer la normalisation par lots
+[wang2022removing].</li>
+</ul>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Devrions-nous supprimer le paramètre de biais de la couche
+entièrement connectée ou de la couche convolutive avant la normalisation
+par lots ? Pourquoi ?</li>
+<li>Comparez les taux d’apprentissage pour LeNet avec et sans
+normalisation par lots.
+<ol type="1">
+<li>Tracez l’augmentation de la précision de validation.</li>
+<li>Jusqu’à quel point pouvez-vous augmenter le taux d’apprentissage
+avant que l’optimisation n’échoue dans les deux cas ?</li>
+</ol></li>
+<li>Avons-nous besoin d’une normalisation par lots dans chaque couche ?
+Expérimentez-le.</li>
+<li>Implémentez une version “allégée” (lite) de la normalisation par
+lots qui ne supprime que la moyenne, ou alternativement une qui ne
+supprime que la variance. Comment se comporte-t-elle ?</li>
+<li>Fixez les paramètres <code>beta</code> et <code>gamma</code>.
+Observez et analysez les résultats.</li>
+<li>Pouvez-vous remplacer le dropout par la normalisation par lots ?
+Comment le comportement change-t-il ?</li>
+<li>Idées de recherche : pensez à d’autres transformations de
+normalisation que vous pouvez appliquer :
+<ol type="1">
+<li>Pouvez-vous appliquer la transformation intégrale de probabilité
+?</li>
+<li>Pouvez-vous utiliser une estimation de covariance de rang plein ?
+Pourquoi devriez-vous probablement éviter cela ?</li>
+<li>Pouvez-vous utiliser d’autres variantes de matrices compactes
+(bloc-diagonale, de rang à faible déplacement, Monarch, etc.) ?</li>
+<li>Est-ce qu’une compression par sparsification agit comme un
+régularisateur ?</li>
+<li>Existe-t-il d’autres projections (par exemple, cône convexe,
+transformations spécifiques à un groupe de symétrie) que vous pouvez
+utiliser ?</li>
+</ol></li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/83">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/84">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/330">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/18005">Discussions</a> :end_tab:</p>
+<div class="navlinks"><a class="prev" href="googlenet.html">&larr; Réseaux à branches multiples (GoogLeNet)</a><a class="next" href="resnet.html">Réseaux résiduels (ResNet) et ResNeXt &rarr;</a></div></main></div></body></html>

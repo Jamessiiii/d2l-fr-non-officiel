@@ -1,0 +1,603 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Réseaux de neurones convolutifs profonds (AlexNet) - Dive into Deep Learning FR</title><link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid #d8dee4;padding:24px 18px;background:#f6f8fa;position:sticky;top:0;height:100vh;overflow:auto}.sidebar h1{font-size:16px;margin:0 0 16px}.sidebar ol{padding-left:22px;line-height:1.55}.sidebar a,.navlinks a{color:#245a9c;text-decoration:none}.content{max-width:980px;padding:32px 44px 56px}.navlinks{display:flex;justify-content:space-between;gap:20px;margin:28px 0}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}img{max-width:100%;height:auto}@media(max-width:760px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid #d8dee4}.content{padding:24px 18px 42px}}</style></head><body><div class="layout"><nav class="sidebar"><h1><a href="../index.html">D2L français</a></h1><ol><li><a href="index.html">Réseaux de neurones convolutifs modernes</a></li>
+<li><a href="alexnet.html">Réseaux de neurones convolutifs profonds (AlexNet)</a></li>
+<li><a href="vgg.html">Réseaux utilisant des blocs (VGG)</a></li>
+<li><a href="nin.html">Network in Network (NiN)</a></li>
+<li><a href="googlenet.html">Réseaux à branches multiples (GoogLeNet)</a></li>
+<li><a href="batch-norm.html">Normalisation par lots</a></li>
+<li><a href="resnet.html">Réseaux résiduels (ResNet) et ResNeXt</a></li>
+<li><a href="densenet.html">Réseaux à connexions denses (DenseNet)</a></li>
+<li><a href="cnn-design.html">Conception d&#x27;architectures de réseaux de neurones convolutifs</a></li></ol></nav><main class="content"><div class="navlinks"><a class="prev" href="index.html">&larr; Réseaux de neurones convolutifs modernes</a><a class="next" href="vgg.html">Réseaux utilisant des blocs (VGG) &rarr;</a></div><div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="réseaux-de-neurones-convolutifs-profonds-alexnet">Réseaux de
+neurones convolutifs profonds (AlexNet)</h1>
+<p><a id="sec_alexnet"></a> Bien que les CNN fussent bien connus dans
+les communautés de vision par ordinateur et d’apprentissage automatique
+suite à l’introduction de LeNet [LeCun.Jackel.Bottou.ea.1995], ils n’ont
+pas immédiatement dominé le domaine. Bien que LeNet ait obtenu de bons
+résultats sur de petits jeux de données précoces, la performance et la
+faisabilité de l’entraînement des CNN sur des jeux de données plus
+grands et plus réalistes restaient à établir. En fait, pendant une
+grande partie du temps écoulé entre le début des années 1990 et les
+résultats décisifs de 2012 [Krizhevsky.Sutskever.Hinton.2012], les
+réseaux de neurones étaient souvent surpassés par d’autres méthodes
+d’apprentissage automatique, telles que les méthodes à noyau
+[Scholkopf.Smola.2002], les méthodes d’ensemble
+[Freund.Schapire.ea.1996] et l’estimation structurée
+[Taskar.Guestrin.Koller.2004].</p>
+<p>Pour la vision par ordinateur, cette comparaison n’est peut-être pas
+tout à fait exacte. C’est-à-dire que, bien que les entrées des réseaux
+convolutifs consistent en des valeurs de pixels brutes ou légèrement
+traitées (par exemple, par centrage), les praticiens ne fourniraient
+jamais de pixels bruts à des modèles traditionnels. Au lieu de cela, les
+pipelines de vision par ordinateur typiques consistaient à concevoir
+manuellement des pipelines d’extraction de caractéristiques, tels que
+SIFT [Lowe.2004], SURF [Bay.Tuytelaars.Van-Gool.2006] et les sacs de
+mots visuels [Sivic.Zisserman.2003]. Plutôt que d’ <em>apprendre</em>
+les caractéristiques, celles-ci étaient <em>conçues</em>. La majeure
+partie des progrès provenait d’idées plus ingénieuses pour l’extraction
+de caractéristiques d’une part, et d’une compréhension approfondie de la
+géométrie [Hartley.Zisserman.2000] d’autre part. L’algorithme
+d’apprentissage était souvent considéré comme une réflexion après
+coup.</p>
+<p>Bien que certains accélérateurs de réseaux de neurones fussent
+disponibles dans les années 1990, ils n’étaient pas encore suffisamment
+puissants pour créer des CNN profonds multicanaux et multicouches avec
+un grand nombre de paramètres. Par exemple, la GeForce 256 de NVIDIA de
+1999 était capable de traiter au plus 480 millions d’opérations en
+virgule flottante, telles que des additions et des multiplications, par
+seconde (MFLOPS), sans aucun cadre de programmation significatif pour
+des opérations au-delà des jeux. Les accélérateurs d’aujourd’hui sont
+capables de réaliser plus de 1000 TFLOPS par appareil. De plus, les jeux
+de données étaient encore relativement petits : l’OCR sur 60 000 images
+de basse résolution de <span class="math inline">\(28 \times 28\)</span>
+pixels était considéré comme une tâche extrêmement difficile. À ces
+obstacles s’ajoutaient des astuces clés pour l’entraînement des réseaux
+de neurones, notamment les heuristiques d’initialisation des paramètres
+[Glorot.Bengio.2010], les variantes astucieuses de la descente de
+gradient stochastique [Kingma.Ba.2014], les fonctions d’activation non
+écrasantes [Nair.Hinton.2010] et les techniques de régularisation
+efficaces [Srivastava.Hinton.Krizhevsky.ea.2014], qui manquaient
+encore.</p>
+<p>Ainsi, plutôt que d’entraîner des systèmes <em>de bout en bout</em>
+(du pixel à la classification), les pipelines classiques ressemblaient
+davantage à ceci :</p>
+<ol type="1">
+<li>Obtenir un jeu de données intéressant. À l’époque, ces jeux de
+données nécessitaient des capteurs coûteux. Par exemple, l’ <a
+href="https://en.wikipedia.org/wiki/Apple_QuickTake">Apple QuickTake
+100</a> de 1994 arborait une résolution impressionnante de 0,3 mégapixel
+(VGA), capable de stocker jusqu’à 8 images, le tout pour un prix de 1000
+$.</li>
+<li>Prétraiter le jeu de données avec des caractéristiques conçues à la
+main basées sur certaines connaissances en optique, géométrie, d’autres
+outils analytiques, et occasionnellement sur les découvertes fortuites
+d’étudiants diplômés chanceux.</li>
+<li>Faire passer les données par un ensemble standard d’extracteurs de
+caractéristiques tels que le SIFT (scale-invariant feature transform)
+[Lowe.2004], le SURF (speeded up robust features)
+[Bay.Tuytelaars.Van-Gool.2006], ou n’importe quel autre nombre de
+pipelines réglés à la main. OpenCV fournit toujours des extracteurs SIFT
+à ce jour !</li>
+<li>Envoyer les représentations résultantes dans votre classificateur
+préféré, probablement un modèle linéaire ou une méthode à noyau, pour
+entraîner un classificateur.</li>
+</ol>
+<p>Si vous parliez à des chercheurs en apprentissage automatique, ils
+vous répondraient que l’apprentissage automatique était à la fois
+important et beau. Des théories élégantes prouvaient les propriétés de
+divers classificateurs [boucheron2005theory] et l’optimisation convexe
+[Boyd.Vandenberghe.2004] était devenue le pilier pour les obtenir. Le
+domaine de l’apprentissage automatique était florissant, rigoureux et
+éminemment utile. Cependant, si vous parliez à un chercheur en vision
+par ordinateur, vous entendriez une histoire très différente. La sale
+vérité de la reconnaissance d’images, vous diraient-ils, est que les
+caractéristiques, la géométrie
+[Hartley.Zisserman.2000,hartley2009global] et l’ingénierie, plutôt que
+de nouveaux algorithmes d’apprentissage, stimulaient les progrès. Les
+chercheurs en vision par ordinateur croyaient à juste titre qu’un jeu de
+données légèrement plus grand ou plus propre, ou un pipeline
+d’extraction de caractéristiques légèrement amélioré, importait bien
+plus pour la précision finale que n’importe quel algorithme
+d’apprentissage.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> np, init, npx</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet.gluon <span class="im">import</span> nn</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flax <span class="im">import</span> linen <span class="im">as</span> nn</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span></code></pre></div>
+<h2 id="apprentissage-de-représentations">Apprentissage de
+représentations</h2>
+<p>Une autre façon de présenter l’état des lieux est que la partie la
+plus importante du pipeline était la représentation. Et jusqu’en 2012,
+la représentation était calculée principalement de manière mécanique. En
+fait, la conception d’un nouvel ensemble de fonctions de
+caractéristiques, l’amélioration des résultats et la rédaction de la
+méthode figuraient en bonne place dans les articles. SIFT [Lowe.2004],
+SURF [Bay.Tuytelaars.Van-Gool.2006], HOG (histogrammes de gradients
+orientés) [Dalal.Triggs.2005], les sacs de mots visuels
+[Sivic.Zisserman.2003] et des extracteurs de caractéristiques similaires
+régnaient en maîtres.</p>
+<p>Un autre groupe de chercheurs, dont Yann LeCun, Geoff Hinton, Yoshua
+Bengio, Andrew Ng, Shun-ichi Amari et Juergen Schmidhuber, avait
+d’autres projets. Ils pensaient que les caractéristiques elles-mêmes
+devaient être apprises. De plus, ils estimaient que pour être
+raisonnablement complexes, les caractéristiques devaient être composées
+hiérarchiquement avec plusieurs couches apprises conjointement, chacune
+ayant des paramètres apprenables. Dans le cas d’une image, les couches
+les plus basses pourraient en venir à détecter des bords, des couleurs
+et des textures, par analogie avec la façon dont le système visuel chez
+les animaux traite son entrée. En particulier, la conception automatique
+de caractéristiques visuelles telles que celles obtenues par le codage
+parcimonieux [olshausen1996emergence] est restée un défi ouvert jusqu’à
+l’avènement des CNN modernes. Ce n’est qu’avec
+[Dean.Corrado.Monga.ea.2012,le2013building] que l’idée de générer
+automatiquement des caractéristiques à partir de données d’image a gagné
+un terrain significatif.</p>
+<p>Le premier CNN moderne [Krizhevsky.Sutskever.Hinton.2012], nommé
+<em>AlexNet</em> d’après l’un de ses inventeurs, Alex Krizhevsky, est en
+grande partie une amélioration évolutive de LeNet. Il a obtenu
+d’excellentes performances lors du défi ImageNet de 2012.</p>
+<p><img src="img/filters.png"
+alt="Filtres d’images appris par la première couche d’AlexNet. Reproduction avec l’aimable autorisation de [Krizhevsky.Sutskever.Hinton.2012]." />
+:width:<code>400px</code> <a id="fig_filters"></a> Il est intéressant de
+noter que dans les couches les plus basses du réseau, le modèle a appris
+des extracteurs de caractéristiques qui ressemblaient à certains filtres
+traditionnels. La fig_filters montre des descripteurs d’image de bas
+niveau. Les couches supérieures du réseau pourraient s’appuyer sur ces
+représentations pour représenter des structures plus grandes, comme des
+yeux, des nez, des brins d’herbe, etc. Des couches encore plus élevées
+pourraient représenter des objets entiers comme des personnes, des
+avions, des chiens ou des frisbees. En fin de compte, l’état caché final
+apprend une représentation compacte de l’image que résume son contenu de
+telle sorte que les données appartenant à différentes catégories
+puissent être facilement séparées.</p>
+<p>AlexNet (2012) et son précurseur LeNet (1995) partagent de nombreux
+éléments architecturaux. Cela pose la question : pourquoi cela a-t-il
+pris autant de temps ? Une différence clé est que, au cours des deux
+décennies précédentes, la quantité de données et la puissance de calcul
+disponibles avaient considérablement augmenté. En tant que tel, AlexNet
+était beaucoup plus grand : il a été entraîné sur beaucoup plus de
+données, et sur des GPU beaucoup plus rapides par rapport aux CPU
+disponibles en 1995.</p>
+<h3 id="ingrédient-manquant-les-données">Ingrédient manquant : les
+données</h3>
+<p>Les modèles profonds comportant de nombreuses couches nécessitent de
+grandes quantités de données pour entrer dans le régime où ils
+surpassent de manière significative les méthodes traditionnelles basées
+sur des optimisations convexes (par exemple, les méthodes linéaires et à
+noyau). Cependant, étant donné la capacité de stockage limitée des
+ordinateurs, le coût relatif des capteurs (d’imagerie) et les budgets de
+recherche comparativement plus serrés dans les années 1990, la plupart
+des recherches s’appuyaient sur de minuscules jeux de données. De
+nombreux articles s’appuyaient sur la collection de jeux de données UCI,
+dont beaucoup ne contenaient que des centaines ou (quelques) milliers
+d’images capturées en basse résolution et souvent avec un arrière-plan
+artificiellement propre.</p>
+<p>En 2009, le jeu de données ImageNet a été publié
+[Deng.Dong.Socher.ea.2009], mettant au défi les chercheurs d’apprendre
+des modèles à partir d’un million d’exemples, 1000 pour chacune des 1000
+catégories distinctes d’objets. Les catégories elles-mêmes étaient
+basées sur les nœuds de noms les plus populaires de WordNet
+[Miller.1995]. L’équipe d’ImageNet a utilisé Google Image Search pour
+pré-filtrer de grands ensembles de candidats pour chaque catégorie et a
+employé le pipeline de crowdsourcing Amazon Mechanical Turk pour
+confirmer pour chaque image si elle appartenait à la catégorie associée.
+Cette échelle était sans précédent, dépassant les autres de plus d’un
+ordre de grandeur (par exemple, CIFAR-100 compte 60 000 images). Un
+autre aspect était que les images avaient une résolution relativement
+élevée de <span class="math inline">\(224 \times 224\)</span> pixels,
+contrairement au jeu de données TinyImages de 80 millions d’images
+[Torralba.Fergus.Freeman.2008], composé de vignettes de <span
+class="math inline">\(32 \times 32\)</span> pixels. Cela a permis la
+formation de caractéristiques de plus haut niveau. La compétition
+associée, surnommée le ImageNet Large Scale Visual Recognition Challenge
+[russakovsky2015imagenet], a fait progresser la recherche en vision par
+ordinateur et en apprentissage automatique, mettant les chercheurs au
+défi d’identifier quels modèles étaient les plus performants à une
+échelle plus grande que ce que les universitaires avaient précédemment
+envisagé. Les jeux de données de vision les plus vastes, tels que
+LAION-5B [schuhmann2022laion], contiennent des milliards d’images avec
+des métadonnées supplémentaires.</p>
+<h3 id="ingrédient-manquant-le-matériel">Ingrédient manquant : le
+matériel</h3>
+<p>Les modèles d’apprentissage profond sont de voraces consommateurs de
+cycles de calcul. L’entraînement peut prendre des centaines d’époques,
+et chaque itération nécessite de faire passer les données par de
+nombreuses couches d’opérations d’algèbre linéaire coûteuses en calcul.
+C’est l’une des raisons principales pour lesquelles, dans les années
+1990 et au début des années 2000, les algorithmes simples basés sur des
+objectifs convexes optimisés plus efficacement étaient préférés.</p>
+<p>Les <em>processeurs graphiques</em> (GPU) se sont avérés être un
+changement de donne pour rendre l’apprentissage profond réalisable. Ces
+puces avaient été développées plus tôt pour accélérer le traitement
+graphique au profit des jeux vidéo. En particulier, elles ont été
+optimisées pour un débit élevé de produits matrice-vecteur <span
+class="math inline">\(4 \times 4\)</span>, qui sont nécessaires pour de
+nombreuses tâches d’infographie. Heureusement, les mathématiques sont
+étonnamment similaires à celles requises pour le calcul des couches
+convolutives. Vers cette époque, NVIDIA et ATI avaient commencé à
+optimiser les GPU pour les opérations informatiques générales
+[Fernando.2004], allant jusqu’à les commercialiser en tant que <em>GPU à
+usage général</em> (GPGPU).</p>
+<p>Pour donner une certaine intuition, considérons les cœurs d’un
+microprocesseur moderne (CPU). Chacun des cœurs est assez puissant,
+fonctionnant à une fréquence d’horloge élevée et arborant de grands
+caches (jusqu’à plusieurs mégaoctets de L3). Chaque cœur est bien adapté
+à l’exécution d’une large gamme d’instructions, avec des prédicteurs de
+branchement, un pipeline profond, des unités d’exécution spécialisées,
+une exécution spéculative et de nombreux autres accessoires qui lui
+permettent d’exécuter une grande variété de programmes avec un flux de
+contrôle sophistiqué. Cette force apparente est cependant aussi son
+talon d’Achille : les cœurs à usage général sont très coûteux à
+construire. Ils excellent dans le code à usage général avec beaucoup de
+flux de contrôle. Cela nécessite beaucoup de surface de puce, non
+seulement pour l’ALU (unité arithmétique et logique) réelle où le calcul
+se produit, mais aussi pour tous les accessoires susmentionnés, plus les
+interfaces mémoire, la logique de mise en cache entre les cœurs, les
+interconnexions à haute vitesse, et ainsi de suite. Les CPU sont
+comparativement mauvais dans n’importe quelle tâche unique par rapport
+au matériel dédié. Les ordinateurs portables modernes ont 4 à 8 cœurs,
+et même les serveurs haut de gamme dépassent rarement 64 cœurs par
+support, simplement parce que ce n’est pas rentable.</p>
+<p>En comparaison, les GPU peuvent être constitués de milliers de petits
+éléments de traitement (les dernières puces Ampere de NVIDIA ont jusqu’à
+6912 cœurs CUDA), souvent regroupés en groupes plus importants (NVIDIA
+les appelle des <em>warps</em>). Les détails diffèrent quelque peu entre
+NVIDIA, AMD, ARM et d’autres fabricants de puces. Bien que chaque cœur
+soit relativement faible, fonctionnant à une fréquence d’horloge
+d’environ 1 GHz, c’est le nombre total de ces cœurs qui rend les GPU des
+ordres de grandeur plus rapides que les CPU. Par exemple, le récent GPU
+Ampere A100 de NVIDIA offre plus de 300 TFLOPS par puce pour les
+multiplications matrice-matrice spécialisées en précision 16 bits
+(BFLOAT16), et jusqu’à 20 TFLOPS pour les opérations en virgule
+flottante plus générales (FP32). Dans le même temps, les performances en
+virgule flottante des CPU dépassent rarement 1 TFLOPS. Par exemple, le
+Graviton 3 d’Amazon atteint une performance de pointe de 2 TFLOPS pour
+les opérations en précision 16 bits, un nombre similaire à la
+performance GPU du processeur M1 d’Apple.</p>
+<p>Il existe de nombreuses raisons pour lesquelles les GPU sont beaucoup
+plus rapides que les CPU en termes de FLOPS. Premièrement, la
+consommation d’énergie a tendance à croître de manière
+<em>quadratique</em> avec la fréquence d’horloge. Par conséquent, pour
+le budget énergétique d’un cœur de CPU fonctionnant quatre fois plus
+vite (un nombre typique), vous pouvez utiliser 16 cœurs de GPU à <span
+class="math inline">\(\frac{1}{4}\)</span> de la vitesse, ce qui donne
+<span class="math inline">\(16 \times \frac{1}{4} = 4\)</span> fois la
+performance. Deuxièmement, les cœurs de GPU sont beaucoup plus simples
+(en fait, pendant longtemps, ils n’étaient même pas <em>capables</em>
+d’exécuter du code à usage général), ce qui les rend plus économes en
+énergie. Par exemple, (i) ils n’ont pas tendance à prendre en charge
+l’évaluation spéculative, (ii) il n’est généralement pas possible de
+programmer chaque élément de traitement individuellement, et (iii) les
+caches par cœur ont tendance à être beaucoup plus petits. Enfin, de
+nombreuses opérations d’apprentissage profond nécessitent une large
+bande passante mémoire. Là encore, les GPU brillent ici avec des bus qui
+sont au moins 10 fois plus larges que ceux de nombreux CPU.</p>
+<p>Retour en 2012. Une percée majeure a eu lieu lorsque Alex Krizhevsky
+et Ilya Sutskever ont implémenté un CNN profond capable de fonctionner
+sur des GPU. Ils ont réalisé que les goulots d’étranglement
+informatiques dans les CNN, les convolutions et les multiplications de
+matrices, sont toutes des opérations qui pourraient être parallélisées
+dans le matériel. En utilisant deux NVIDIA GTX 580s avec 3 Go de
+mémoire, dont chacune était capable de 1,5 TFLOPS (toujours un défi pour
+la plupart des CPU une décennie plus tard), ils ont implémenté des
+convolutions rapides. Le code <a
+href="https://code.google.com/archive/p/cuda-convnet/">cuda-convnet</a>
+était assez bon pour être pendant plusieurs années la norme de
+l’industrie et a alimenté les deux premières années du boom de
+l’apprentissage profond.</p>
+<h2 id="alexnet">AlexNet</h2>
+<p>AlexNet, qui employait un CNN à 8 couches, a remporté le ImageNet
+Large Scale Visual Recognition Challenge 2012 avec une marge importante
+[Russakovsky.Deng.Huang.ea.2013]. Ce réseau a montré, pour la première
+fois, que les caractéristiques obtenues par apprentissage peuvent
+transcender les caractéristiques conçues manuellement, brisant le
+paradigme précédent en vision par ordinateur.</p>
+<p>Les architectures d’AlexNet et de LeNet sont étonnamment similaires,
+comme l’illustre la fig_alexnet. Notez que nous fournissons une version
+légèrement simplifiée d’AlexNet, en supprimant certaines des
+particularités de conception qui étaient nécessaires en 2012 pour faire
+tenir le modèle sur deux petits GPU.</p>
+<p><img src="img/alexnet.svg"
+alt="De LeNet (à gauche) à AlexNet (à droite)." />
+<a id="fig_alexnet"></a> Il existe également des différences
+significatives entre AlexNet et LeNet. Premièrement, AlexNet est
+beaucoup plus profond que le LeNet-5, relativement petit. AlexNet se
+compose de huit couches : cinq couches convolutives, deux couches
+cachées entièrement connectées et une couche de sortie entièrement
+connectée. Deuxièmement, AlexNet a utilisé la ReLU au lieu de la
+sigmoïde comme fonction d’activation. Plongeons dans les détails
+ci-dessous.</p>
+<h3 id="architecture">Architecture</h3>
+<p>Dans la première couche d’AlexNet, la forme de la fenêtre de
+convolution est de <span class="math inline">\(11 \times 11\)</span>.
+Étant donné que les images d’ImageNet sont huit fois plus hautes et plus
+larges que les images MNIST, les objets dans les données ImageNet ont
+tendance à occuper plus de pixels avec plus de détails visuels. Par
+conséquent, une fenêtre de convolution plus grande est nécessaire pour
+capturer l’objet. La forme de la fenêtre de convolution dans la deuxième
+couche est réduite à <span class="math inline">\(5 \times 5\)</span>,
+puis à <span class="math inline">\(3 \times 3\)</span>. De plus, après
+les première, deuxième et cinquième couches convolutives, le réseau
+ajoute des couches de regroupement maximal (<em>max-pooling</em>) avec
+une forme de fenêtre de <span class="math inline">\(3 \times 3\)</span>
+et une foulée de 2. De plus, AlexNet possède dix fois plus de canaux de
+convolution que LeNet.</p>
+<p>Après la dernière couche convolutive, il y a deux énormes couches
+entièrement connectées avec 4096 sorties. Ces couches nécessitent près
+de 1 Go de paramètres de modèle. En raison de la mémoire limitée des
+premiers GPU, l’AlexNet original utilisait une conception à double flux
+de données, de sorte que chacun de leurs deux GPU puisse être
+responsable du stockage et du calcul de seulement sa moitié du modèle.
+Heureusement, la mémoire GPU est comparativement abondante aujourd’hui,
+nous avons donc rarement besoin de diviser les modèles entre les GPU de
+nos jours (notre version du modèle AlexNet s’écarte de l’article
+original sur ce point).</p>
+<h3 id="fonctions-dactivation">Fonctions d’activation</h3>
+<p>De plus, AlexNet a remplacé la fonction d’activation sigmoïde par une
+fonction d’activation ReLU plus simple. D’une part, le calcul de la
+fonction d’activation ReLU est plus simple. Par exemple, elle ne
+comporte pas l’opération d’exponentiation présente dans la fonction
+d’activation sigmoïde. D’autre part, la fonction d’activation ReLU
+facilite l’entraînement du modèle lors de l’utilisation de différentes
+méthodes d’initialisation des paramètres. En effet, lorsque la sortie de
+la fonction d’activation sigmoïde est très proche de 0 ou 1, le gradient
+de ces régions est presque nul, de sorte que la rétropropagation ne peut
+pas continuer à mettre à jour certains paramètres du modèle. En
+revanche, le gradient de la fonction d’activation ReLU dans l’intervalle
+positif est toujours égal à 1 (subsec_activation-functions). Par
+conséquent, si les paramètres du modèle ne sont pas correctement
+initialisés, la fonction sigmoïde peut obtenir un gradient presque nul
+dans l’intervalle positif, ce qui signifie que le modèle ne peut pas
+être entraîné efficacement.</p>
+<h3 id="contrôle-de-capacité-et-prétraitement">Contrôle de capacité et
+prétraitement</h3>
+<p>AlexNet contrôle la complexité du modèle de la couche entièrement
+connectée par l’abandon (<em>dropout</em>) (sec_dropout), tandis que
+LeNet n’utilise que le déclin des poids (<em>weight decay</em>). Pour
+augmenter encore plus les données, la boucle d’entraînement d’AlexNet a
+ajouté une grande quantité d’augmentation d’images, comme le
+retournement, le recadrage et les changements de couleur. Cela rend le
+modèle plus robuste et la plus grande taille de l’échantillon réduit
+efficacement le surajustement. Voir
+[Buslaev.Iglovikov.Khvedchenya.ea.2020] pour une revue approfondie de
+ces étapes de prétraitement.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AlexNet(d2l.Classifier):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, lr<span class="op">=</span><span class="fl">0.1</span>, num_classes<span class="op">=</span><span class="dv">10</span>):</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net <span class="op">=</span> nn.Sequential()</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.add(</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                nn.Conv2D(<span class="dv">96</span>, kernel_size<span class="op">=</span><span class="dv">11</span>, strides<span class="op">=</span><span class="dv">4</span>, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                nn.MaxPool2D(pool_size<span class="op">=</span><span class="dv">3</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                nn.Conv2D(<span class="dv">256</span>, kernel_size<span class="op">=</span><span class="dv">5</span>, padding<span class="op">=</span><span class="dv">2</span>, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>                nn.MaxPool2D(pool_size<span class="op">=</span><span class="dv">3</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>                nn.Conv2D(<span class="dv">384</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>                nn.Conv2D(<span class="dv">384</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                nn.Conv2D(<span class="dv">256</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                nn.MaxPool2D(pool_size<span class="op">=</span><span class="dv">3</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>                nn.Dense(<span class="dv">4096</span>, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>), nn.Dropout(<span class="fl">0.5</span>),</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>                nn.Dense(<span class="dv">4096</span>, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>), nn.Dropout(<span class="fl">0.5</span>),</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>                nn.Dense(num_classes))</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.initialize(init.Xavier())</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net <span class="op">=</span> nn.Sequential(</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>                nn.LazyConv2d(<span class="dv">96</span>, kernel_size<span class="op">=</span><span class="dv">11</span>, stride<span class="op">=</span><span class="dv">4</span>, padding<span class="op">=</span><span class="dv">1</span>),</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>                nn.ReLU(), nn.MaxPool2d(kernel_size<span class="op">=</span><span class="dv">3</span>, stride<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>                nn.LazyConv2d(<span class="dv">256</span>, kernel_size<span class="op">=</span><span class="dv">5</span>, padding<span class="op">=</span><span class="dv">2</span>), nn.ReLU(),</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>                nn.MaxPool2d(kernel_size<span class="op">=</span><span class="dv">3</span>, stride<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>                nn.LazyConv2d(<span class="dv">384</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>), nn.ReLU(),</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>                nn.LazyConv2d(<span class="dv">384</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>), nn.ReLU(),</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>                nn.LazyConv2d(<span class="dv">256</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>), nn.ReLU(),</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>                nn.MaxPool2d(kernel_size<span class="op">=</span><span class="dv">3</span>, stride<span class="op">=</span><span class="dv">2</span>), nn.Flatten(),</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>                nn.LazyLinear(<span class="dv">4096</span>), nn.ReLU(), nn.Dropout(p<span class="op">=</span><span class="fl">0.5</span>),</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>                nn.LazyLinear(<span class="dv">4096</span>), nn.ReLU(),nn.Dropout(p<span class="op">=</span><span class="fl">0.5</span>),</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>                nn.LazyLinear(num_classes))</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.<span class="bu">apply</span>(d2l.init_cnn)</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net <span class="op">=</span> tf.keras.models.Sequential([</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Conv2D(filters<span class="op">=</span><span class="dv">96</span>, kernel_size<span class="op">=</span><span class="dv">11</span>, strides<span class="op">=</span><span class="dv">4</span>,</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>                                       activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.MaxPool2D(pool_size<span class="op">=</span><span class="dv">3</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Conv2D(filters<span class="op">=</span><span class="dv">256</span>, kernel_size<span class="op">=</span><span class="dv">5</span>, padding<span class="op">=</span><span class="st">&#39;same&#39;</span>,</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>                                       activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.MaxPool2D(pool_size<span class="op">=</span><span class="dv">3</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Conv2D(filters<span class="op">=</span><span class="dv">384</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="st">&#39;same&#39;</span>,</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>                                       activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Conv2D(filters<span class="op">=</span><span class="dv">384</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="st">&#39;same&#39;</span>,</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>                                       activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Conv2D(filters<span class="op">=</span><span class="dv">256</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="st">&#39;same&#39;</span>,</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>                                       activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.MaxPool2D(pool_size<span class="op">=</span><span class="dv">3</span>, strides<span class="op">=</span><span class="dv">2</span>),</span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Flatten(),</span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Dense(<span class="dv">4096</span>, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Dropout(<span class="fl">0.5</span>),</span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Dense(<span class="dv">4096</span>, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Dropout(<span class="fl">0.5</span>),</span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Dense(num_classes)])</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AlexNet(d2l.Classifier):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    lr: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    num_classes: <span class="bu">int</span> <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    training: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> setup(<span class="va">self</span>):</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> nn.Sequential([</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>            nn.Conv(features<span class="op">=</span><span class="dv">96</span>, kernel_size<span class="op">=</span>(<span class="dv">11</span>, <span class="dv">11</span>), strides<span class="op">=</span><span class="dv">4</span>, padding<span class="op">=</span><span class="dv">1</span>),</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>            nn.relu,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>            <span class="kw">lambda</span> x: nn.max_pool(x, window_shape<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>)),</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>            nn.Conv(features<span class="op">=</span><span class="dv">256</span>, kernel_size<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>)),</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>            nn.relu,</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            <span class="kw">lambda</span> x: nn.max_pool(x, window_shape<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>)),</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>            nn.Conv(features<span class="op">=</span><span class="dv">384</span>, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>)), nn.relu,</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>            nn.Conv(features<span class="op">=</span><span class="dv">384</span>, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>)), nn.relu,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>            nn.Conv(features<span class="op">=</span><span class="dv">256</span>, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>)), nn.relu,</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>            <span class="kw">lambda</span> x: nn.max_pool(x, window_shape<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>)),</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>            <span class="kw">lambda</span> x: x.reshape((x.shape[<span class="dv">0</span>], <span class="op">-</span><span class="dv">1</span>)),  <span class="co"># flatten</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>            nn.Dense(features<span class="op">=</span><span class="dv">4096</span>),</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>            nn.relu,</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>            nn.Dropout(<span class="fl">0.5</span>, deterministic<span class="op">=</span><span class="kw">not</span> <span class="va">self</span>.training),</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>            nn.Dense(features<span class="op">=</span><span class="dv">4096</span>),</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>            nn.relu,</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>            nn.Dropout(<span class="fl">0.5</span>, deterministic<span class="op">=</span><span class="kw">not</span> <span class="va">self</span>.training),</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>            nn.Dense(features<span class="op">=</span><span class="va">self</span>.num_classes)</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>        ])</span></code></pre></div>
+<p>Nous <strong>construisons un exemple de données à canal
+unique</strong> avec une hauteur et une largeur de 224 (<strong>pour
+observer la forme de sortie de chaque couche</strong>). Cela correspond
+à l’architecture AlexNet de la fig_alexnet.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>AlexNet().layer_summary((<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">224</span>, <span class="dv">224</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>AlexNet().layer_summary((<span class="dv">1</span>, <span class="dv">224</span>, <span class="dv">224</span>, <span class="dv">1</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>AlexNet(training<span class="op">=</span><span class="va">False</span>).layer_summary((<span class="dv">1</span>, <span class="dv">224</span>, <span class="dv">224</span>, <span class="dv">1</span>))</span></code></pre></div>
+<h2 id="entraînement">Entraînement</h2>
+<p>Bien qu’AlexNet ait été entraîné sur ImageNet dans
+[Krizhevsky.Sutskever.Hinton.2012], nous utilisons ici Fashion-MNIST car
+l’entraînement d’un modèle ImageNet jusqu’à la convergence pourrait
+prendre des heures ou des jours même sur un GPU moderne. L’un des
+problèmes liés à l’application directe d’AlexNet sur
+<strong>Fashion-MNIST</strong> est que ses (<strong>images ont une
+résolution inférieure</strong>) (pixels <span class="math inline">\(28
+\times 28\)</span> ) (<strong>à celle des images ImageNet.</strong>)
+Pour que cela fonctionne, (<strong>nous les suréchantillonnons en <span
+class="math inline">\(224 \times 224\)</span></strong>). Ce n’est
+généralement pas une pratique judicieuse, car cela augmente simplement
+la complexité du calcul sans ajouter d’informations. Néanmoins, nous le
+faisons ici pour être fidèles à l’architecture AlexNet. Nous effectuons
+ce redimensionnement avec l’argument <code>resize</code> dans le
+constructeur <code>d2l.FashionMNIST</code>.</p>
+<p>Maintenant, nous pouvons <strong>commencer l’entraînement
+d’AlexNet.</strong> Par rapport à LeNet dans la sec_lenet, le principal
+changement ici est l’utilisation d’un taux d’apprentissage plus petit et
+d’un entraînement beaucoup plus lent en raison du réseau plus profond et
+plus large, de la résolution d’image plus élevée et des convolutions
+plus coûteuses.</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, jax</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> AlexNet(lr<span class="op">=</span><span class="fl">0.01</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">128</span>, resize<span class="op">=</span>(<span class="dv">224</span>, <span class="dv">224</span>))</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>, num_gpus<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>trainer.fit(model, data)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">128</span>, resize<span class="op">=</span>(<span class="dv">224</span>, <span class="dv">224</span>))</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> d2l.try_gpu():</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    model <span class="op">=</span> AlexNet(lr<span class="op">=</span><span class="fl">0.01</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    trainer.fit(model, data)</span></code></pre></div>
+<h2 id="discussion">Discussion</h2>
+<p>La structure d’AlexNet présente une ressemblance frappante avec
+LeNet, avec un certain nombre d’améliorations critiques, tant pour la
+précision (<em>dropout</em>) que pour la facilité d’entraînement (ReLU).
+Ce qui est tout aussi frappant est l’ampleur des progrès réalisés en
+termes d’outillage d’apprentissage profond. Ce qui représentait
+plusieurs mois de travail en 2012 peut désormais être accompli en une
+douzaine de lignes de code à l’aide de n’importe quel framework
+moderne.</p>
+<p>En examinant l’architecture, nous constatons qu’AlexNet a un talon
+d’Achille en matière d’efficacité : les deux dernières couches cachées
+nécessitent des matrices de taille <span class="math inline">\(6400
+\times 4096\)</span> et <span class="math inline">\(4096 \times
+4096\)</span>, respectivement. Cela correspond à 164 Mo de mémoire et 81
+MFLOPS de calcul, ce qui constitue une dépense non négligeable, en
+particulier sur de petits appareils, tels que les téléphones portables.
+C’est l’une des raisons pour lesquelles AlexNet a été surpassé par des
+architectures beaucoup plus efficaces que nous aborderons dans les
+sections suivantes. Néanmoins, il s’agit d’une étape clé du passage des
+réseaux peu profonds aux réseaux profonds utilisés de nos jours. Notez
+que même si le nombre de paramètres dépasse de loin la quantité de
+données d’entraînement dans nos expériences (les deux dernières couches
+ont plus de 40 millions de paramètres, entraînés sur des jeux de données
+de 60 000 images), il n’y a pratiquement aucun surajustement : les
+pertes d’entraînement et de validation sont pratiquement identiques tout
+au long de l’entraînement. Cela est dû à l’amélioration de la
+régularisation, telle que le <em>dropout</em>, inhérente aux conceptions
+modernes de réseaux profonds.</p>
+<p>Bien qu’il semble qu’il n’y ait que quelques lignes de plus dans
+l’implémentation d’AlexNet que dans celle de LeNet, il a fallu de
+nombreuses années à la communauté universitaire pour adopter ce
+changement conceptuel et tirer parti de ses excellents résultats
+expérimentaux. Cela était également dû au manque d’outils informatiques
+efficaces. À l’époque, ni DistBelief [Dean.Corrado.Monga.ea.2012] ni
+Caffe [Jia.Shelhamer.Donahue.ea.2014] n’existaient, et Theano
+[Bergstra.Breuleux.Bastien.ea.2010] manquait encore de nombreuses
+caractéristiques distinctives. C’est la disponibilité de TensorFlow
+[Abadi.Barham.Chen.ea.2016] qui a radicalement changé la situation.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>En donnant suite à la discussion ci-dessus, analysez les propriétés
+informatiques d’AlexNet.
+<ol type="1">
+<li>Calculez l’empreinte mémoire pour les convolutions et les couches
+entièrement connectées, respectivement. Laquelle domine ?</li>
+<li>Calculez le coût de calcul pour les convolutions et les couches
+entièrement connectées.</li>
+<li>Comment la mémoire (bande passante de lecture et d’écriture,
+latence, taille) affecte-t-elle le calcul ? Y a-t-il une différence dans
+ses effets pour l’entraînement et l’inférence ?</li>
+</ol></li>
+<li>Vous êtes concepteur de puces et devez faire un compromis entre le
+calcul et la bande passante mémoire. Par exemple, une puce plus rapide
+nécessite plus de puissance et éventuellement une surface de puce plus
+grande. Une bande passante mémoire plus élevée nécessite plus de broches
+et de logique de contrôle, donc également plus de surface. Comment
+optimisez-vous ?</li>
+<li>Pourquoi les ingénieurs ne rapportent-ils plus de références de
+performance (<em>benchmarks</em>) sur AlexNet ?</li>
+<li>Essayez d’augmenter le nombre d’époques lors de l’entraînement
+d’AlexNet. Par rapport à LeNet, en quoi les résultats diffèrent-ils ?
+Pourquoi ?</li>
+<li>AlexNet est peut-être trop complexe pour le jeu de données
+Fashion-MNIST, en particulier en raison de la faible résolution des
+images initiales.
+<ol type="1">
+<li>Essayez de simplifier le modèle pour accélérer l’entraînement, tout
+en vous assurant que la précision ne chute pas de manière
+significative.</li>
+<li>Concevez un meilleur modèle qui fonctionne directement sur des
+images de <span class="math inline">\(28 \times 28\)</span>.</li>
+</ol></li>
+<li>Modifiez la taille du lot (<em>batch size</em>) et observez les
+changements de débit (images/s), de précision et de mémoire GPU.</li>
+<li>Appliquez le <em>dropout</em> et la ReLU à LeNet-5. Est-ce que cela
+s’améliore ? Pouvez-vous encore améliorer les choses par un
+prétraitement pour tirer parti des invariances inhérentes aux images
+?</li>
+<li>Pouvez-vous faire en sorte qu’AlexNet surajuste ? Quelle
+fonctionnalité devez-vous supprimer ou modifier pour briser
+l’entraînement ?</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/75">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/76">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/276">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/18001">Discussions</a> :end_tab:</p>
+<div class="navlinks"><a class="prev" href="index.html">&larr; Réseaux de neurones convolutifs modernes</a><a class="next" href="vgg.html">Réseaux utilisant des blocs (VGG) &rarr;</a></div></main></div></body></html>

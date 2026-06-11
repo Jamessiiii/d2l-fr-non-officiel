@@ -42,6 +42,7 @@ Le build HTML final a réussi et produit notamment :
 - `docs/chapter_multilayer-perceptrons/index.html`
 - `docs/chapter_builders-guide/index.html`
 - `docs/chapter_convolutional-neural-networks/index.html`
+- `docs/chapter_convolutional-modern/index.html`
 
 Vérifications locales effectuées sur `http://localhost:4173` :
 
@@ -107,6 +108,15 @@ Traduction réalisée par agent Gemini :
 - `chapter_convolutional-neural-networks/channels.md` : traduit en français par `cnn_retry_channels.txt`.
 - `chapter_convolutional-neural-networks/pooling.md` : traduit en français par `cnn_retry_pooling.txt`.
 - `chapter_convolutional-neural-networks/lenet.md` : traduit en français par `cnn_retry_lenet.txt`.
+- `chapter_convolutional-modern/index.md` : traduit en français par `conv_modern_index.txt`.
+- `chapter_convolutional-modern/alexnet.md` : traduit en français par `conv_modern_alexnet.txt`.
+- `chapter_convolutional-modern/vgg.md` : traduit en français par `conv_modern_vgg.txt`.
+- `chapter_convolutional-modern/nin.md` : traduit en français par `conv_modern_nin.txt`.
+- `chapter_convolutional-modern/googlenet.md` : traduit en français par `conv_modern_googlenet.txt`.
+- `chapter_convolutional-modern/batch-norm.md` : traduit en français par `conv_modern_batch_norm.txt`.
+- `chapter_convolutional-modern/resnet.md` : traduit en français par `conv_modern_resnet.txt`.
+- `chapter_convolutional-modern/densenet.md` : traduit en français par `conv_modern_densenet.txt`.
+- `chapter_convolutional-modern/cnn-design.md` : traduit en français par `conv_modern_cnn_design.txt`.
 
 Ajouts manuels de structure française :
 
@@ -122,6 +132,7 @@ Ajouts manuels de structure française :
 - `img/dropout2.svg`, `img/forward.svg`, `img/house-pricing.png`, `img/kaggle-submit2.png`, `img/kaggle.png`, `img/mlp.svg` : figures utilisées par `chapter_multilayer-perceptrons`.
 - `img/blocks.svg`, `img/copyto.svg` : figures utilisées par `chapter_builders-guide`.
 - `img/conv-multi-in.svg`, `img/conv-1x1.svg`, `img/correlation.svg`, `img/field-visual.png`, `img/lenet.svg`, `img/lenet-vert.svg`, `img/conv-reuse.svg`, `img/conv-pad.svg`, `img/conv-stride.svg`, `img/pooling.svg`, `img/waldo-football.jpg`, `img/waldo-mask.jpg` : figures utilisées par `chapter_convolutional-neural-networks`.
+- `img/alexnet.svg`, `img/anynet.svg`, `img/densenet-block.svg`, `img/densenet.svg`, `img/filters.png`, `img/functionclasses.svg`, `img/inception-full-90.svg`, `img/inception.svg`, `img/nin.svg`, `img/regnet-fig.png`, `img/residual-block.svg`, `img/resnet-block.svg`, `img/resnet18-90.svg`, `img/resnext-block.svg`, `img/vgg.svg` : figures utilisées par `chapter_convolutional-modern`.
 
 ## Non traduit / restant à faire
 
@@ -162,6 +173,8 @@ Pour `chapter_multilayer-perceptrons`, huit agents Gemini ont été lancés en d
 Pour `chapter_builders-guide`, huit agents Gemini ont été lancés en deux vagues. Les blocs de code fenced ont ensuite été restaurés depuis le dépôt original anglais. Les notebooks et pages HTML publiques ont été générés à partir des sources Markdown traduites, avec MathJax et les images locales, car le pipeline D2L-Book/Sphinx complet reste instable dans cette session.
 
 Pour `chapter_convolutional-neural-networks`, les agents Gemini ont d'abord été lancés en vague parallèle. Un agent a rencontré `MODEL_CAPACITY_EXHAUSTED` et deux agents sont restés bloqués sur une invite interactive d'authentification. Les sections restantes ont donc été relancées une par une depuis le dossier parent contenant `d2l-fr` et `d2l-en`, afin de permettre à Gemini d'inspecter les sources relatives sans chemin absolu. Les blocs de code fenced ont ensuite été restaurés depuis les sources officielles brutes. Les notebooks et pages HTML publiques ont été générés à partir des sources Markdown traduites, avec MathJax et les images locales.
+
+Pour `chapter_convolutional-modern`, les sections ont été traduites une par une avec Gemini depuis le dossier parent contenant `d2l-fr` et `d2l-en`. `cnn-design` a d'abord rencontré `MODEL_CAPACITY_EXHAUSTED`, puis a réussi lors d'une relance isolée. `batch-norm` et `resnet` ont affiché des erreurs post-écriture dans la sortie Gemini, mais les fichiers traduits ont ensuite été validés localement. Les blocs de code fenced ont été restaurés depuis les sources officielles brutes avant génération des notebooks et pages HTML publiques.
 
 ## Limites du build partiel
 

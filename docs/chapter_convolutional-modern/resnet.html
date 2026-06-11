@@ -1,0 +1,854 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Réseaux résiduels (ResNet) et ResNeXt - Dive into Deep Learning FR</title><link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid #d8dee4;padding:24px 18px;background:#f6f8fa;position:sticky;top:0;height:100vh;overflow:auto}.sidebar h1{font-size:16px;margin:0 0 16px}.sidebar ol{padding-left:22px;line-height:1.55}.sidebar a,.navlinks a{color:#245a9c;text-decoration:none}.content{max-width:980px;padding:32px 44px 56px}.navlinks{display:flex;justify-content:space-between;gap:20px;margin:28px 0}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}img{max-width:100%;height:auto}@media(max-width:760px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid #d8dee4}.content{padding:24px 18px 42px}}</style></head><body><div class="layout"><nav class="sidebar"><h1><a href="../index.html">D2L français</a></h1><ol><li><a href="index.html">Réseaux de neurones convolutifs modernes</a></li>
+<li><a href="alexnet.html">Réseaux de neurones convolutifs profonds (AlexNet)</a></li>
+<li><a href="vgg.html">Réseaux utilisant des blocs (VGG)</a></li>
+<li><a href="nin.html">Network in Network (NiN)</a></li>
+<li><a href="googlenet.html">Réseaux à branches multiples (GoogLeNet)</a></li>
+<li><a href="batch-norm.html">Normalisation par lots</a></li>
+<li><a href="resnet.html">Réseaux résiduels (ResNet) et ResNeXt</a></li>
+<li><a href="densenet.html">Réseaux à connexions denses (DenseNet)</a></li>
+<li><a href="cnn-design.html">Conception d&#x27;architectures de réseaux de neurones convolutifs</a></li></ol></nav><main class="content"><div class="navlinks"><a class="prev" href="batch-norm.html">&larr; Normalisation par lots</a><a class="next" href="densenet.html">Réseaux à connexions denses (DenseNet) &rarr;</a></div><div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="réseaux-résiduels-resnet-et-resnext">Réseaux résiduels (ResNet)
+et ResNeXt</h1>
+<p><a id="sec_resnet"></a> À mesure que nous concevons des réseaux de
+plus en plus profonds, il devient impératif de comprendre comment
+l’ajout de couches peut augmenter la complexité et l’expressivité du
+réseau. Plus important encore est la capacité à concevoir des réseaux où
+l’ajout de couches rend les réseaux strictement plus expressifs plutôt
+que simplement différents. Pour progresser, nous avons besoin d’un peu
+de mathématiques.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> np, npx, init</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet.gluon <span class="im">import</span> nn</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.nn <span class="im">import</span> functional <span class="im">as</span> F</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flax <span class="im">import</span> linen <span class="im">as</span> nn</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span></code></pre></div>
+<h2 id="classes-de-fonctions">Classes de fonctions</h2>
+<p>Considérons <span class="math inline">\(\mathcal{F}\)</span>, la
+classe de fonctions qu’une architecture de réseau spécifique (ainsi que
+les taux d’apprentissage et d’autres réglages d’hyperparamètres) peut
+atteindre. C’est-à-dire que pour tout <span class="math inline">\(f \in
+\mathcal{F}\)</span>, il existe un ensemble de paramètres (par exemple,
+des poids et des biais) qui peuvent être obtenus par un entraînement sur
+un jeu de données approprié. Supposons que <span
+class="math inline">\(f^*\)</span> soit la fonction « vérité » que nous
+aimerions vraiment trouver. Si elle est dans <span
+class="math inline">\(\mathcal{F}\)</span>, nous sommes sur la bonne
+voie, mais typiquement nous ne serons pas aussi chanceux. Au lieu de
+cela, nous essaierons de trouver une fonction <span
+class="math inline">\(f^*_\mathcal{F}\)</span> qui soit notre meilleur
+choix au sein de <span class="math inline">\(\mathcal{F}\)</span>. Par
+exemple, étant donné un jeu de données avec des caractéristiques <span
+class="math inline">\(\mathbf{X}\)</span> et des étiquettes <span
+class="math inline">\(\mathbf{y}\)</span>, nous pourrions essayer de la
+trouver en résolvant le problème d’optimisation suivant :</p>
+<p><span class="math display">\[f^*_\mathcal{F}
+\stackrel{\textrm{def}}{=} \mathop{\mathrm{argmin}}_f L(\mathbf{X},
+\mathbf{y}, f) \textrm{ subject to } f \in \mathcal{F}.\]</span></p>
+<p>Nous savons que la régularisation
+[tikhonov1977solutions,morozov2012methods] peut contrôler la complexité
+de <span class="math inline">\(\mathcal{F}\)</span> et atteindre la
+cohérence, de sorte qu’une plus grande taille de données d’entraînement
+conduit généralement à une meilleure <span
+class="math inline">\(f^*_\mathcal{F}\)</span>. Il est raisonnable de
+supposer que si nous concevons une architecture différente et plus
+puissante <span class="math inline">\(\mathcal{F}&#39;\)</span>, nous
+devrions arriver à un meilleur résultat. En d’autres termes, nous nous
+attendrions à ce que <span
+class="math inline">\(f^*_{\mathcal{F}&#39;}\)</span> soit « meilleure »
+que <span class="math inline">\(f^*_{\mathcal{F}}\)</span>. Cependant,
+si <span class="math inline">\(\mathcal{F} \not\subseteq
+\mathcal{F}&#39;\)</span>, il n’y a aucune garantie que cela se
+produise. En fait, <span
+class="math inline">\(f^*_{\mathcal{F}&#39;}\)</span> pourrait bien être
+pire. Comme illustré par la fig_functionclasses, pour des classes de
+fonctions non imbriquées, une classe de fonctions plus grande ne se
+rapproche pas toujours de la fonction « vérité » <span
+class="math inline">\(f^*\)</span>. Par exemple, à gauche de la
+fig_functionclasses, bien que <span
+class="math inline">\(\mathcal{F}_3\)</span> soit plus proche de <span
+class="math inline">\(f^*\)</span> que <span
+class="math inline">\(\mathcal{F}_1\)</span>, <span
+class="math inline">\(\mathcal{F}_6\)</span> s’en éloigne et il n’y a
+aucune garantie qu’une augmentation supplémentaire de la complexité
+puisse réduire la distance par rapport à <span
+class="math inline">\(f^*\)</span>. Avec des classes de fonctions
+imbriquées où <span class="math inline">\(\mathcal{F}_1 \subseteq \cdots
+\subseteq \mathcal{F}_6\)</span> à droite de la fig_functionclasses,
+nous pouvons éviter le problème susmentionné des classes de fonctions
+non imbriquées.</p>
+<p><img src="img/functionclasses.svg"
+alt="Pour les classes de fonctions non imbriquées, une classe de fonctions plus grande (indiquée par l’aire) ne garantit pas que nous nous rapprocherons de la fonction « vérité » (\mathit{f}^*). Cela n’arrive pas dans les classes de fonctions imbriquées." />
+<a id="fig_functionclasses"></a> Ainsi, ce n’est que si les classes de
+fonctions plus grandes contiennent les plus petites que nous avons la
+garantie qu’augmenter leur taille accroît strictement le pouvoir
+expressif du réseau. Pour les réseaux de neurones profonds, si nous
+pouvons entraîner la couche nouvellement ajoutée en une fonction
+identité <span class="math inline">\(f(\mathbf{x}) =
+\mathbf{x}\)</span>, le nouveau modèle sera aussi efficace que le modèle
+original. Comme le nouveau modèle peut obtenir une meilleure solution
+pour s’adapter au jeu de données d’entraînement, la couche ajoutée
+pourrait faciliter la réduction des erreurs d’entraînement.</p>
+<p>C’est la question que [He.Zhang.Ren.ea.2016] ont considérée
+lorsqu’ils travaillaient sur des modèles de vision par ordinateur très
+profonds. Au cœur de leur <em>réseau résiduel</em> (<em>ResNet</em>)
+proposé se trouve l’idée que chaque couche supplémentaire devrait plus
+facilement contenir la fonction identité comme l’un de ses éléments. Ces
+considérations sont assez profondes mais elles ont mené à une solution
+étonnamment simple, un <em>bloc résiduel</em>. Grâce à lui, ResNet a
+remporté le ImageNet Large Scale Visual Recognition Challenge en 2015.
+La conception a eu une influence profonde sur la manière de construire
+des réseaux de neurones profonds. Par exemple, des blocs résiduels ont
+été ajoutés aux réseaux récurrents [prakash2016neural,kim2017residual].
+De même, les Transformers [Vaswani.Shazeer.Parmar.ea.2017] les utilisent
+pour empiler efficacement de nombreuses couches de réseaux. Il est
+également utilisé dans les réseaux de neurones sur graphes
+[Kipf.Welling.2016] et, en tant que concept de base, il a été largement
+utilisé en vision par ordinateur
+[Redmon.Farhadi.2018,Ren.He.Girshick.ea.2015]. Notez que les réseaux
+résiduels sont précédés par les réseaux autoroutes (highway networks)
+[srivastava2015highway] qui partagent une partie de la motivation, bien
+que sans la paramétrisation élégante autour de la fonction identité.</p>
+<h2 id="blocs-résiduels">(<strong>Blocs résiduels</strong>)</h2>
+<p><a id="subsec_residual-blks"></a> Concentrons-nous sur une partie
+locale d’un réseau de neurones, telle que représentée dans la
+fig_residual_block. Notons l’entrée par <span
+class="math inline">\(\mathbf{x}\)</span>. Nous supposons que <span
+class="math inline">\(f(\mathbf{x})\)</span>, l’application sous-jacente
+souhaitée que nous voulons obtenir par apprentissage, doit être utilisée
+comme entrée de la fonction d’activation au sommet. À gauche, la partie
+à l’intérieur de la boîte en pointillés doit apprendre directement <span
+class="math inline">\(f(\mathbf{x})\)</span>. À droite, la partie à
+l’intérieur de la boîte en pointillés doit apprendre l’<em>application
+résiduelle</em> <span class="math inline">\(g(\mathbf{x}) =
+f(\mathbf{x}) - \mathbf{x}\)</span>, d’où le nom du bloc résiduel. Si
+l’application identité <span class="math inline">\(f(\mathbf{x}) =
+\mathbf{x}\)</span> est l’application sous-jacente souhaitée,
+l’application résiduelle revient à <span
+class="math inline">\(g(\mathbf{x}) = 0\)</span> et elle est donc plus
+facile à apprendre : il suffit de pousser vers zéro les poids et les
+biais de la couche de poids supérieure (par exemple, une couche
+entièrement connectée ou une couche convolutive) à l’intérieur de la
+boîte en pointillés. La figure de droite illustre le <em>bloc
+résiduel</em> de ResNet, où la ligne pleine transportant l’entrée de la
+couche <span class="math inline">\(\mathbf{x}\)</span> vers l’opérateur
+d’addition est appelée une <em>connexion résiduelle</em> (ou
+<em>connexion de raccourci</em>). Avec les blocs résiduels, les entrées
+peuvent se propager vers l’avant plus rapidement via les connexions
+résiduelles à travers les couches. En fait, le bloc résiduel peut être
+considéré comme un cas particulier du bloc Inception multi-branches : il
+possède deux branches dont l’une est l’application identité.</p>
+<p><img src="img/residual-block.svg"
+alt="Dans un bloc régulier (gauche), la partie à l’intérieur de la boîte en pointillés doit apprendre directement l’application \mathit{f}(\mathbf{x}). Dans un bloc résiduel (droite), la partie à l’intérieur de la boîte en pointillés doit apprendre l’application résiduelle \mathit{g}(\mathbf{x}) = \mathit{f}(\mathbf{x}) - \mathbf{x}, rendant l’application identité \mathit{f}(\mathbf{x}) = \mathbf{x} plus facile à apprendre." />
+<a id="fig_residual_block"></a> ResNet reprend la conception complète de
+la couche convolutive <span class="math inline">\(3\times 3\)</span> de
+VGG. Le bloc résiduel comporte deux couches convolutives <span
+class="math inline">\(3\times 3\)</span> avec le même nombre de canaux
+de sortie. Chaque couche convolutive est suivie d’une couche de
+normalisation par lots (batch normalization) et d’une fonction
+d’activation ReLU. Ensuite, nous sautons ces deux opérations de
+convolution et ajoutons l’entrée directement avant la fonction
+d’activation ReLU finale. Ce type de conception exige que la sortie des
+deux couches convolutives ait la même forme que l’entrée, afin qu’elles
+puissent être additionnées. Si nous voulons changer le nombre de canaux,
+nous devons introduire une couche convolutive <span
+class="math inline">\(1\times 1\)</span> supplémentaire pour transformer
+l’entrée dans la forme souhaitée pour l’opération d’addition. Jetons un
+coup d’œil au code ci-dessous.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Residual(nn.Block):  <span class="co">#@save</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The Residual block of ResNet models.&quot;&quot;&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_channels, use_1x1conv<span class="op">=</span><span class="va">False</span>, strides<span class="op">=</span><span class="dv">1</span>, <span class="op">**</span>kwargs):</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(<span class="op">**</span>kwargs)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv1 <span class="op">=</span> nn.Conv2D(num_channels, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                               strides<span class="op">=</span>strides)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv2 <span class="op">=</span> nn.Conv2D(num_channels, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> use_1x1conv:</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv3 <span class="op">=</span> nn.Conv2D(num_channels, kernel_size<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                                   strides<span class="op">=</span>strides)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv3 <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn1 <span class="op">=</span> nn.BatchNorm()</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn2 <span class="op">=</span> nn.BatchNorm()</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, X):</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> npx.relu(<span class="va">self</span>.bn1(<span class="va">self</span>.conv1(X)))</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> <span class="va">self</span>.bn2(<span class="va">self</span>.conv2(Y))</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.conv3:</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>            X <span class="op">=</span> <span class="va">self</span>.conv3(X)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> npx.relu(Y <span class="op">+</span> X)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Residual(nn.Module):  <span class="co">#@save</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The Residual block of ResNet models.&quot;&quot;&quot;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_channels, use_1x1conv<span class="op">=</span><span class="va">False</span>, strides<span class="op">=</span><span class="dv">1</span>):</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv1 <span class="op">=</span> nn.LazyConv2d(num_channels, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>                                   stride<span class="op">=</span>strides)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv2 <span class="op">=</span> nn.LazyConv2d(num_channels, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> use_1x1conv:</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv3 <span class="op">=</span> nn.LazyConv2d(num_channels, kernel_size<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>                                       stride<span class="op">=</span>strides)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv3 <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn1 <span class="op">=</span> nn.LazyBatchNorm2d()</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn2 <span class="op">=</span> nn.LazyBatchNorm2d()</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, X):</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> F.relu(<span class="va">self</span>.bn1(<span class="va">self</span>.conv1(X)))</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> <span class="va">self</span>.bn2(<span class="va">self</span>.conv2(Y))</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.conv3:</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>            X <span class="op">=</span> <span class="va">self</span>.conv3(X)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">+=</span> X</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> F.relu(Y)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Residual(tf.keras.Model):  <span class="co">#@save</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The Residual block of ResNet models.&quot;&quot;&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_channels, use_1x1conv<span class="op">=</span><span class="va">False</span>, strides<span class="op">=</span><span class="dv">1</span>):</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv1 <span class="op">=</span> tf.keras.layers.Conv2D(num_channels, padding<span class="op">=</span><span class="st">&#39;same&#39;</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>                                            kernel_size<span class="op">=</span><span class="dv">3</span>, strides<span class="op">=</span>strides)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv2 <span class="op">=</span> tf.keras.layers.Conv2D(num_channels, kernel_size<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>                                            padding<span class="op">=</span><span class="st">&#39;same&#39;</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv3 <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> use_1x1conv:</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv3 <span class="op">=</span> tf.keras.layers.Conv2D(num_channels, kernel_size<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>                                                strides<span class="op">=</span>strides)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn1 <span class="op">=</span> tf.keras.layers.BatchNormalization()</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn2 <span class="op">=</span> tf.keras.layers.BatchNormalization()</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> call(<span class="va">self</span>, X):</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> tf.keras.activations.relu(<span class="va">self</span>.bn1(<span class="va">self</span>.conv1(X)))</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> <span class="va">self</span>.bn2(<span class="va">self</span>.conv2(Y))</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.conv3 <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>            X <span class="op">=</span> <span class="va">self</span>.conv3(X)</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">+=</span> X</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> tf.keras.activations.relu(Y)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Residual(nn.Module):  <span class="co">#@save</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The Residual block of ResNet models.&quot;&quot;&quot;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    num_channels: <span class="bu">int</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    use_1x1conv: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    strides: <span class="bu">tuple</span> <span class="op">=</span> (<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    training: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> setup(<span class="va">self</span>):</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv1 <span class="op">=</span> nn.Conv(<span class="va">self</span>.num_channels, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>),</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>                             padding<span class="op">=</span><span class="st">&#39;same&#39;</span>, strides<span class="op">=</span><span class="va">self</span>.strides)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv2 <span class="op">=</span> nn.Conv(<span class="va">self</span>.num_channels, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>),</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>                             padding<span class="op">=</span><span class="st">&#39;same&#39;</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.use_1x1conv:</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv3 <span class="op">=</span> nn.Conv(<span class="va">self</span>.num_channels, kernel_size<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">1</span>),</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>                                 strides<span class="op">=</span><span class="va">self</span>.strides)</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv3 <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn1 <span class="op">=</span> nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training)</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn2 <span class="op">=</span> nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, X):</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> nn.relu(<span class="va">self</span>.bn1(<span class="va">self</span>.conv1(X)))</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> <span class="va">self</span>.bn2(<span class="va">self</span>.conv2(Y))</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.conv3:</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>            X <span class="op">=</span> <span class="va">self</span>.conv3(X)</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">+=</span> X</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> nn.relu(Y)</span></code></pre></div>
+<p>Ce code génère deux types de réseaux : l’un où nous ajoutons l’entrée
+à la sortie avant d’appliquer la non-linéarité ReLU chaque fois que
+<code>use_1x1conv=False</code> ; et l’un où nous ajustons les canaux et
+la résolution au moyen d’une convolution <span class="math inline">\(1
+\times 1\)</span> avant l’addition. La fig_resnet_block illustre
+cela.</p>
+<p><img src="img/resnet-block.svg"
+alt="Bloc ResNet avec et sans convolution 1 \times 1, qui transforme l’entrée dans la forme souhaitée pour l’opération d’addition." />
+<a id="fig_resnet_block"></a> Regardons maintenant <strong>une situation
+où l’entrée et la sortie sont de la même forme</strong>, où la
+convolution <span class="math inline">\(1 \times 1\)</span> n’est pas
+nécessaire.</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    blk <span class="op">=</span> Residual(<span class="dv">3</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    blk.initialize()</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    blk <span class="op">=</span> Residual(<span class="dv">3</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.randn(<span class="dv">4</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">6</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>blk(X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>blk <span class="op">=</span> Residual(<span class="dv">3</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.normal((<span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">6</span>, <span class="dv">3</span>))</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>Y <span class="op">=</span> blk(X)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>Y.shape</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>blk <span class="op">=</span> Residual(<span class="dv">3</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> jax.random.normal(d2l.get_key(), (<span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">6</span>, <span class="dv">3</span>))</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>blk.init_with_output(d2l.get_key(), X)[<span class="dv">0</span>].shape</span></code></pre></div>
+<p>Nous avons également la possibilité de <strong>diviser par deux la
+hauteur et la largeur de sortie tout en augmentant le nombre de canaux
+de sortie</strong>. Dans ce cas, nous utilisons des convolutions <span
+class="math inline">\(1 \times 1\)</span> via
+<code>use_1x1conv=True</code>. Cela s’avère utile au début de chaque
+bloc ResNet pour réduire la dimensionnalité spatiale via
+<code>strides=2</code>.</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>blk <span class="op">=</span> Residual(<span class="dv">6</span>, use_1x1conv<span class="op">=</span><span class="va">True</span>, strides<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    blk.initialize()</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>blk(X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>blk <span class="op">=</span> Residual(<span class="dv">6</span>, use_1x1conv<span class="op">=</span><span class="va">True</span>, strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>blk.init_with_output(d2l.get_key(), X)[<span class="dv">0</span>].shape</span></code></pre></div>
+<h2 id="modèle-resnet"><strong>Modèle ResNet</strong></h2>
+<p>Les deux premières couches de ResNet sont les mêmes que celles de
+GoogLeNet que nous avons décrites précédemment : la couche convolutive
+<span class="math inline">\(7\times 7\)</span> avec 64 canaux de sortie
+et une foulée de 2 est suivie de la couche de max-pooling <span
+class="math inline">\(3\times 3\)</span> avec une foulée de 2. La
+différence est la couche de normalisation par lots ajoutée après chaque
+couche convolutive dans ResNet.</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ResNet(d2l.Classifier):</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> b1(<span class="va">self</span>):</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>            net <span class="op">=</span> nn.Sequential()</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>            net.add(nn.Conv2D(<span class="dv">64</span>, kernel_size<span class="op">=</span><span class="dv">7</span>, strides<span class="op">=</span><span class="dv">2</span>, padding<span class="op">=</span><span class="dv">3</span>),</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>                    nn.BatchNorm(), nn.Activation(<span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>                    nn.MaxPool2D(pool_size<span class="op">=</span><span class="dv">3</span>, strides<span class="op">=</span><span class="dv">2</span>, padding<span class="op">=</span><span class="dv">1</span>))</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> net</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> nn.Sequential(</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>                nn.LazyConv2d(<span class="dv">64</span>, kernel_size<span class="op">=</span><span class="dv">7</span>, stride<span class="op">=</span><span class="dv">2</span>, padding<span class="op">=</span><span class="dv">3</span>),</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>                nn.LazyBatchNorm2d(), nn.ReLU(),</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>                nn.MaxPool2d(kernel_size<span class="op">=</span><span class="dv">3</span>, stride<span class="op">=</span><span class="dv">2</span>, padding<span class="op">=</span><span class="dv">1</span>))</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> tf.keras.models.Sequential([</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Conv2D(<span class="dv">64</span>, kernel_size<span class="op">=</span><span class="dv">7</span>, strides<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>                                       padding<span class="op">=</span><span class="st">&#39;same&#39;</span>),</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.BatchNormalization(),</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.Activation(<span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>                tf.keras.layers.MaxPool2D(pool_size<span class="op">=</span><span class="dv">3</span>, strides<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>                                          padding<span class="op">=</span><span class="st">&#39;same&#39;</span>)])</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ResNet(d2l.Classifier):</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    arch: <span class="bu">tuple</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    lr: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    num_classes: <span class="bu">int</span> <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    training: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> setup(<span class="va">self</span>):</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> <span class="va">self</span>.create_net()</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> b1(<span class="va">self</span>):</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> nn.Sequential([</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>            nn.Conv(<span class="dv">64</span>, kernel_size<span class="op">=</span>(<span class="dv">7</span>, <span class="dv">7</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>), padding<span class="op">=</span><span class="st">&#39;same&#39;</span>),</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>            nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training), nn.relu,</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>            <span class="kw">lambda</span> x: nn.max_pool(x, window_shape<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>),</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>                                  padding<span class="op">=</span><span class="st">&#39;same&#39;</span>)])</span></code></pre></div>
+<p>GoogLeNet utilise quatre modules composés de blocs Inception.
+Cependant, ResNet utilise quatre modules composés de blocs résiduels,
+chacun utilisant plusieurs blocs résiduels avec le même nombre de canaux
+de sortie. Le nombre de canaux dans le premier module est le même que le
+nombre de canaux d’entrée. Puisqu’une couche de max-pooling avec une
+foulée de 2 a déjà été utilisée, il n’est pas nécessaire de réduire la
+hauteur et la largeur. Dans le premier bloc résiduel pour chacun des
+modules suivants, le nombre de canaux est doublé par rapport à celui du
+module précédent, et la hauteur et la largeur sont divisées par
+deux.</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(ResNet)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> block(<span class="va">self</span>, num_residuals, num_channels, first_block<span class="op">=</span><span class="va">False</span>):</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    blk <span class="op">=</span> nn.Sequential()</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(num_residuals):</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span> <span class="kw">and</span> <span class="kw">not</span> first_block:</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>            blk.add(Residual(num_channels, use_1x1conv<span class="op">=</span><span class="va">True</span>, strides<span class="op">=</span><span class="dv">2</span>))</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>            blk.add(Residual(num_channels))</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> blk</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(ResNet)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> block(<span class="va">self</span>, num_residuals, num_channels, first_block<span class="op">=</span><span class="va">False</span>):</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    blk <span class="op">=</span> []</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(num_residuals):</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span> <span class="kw">and</span> <span class="kw">not</span> first_block:</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>            blk.append(Residual(num_channels, use_1x1conv<span class="op">=</span><span class="va">True</span>, strides<span class="op">=</span><span class="dv">2</span>))</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>            blk.append(Residual(num_channels))</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> nn.Sequential(<span class="op">*</span>blk)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(ResNet)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> block(<span class="va">self</span>, num_residuals, num_channels, first_block<span class="op">=</span><span class="va">False</span>):</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    blk <span class="op">=</span> tf.keras.models.Sequential()</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(num_residuals):</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span> <span class="kw">and</span> <span class="kw">not</span> first_block:</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>            blk.add(Residual(num_channels, use_1x1conv<span class="op">=</span><span class="va">True</span>, strides<span class="op">=</span><span class="dv">2</span>))</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>            blk.add(Residual(num_channels))</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> blk</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(ResNet)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> block(<span class="va">self</span>, num_residuals, num_channels, first_block<span class="op">=</span><span class="va">False</span>):</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    blk <span class="op">=</span> []</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(num_residuals):</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">==</span> <span class="dv">0</span> <span class="kw">and</span> <span class="kw">not</span> first_block:</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>            blk.append(Residual(num_channels, use_1x1conv<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>                                strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>), training<span class="op">=</span><span class="va">self</span>.training))</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>            blk.append(Residual(num_channels, training<span class="op">=</span><span class="va">self</span>.training))</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> nn.Sequential(blk)</span></code></pre></div>
+<p>Ensuite, nous ajoutons tous les modules à ResNet. Ici, deux blocs
+résiduels sont utilisés pour chaque module. Enfin, tout comme GoogLeNet,
+nous ajoutons une couche de pooling moyen global (global average
+pooling), suivie de la sortie de la couche entièrement connectée.</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(ResNet)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, arch, lr<span class="op">=</span><span class="fl">0.1</span>, num_classes<span class="op">=</span><span class="dv">10</span>):</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">super</span>(ResNet, <span class="va">self</span>).<span class="fu">__init__</span>()</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> nn.Sequential()</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.add(<span class="va">self</span>.b1())</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i, b <span class="kw">in</span> <span class="bu">enumerate</span>(arch):</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.add(<span class="va">self</span>.block(<span class="op">*</span>b, first_block<span class="op">=</span>(i<span class="op">==</span><span class="dv">0</span>)))</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.add(nn.GlobalAvgPool2D(), nn.Dense(num_classes))</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.initialize(init.Xavier())</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> nn.Sequential(<span class="va">self</span>.b1())</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i, b <span class="kw">in</span> <span class="bu">enumerate</span>(arch):</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.add_module(<span class="ss">f&#39;b</span><span class="sc">{</span>i<span class="op">+</span><span class="dv">2</span><span class="sc">}</span><span class="ss">&#39;</span>, <span class="va">self</span>.block(<span class="op">*</span>b, first_block<span class="op">=</span>(i<span class="op">==</span><span class="dv">0</span>)))</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.add_module(<span class="st">&#39;last&#39;</span>, nn.Sequential(</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>            nn.AdaptiveAvgPool2d((<span class="dv">1</span>, <span class="dv">1</span>)), nn.Flatten(),</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>            nn.LazyLinear(num_classes)))</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.<span class="bu">apply</span>(d2l.init_cnn)</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> tf.keras.models.Sequential(<span class="va">self</span>.b1())</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i, b <span class="kw">in</span> <span class="bu">enumerate</span>(arch):</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.net.add(<span class="va">self</span>.block(<span class="op">*</span>b, first_block<span class="op">=</span>(i<span class="op">==</span><span class="dv">0</span>)))</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.add(tf.keras.models.Sequential([</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>            tf.keras.layers.GlobalAvgPool2D(),</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>            tf.keras.layers.Dense(units<span class="op">=</span>num_classes)]))</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># %%tab jax</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(ResNet)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> create_net(<span class="va">self</span>):</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    net <span class="op">=</span> nn.Sequential([<span class="va">self</span>.b1()])</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, b <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="va">self</span>.arch):</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>        net.layers.extend([<span class="va">self</span>.block(<span class="op">*</span>b, first_block<span class="op">=</span>(i<span class="op">==</span><span class="dv">0</span>))])</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    net.layers.extend([nn.Sequential([</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Flax does not provide a GlobalAvg2D layer</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">lambda</span> x: nn.avg_pool(x, window_shape<span class="op">=</span>x.shape[<span class="dv">1</span>:<span class="dv">3</span>],</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>                              strides<span class="op">=</span>x.shape[<span class="dv">1</span>:<span class="dv">3</span>], padding<span class="op">=</span><span class="st">&#39;valid&#39;</span>),</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">lambda</span> x: x.reshape((x.shape[<span class="dv">0</span>], <span class="op">-</span><span class="dv">1</span>)),</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>        nn.Dense(<span class="va">self</span>.num_classes)])])</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> net</span></code></pre></div>
+<p>Il y a quatre couches convolutives dans chaque module (en excluant la
+couche convolutive <span class="math inline">\(1\times 1\)</span>). Avec
+la première couche convolutive <span class="math inline">\(7\times
+7\)</span> et la couche entièrement connectée finale, il y a 18 couches
+au total. Par conséquent, ce modèle est communément connu sous le nom de
+ResNet-18. En configurant différents nombres de canaux et de blocs
+résiduels dans le module, nous pouvons créer différents modèles ResNet,
+tels que le ResNet-152 plus profond à 152 couches. Bien que
+l’architecture principale de ResNet soit similaire à celle de GoogLeNet,
+la structure de ResNet est plus simple et plus facile à modifier. Tous
+ces facteurs ont entraîné l’utilisation rapide et généralisée de ResNet.
+La fig_resnet18 représente le ResNet-18 complet.</p>
+<p><img src="img/resnet18-90.svg" alt="L’architecture ResNet-18." />
+<a id="fig_resnet18"></a> Avant d’entraîner ResNet, <strong>observons
+comment la forme de l’entrée change à travers les différents modules de
+ResNet</strong>. Comme dans toutes les architectures précédentes, la
+résolution diminue tandis que le nombre de canaux augmente jusqu’au
+point où une couche de pooling moyen global agrège toutes les
+caractéristiques.</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ResNet18(ResNet):</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, lr<span class="op">=</span><span class="fl">0.1</span>, num_classes<span class="op">=</span><span class="dv">10</span>):</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(((<span class="dv">2</span>, <span class="dv">64</span>), (<span class="dv">2</span>, <span class="dv">128</span>), (<span class="dv">2</span>, <span class="dv">256</span>), (<span class="dv">2</span>, <span class="dv">512</span>)),</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>                       lr, num_classes)</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ResNet18(ResNet):</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    arch: <span class="bu">tuple</span> <span class="op">=</span> ((<span class="dv">2</span>, <span class="dv">64</span>), (<span class="dv">2</span>, <span class="dv">128</span>), (<span class="dv">2</span>, <span class="dv">256</span>), (<span class="dv">2</span>, <span class="dv">512</span>))</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    lr: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    num_classes: <span class="bu">int</span> <span class="op">=</span> <span class="dv">10</span></span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>ResNet18().layer_summary((<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">96</span>, <span class="dv">96</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>ResNet18().layer_summary((<span class="dv">1</span>, <span class="dv">96</span>, <span class="dv">96</span>, <span class="dv">1</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>ResNet18(training<span class="op">=</span><span class="va">False</span>).layer_summary((<span class="dv">1</span>, <span class="dv">96</span>, <span class="dv">96</span>, <span class="dv">1</span>))</span></code></pre></div>
+<h2 id="entraînement"><strong>Entraînement</strong></h2>
+<p>Nous entraînons ResNet sur le jeu de données Fashion-MNIST, comme
+auparavant. ResNet est une architecture assez puissante et flexible. Le
+graphique capturant la perte d’entraînement et de validation illustre un
+écart important entre les deux courbes, la perte d’entraînement étant
+considérablement plus faible. Pour un réseau de cette flexibilité,
+davantage de données d’entraînement offriraient un avantage distinct
+pour combler l’écart et améliorer la précision.</p>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch, jax</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> ResNet18(lr<span class="op">=</span><span class="fl">0.01</span>)</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>, num_gpus<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">128</span>, resize<span class="op">=</span>(<span class="dv">96</span>, <span class="dv">96</span>))</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    model.apply_init([<span class="bu">next</span>(<span class="bu">iter</span>(data.get_dataloader(<span class="va">True</span>)))[<span class="dv">0</span>]], d2l.init_cnn)</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>trainer.fit(model, data)</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">128</span>, resize<span class="op">=</span>(<span class="dv">96</span>, <span class="dv">96</span>))</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> d2l.try_gpu():</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    model <span class="op">=</span> ResNet18(lr<span class="op">=</span><span class="fl">0.01</span>)</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>    trainer.fit(model, data)</span></code></pre></div>
+<h2 id="resnext">ResNeXt</h2>
+<p><a id="subsec_resnext"></a> L’un des défis que l’on rencontre dans la
+conception de ResNet est le compromis entre la non-linéarité et la
+dimensionnalité au sein d’un bloc donné. C’est-à-dire que nous pourrions
+ajouter plus de non-linéarité en augmentant le nombre de couches, ou en
+augmentant la largeur des convolutions. Une stratégie alternative
+consiste à augmenter le nombre de canaux pouvant transporter des
+informations entre les blocs. Malheureusement, cette dernière
+s’accompagne d’une pénalité quadratique puisque le coût computationnel
+de l’ingestion de <span class="math inline">\(c_\textrm{i}\)</span>
+canaux et de l’émission de <span
+class="math inline">\(c_\textrm{o}\)</span> canaux est proportionnel à
+<span class="math inline">\(\mathcal{O}(c_\textrm{i} \cdot
+c_\textrm{o})\)</span> (voir notre discussion dans la sec_channels).</p>
+<p>Nous pouvons nous inspirer du bloc Inception de la fig_inception dont
+les informations circulent à travers le bloc en groupes séparés.
+L’application de l’idée de multiples groupes indépendants au bloc ResNet
+de la fig_resnet_block a conduit à la conception de ResNeXt
+[Xie.Girshick.Dollar.ea.2017]. À la différence du méli-mélo de
+transformations dans Inception, ResNeXt adopte la <em>même</em>
+transformation dans toutes les branches, ainsi minimisant le besoin de
+réglage manuel de chaque branche.</p>
+<p><img src="img/resnext-block.svg"
+alt="Le bloc ResNeXt. L’utilisation d’une convolution groupée avec \mathit{g} groupes est \mathit{g} fois plus rapide qu’une convolution dense. C’est un bloc résiduel goulot d’étranglement (bottleneck) lorsque le nombre de canaux intermédiaires \mathit{b} est inférieur à \mathit{c}." />
+<a id="fig_resnext_block"></a> Diviser une convolution de <span
+class="math inline">\(c_\textrm{i}\)</span> à <span
+class="math inline">\(c_\textrm{o}\)</span> canaux en un groupe de <span
+class="math inline">\(g\)</span> groupes de taille <span
+class="math inline">\(c_\textrm{i}/g\)</span> générant <span
+class="math inline">\(g\)</span> sorties de taille <span
+class="math inline">\(c_\textrm{o}/g\)</span> est appelé, assez
+justement, une <em>convolution groupée</em>. Le coût computationnel
+(proportionnellement) est réduit de <span
+class="math inline">\(\mathcal{O}(c_\textrm{i} \cdot
+c_\textrm{o})\)</span> à <span class="math inline">\(\mathcal{O}(g \cdot
+(c_\textrm{i}/g) \cdot (c_\textrm{o}/g)) = \mathcal{O}(c_\textrm{i}
+\cdot c_\textrm{o} / g)\)</span>, c’est-à-dire qu’il est <span
+class="math inline">\(g\)</span> fois plus rapide. Mieux encore, le
+nombre de paramètres nécessaires pour générer la sortie est également
+réduit d’une matrice <span class="math inline">\(c_\textrm{i} \times
+c_\textrm{o}\)</span> à <span class="math inline">\(g\)</span> matrices
+plus petites de taille <span class="math inline">\((c_\textrm{i}/g)
+\times (c_\textrm{o}/g)\)</span>, encore une réduction d’un facteur
+<span class="math inline">\(g\)</span>. Dans ce qui suit, nous supposons
+que <span class="math inline">\(c_\textrm{i}\)</span> et <span
+class="math inline">\(c_\textrm{o}\)</span> sont tous deux divisibles
+par <span class="math inline">\(g\)</span>.</p>
+<p>Le seul défi de cette conception est qu’aucune information n’est
+échangée entre les <span class="math inline">\(g\)</span> groupes. Le
+bloc ResNeXt de la fig_resnext_block corrige cela de deux manières : la
+convolution groupée avec un noyau <span class="math inline">\(3 \times
+3\)</span> est prise en sandwich entre deux convolutions <span
+class="math inline">\(1 \times 1\)</span>. La seconde remplit une double
+fonction en ramenant le nombre de canaux à sa valeur initiale.
+L’avantage est que nous ne payons que le coût <span
+class="math inline">\(\mathcal{O}(c \cdot b)\)</span> pour les noyaux
+<span class="math inline">\(1 \times 1\)</span> et que nous pouvons nous
+contenter d’un coût <span class="math inline">\(\mathcal{O}(b^2 /
+g)\)</span> pour les noyaux <span class="math inline">\(3 \times
+3\)</span>. Similairement à l’implémentation du bloc résiduel dans la
+subsec_residual-blks, la connexion résiduelle est remplacée (donc
+généralisée) par une convolution <span class="math inline">\(1 \times
+1\)</span>.</p>
+<p>La figure de droite dans la fig_resnext_block fournit un résumé
+beaucoup plus concis du bloc de réseau résultant. Il jouera également un
+rôle majeur dans la conception de CNN modernes génériques dans la
+sec_cnn-design. Notez que l’idée des convolutions groupées remonte à
+l’implémentation d’AlexNet [Krizhevsky.Sutskever.Hinton.2012]. Lors de
+la distribution du réseau sur deux GPU avec une mémoire limitée,
+l’implémentation traitait chaque GPU comme son propre canal sans effets
+néfastes.</p>
+<p>L’implémentation suivante de la classe <code>ResNeXtBlock</code>
+prend comme argument <code>groups</code> (<span
+class="math inline">\(g\)</span>), avec <code>bot_channels</code> (<span
+class="math inline">\(b\)</span>) canaux intermédiaires (goulot
+d’étranglement). Enfin, lorsque nous devons réduire la hauteur et la
+largeur de la représentation, nous ajouteons une foulée de <span
+class="math inline">\(2\)</span> en définissant
+<code>use_1x1conv=True, strides=2</code>.</p>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ResNeXtBlock(nn.Block):  <span class="co">#@save</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The ResNeXt block.&quot;&quot;&quot;</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_channels, groups, bot_mul,</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>                 use_1x1conv<span class="op">=</span><span class="va">False</span>, strides<span class="op">=</span><span class="dv">1</span>, <span class="op">**</span>kwargs):</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>(<span class="op">**</span>kwargs)</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>        bot_channels <span class="op">=</span> <span class="bu">int</span>(<span class="bu">round</span>(num_channels <span class="op">*</span> bot_mul))</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv1 <span class="op">=</span> nn.Conv2D(bot_channels, kernel_size<span class="op">=</span><span class="dv">1</span>, padding<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>                               strides<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv2 <span class="op">=</span> nn.Conv2D(bot_channels, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>, </span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>                               strides<span class="op">=</span>strides, groups<span class="op">=</span>bot_channels<span class="op">//</span>groups)</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv3 <span class="op">=</span> nn.Conv2D(num_channels, kernel_size<span class="op">=</span><span class="dv">1</span>, padding<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>                               strides<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn1 <span class="op">=</span> nn.BatchNorm()</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn2 <span class="op">=</span> nn.BatchNorm()</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn3 <span class="op">=</span> nn.BatchNorm()</span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> use_1x1conv:</span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv4 <span class="op">=</span> nn.Conv2D(num_channels, kernel_size<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>                                   strides<span class="op">=</span>strides)</span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.bn4 <span class="op">=</span> nn.BatchNorm()</span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv4 <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, X):</span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> npx.relu(<span class="va">self</span>.bn1(<span class="va">self</span>.conv1(X)))</span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> npx.relu(<span class="va">self</span>.bn2(<span class="va">self</span>.conv2(Y)))</span>
+<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> <span class="va">self</span>.bn3(<span class="va">self</span>.conv3(Y))</span>
+<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.conv4:</span>
+<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a>            X <span class="op">=</span> <span class="va">self</span>.bn4(<span class="va">self</span>.conv4(X))</span>
+<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> npx.relu(Y <span class="op">+</span> X)</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ResNeXtBlock(nn.Module):  <span class="co">#@save</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The ResNeXt block.&quot;&quot;&quot;</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_channels, groups, bot_mul, use_1x1conv<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>                 strides<span class="op">=</span><span class="dv">1</span>):</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>        bot_channels <span class="op">=</span> <span class="bu">int</span>(<span class="bu">round</span>(num_channels <span class="op">*</span> bot_mul))</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv1 <span class="op">=</span> nn.LazyConv2d(bot_channels, kernel_size<span class="op">=</span><span class="dv">1</span>, stride<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv2 <span class="op">=</span> nn.LazyConv2d(bot_channels, kernel_size<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>                                   stride<span class="op">=</span>strides, padding<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>                                   groups<span class="op">=</span>bot_channels<span class="op">//</span>groups)</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv3 <span class="op">=</span> nn.LazyConv2d(num_channels, kernel_size<span class="op">=</span><span class="dv">1</span>, stride<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn1 <span class="op">=</span> nn.LazyBatchNorm2d()</span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn2 <span class="op">=</span> nn.LazyBatchNorm2d()</span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn3 <span class="op">=</span> nn.LazyBatchNorm2d()</span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> use_1x1conv:</span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv4 <span class="op">=</span> nn.LazyConv2d(num_channels, kernel_size<span class="op">=</span><span class="dv">1</span>, </span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a>                                       stride<span class="op">=</span>strides)</span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.bn4 <span class="op">=</span> nn.LazyBatchNorm2d()</span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv4 <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, X):</span>
+<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> F.relu(<span class="va">self</span>.bn1(<span class="va">self</span>.conv1(X)))</span>
+<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> F.relu(<span class="va">self</span>.bn2(<span class="va">self</span>.conv2(Y)))</span>
+<span id="cb31-26"><a href="#cb31-26" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> <span class="va">self</span>.bn3(<span class="va">self</span>.conv3(Y))</span>
+<span id="cb31-27"><a href="#cb31-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.conv4:</span>
+<span id="cb31-28"><a href="#cb31-28" aria-hidden="true" tabindex="-1"></a>            X <span class="op">=</span> <span class="va">self</span>.bn4(<span class="va">self</span>.conv4(X))</span>
+<span id="cb31-29"><a href="#cb31-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> F.relu(Y <span class="op">+</span> X)</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ResNeXtBlock(tf.keras.Model):  <span class="co">#@save</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The ResNeXt block.&quot;&quot;&quot;</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_channels, groups, bot_mul, use_1x1conv<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>                 strides<span class="op">=</span><span class="dv">1</span>):</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>        bot_channels <span class="op">=</span> <span class="bu">int</span>(<span class="bu">round</span>(num_channels <span class="op">*</span> bot_mul))</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv1 <span class="op">=</span> tf.keras.layers.Conv2D(bot_channels, <span class="dv">1</span>, strides<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv2 <span class="op">=</span> tf.keras.layers.Conv2D(bot_channels, <span class="dv">3</span>, strides<span class="op">=</span>strides,</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>                                            padding<span class="op">=</span><span class="st">&quot;same&quot;</span>,</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>                                            groups<span class="op">=</span>bot_channels<span class="op">//</span>groups)</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv3 <span class="op">=</span> tf.keras.layers.Conv2D(num_channels, <span class="dv">1</span>, strides<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn1 <span class="op">=</span> tf.keras.layers.BatchNormalization()</span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn2 <span class="op">=</span> tf.keras.layers.BatchNormalization()</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn3 <span class="op">=</span> tf.keras.layers.BatchNormalization()</span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> use_1x1conv:</span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv4 <span class="op">=</span> tf.keras.layers.Conv2D(num_channels, <span class="dv">1</span>,</span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>                                                strides<span class="op">=</span>strides)</span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.bn4 <span class="op">=</span> tf.keras.layers.BatchNormalization()</span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv4 <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> call(<span class="va">self</span>, X):</span>
+<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> tf.keras.activations.relu(<span class="va">self</span>.bn1(<span class="va">self</span>.conv1(X)))</span>
+<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> tf.keras.activations.relu(<span class="va">self</span>.bn2(<span class="va">self</span>.conv2(Y)))</span>
+<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> <span class="va">self</span>.bn3(<span class="va">self</span>.conv3(Y))</span>
+<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.conv4:</span>
+<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a>            X <span class="op">=</span> <span class="va">self</span>.bn4(<span class="va">self</span>.conv4(X))</span>
+<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> tf.keras.activations.relu(Y <span class="op">+</span> X)</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> ResNeXtBlock(nn.Module):  <span class="co">#@save</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;The ResNeXt block.&quot;&quot;&quot;</span></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>    num_channels: <span class="bu">int</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>    groups: <span class="bu">int</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>    bot_mul: <span class="bu">int</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>    use_1x1conv: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>    strides: <span class="bu">tuple</span> <span class="op">=</span> (<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>    training: <span class="bu">bool</span> <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> setup(<span class="va">self</span>):</span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>        bot_channels <span class="op">=</span> <span class="bu">int</span>(<span class="bu">round</span>(<span class="va">self</span>.num_channels <span class="op">*</span> <span class="va">self</span>.bot_mul))</span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv1 <span class="op">=</span> nn.Conv(bot_channels, kernel_size<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">1</span>),</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>                               strides<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">1</span>))</span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv2 <span class="op">=</span> nn.Conv(bot_channels, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>),</span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>                               strides<span class="op">=</span><span class="va">self</span>.strides, padding<span class="op">=</span><span class="st">&#39;same&#39;</span>,</span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>                               feature_group_count<span class="op">=</span>bot_channels<span class="op">//</span><span class="va">self</span>.groups)</span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.conv3 <span class="op">=</span> nn.Conv(<span class="va">self</span>.num_channels, kernel_size<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">1</span>),</span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>                               strides<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">1</span>))</span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn1 <span class="op">=</span> nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training)</span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn2 <span class="op">=</span> nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training)</span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bn3 <span class="op">=</span> nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training)</span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.use_1x1conv:</span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv4 <span class="op">=</span> nn.Conv(<span class="va">self</span>.num_channels, kernel_size<span class="op">=</span>(<span class="dv">1</span>, <span class="dv">1</span>),</span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>                                       strides<span class="op">=</span><span class="va">self</span>.strides)</span>
+<span id="cb33-26"><a href="#cb33-26" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.bn4 <span class="op">=</span> nn.BatchNorm(<span class="kw">not</span> <span class="va">self</span>.training)</span>
+<span id="cb33-27"><a href="#cb33-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb33-28"><a href="#cb33-28" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.conv4 <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb33-29"><a href="#cb33-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-30"><a href="#cb33-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, X):</span>
+<span id="cb33-31"><a href="#cb33-31" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> nn.relu(<span class="va">self</span>.bn1(<span class="va">self</span>.conv1(X)))</span>
+<span id="cb33-32"><a href="#cb33-32" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> nn.relu(<span class="va">self</span>.bn2(<span class="va">self</span>.conv2(Y)))</span>
+<span id="cb33-33"><a href="#cb33-33" aria-hidden="true" tabindex="-1"></a>        Y <span class="op">=</span> <span class="va">self</span>.bn3(<span class="va">self</span>.conv3(Y))</span>
+<span id="cb33-34"><a href="#cb33-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.conv4:</span>
+<span id="cb33-35"><a href="#cb33-35" aria-hidden="true" tabindex="-1"></a>            X <span class="op">=</span> <span class="va">self</span>.bn4(<span class="va">self</span>.conv4(X))</span>
+<span id="cb33-36"><a href="#cb33-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> nn.relu(Y <span class="op">+</span> X)</span></code></pre></div>
+<p>Son utilisation est tout à fait analogue à celle du
+<code>ResNetBlock</code> discuté précédemment. Par exemple, lors de
+l’utilisation de (<code>use_1x1conv=False, strides=1</code>), l’entrée
+et la sortie sont de la même forme. Alternativement, le réglage
+<code>use_1x1conv=True, strides=2</code> divise par deux la hauteur et
+la largeur de sortie.</p>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>blk <span class="op">=</span> ResNeXtBlock(<span class="dv">32</span>, <span class="dv">16</span>, <span class="dv">1</span>)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>    blk.initialize()</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.randn(<span class="dv">4</span>, <span class="dv">32</span>, <span class="dv">96</span>, <span class="dv">96</span>)</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>blk(X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>blk <span class="op">=</span> ResNeXtBlock(<span class="dv">32</span>, <span class="dv">16</span>, <span class="dv">1</span>)</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.normal((<span class="dv">4</span>, <span class="dv">96</span>, <span class="dv">96</span>, <span class="dv">32</span>))</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>Y <span class="op">=</span> blk(X)</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>Y.shape</span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>blk <span class="op">=</span> ResNeXtBlock(<span class="dv">32</span>, <span class="dv">16</span>, <span class="dv">1</span>)</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> jnp.zeros((<span class="dv">4</span>, <span class="dv">96</span>, <span class="dv">96</span>, <span class="dv">32</span>))</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>blk.init_with_output(d2l.get_key(), X)[<span class="dv">0</span>].shape</span></code></pre></div>
+<h2 id="résumé-et-discussion">Résumé et discussion</h2>
+<p>Les classes de fonctions imbriquées sont souhaitables car elles nous
+permettent d’obtenir des classes de fonctions strictement <em>plus
+puissantes</em> plutôt que subtilement <em>différentes</em> lors de
+l’ajout de capacité. Une façon d’y parvenir est de laisser les couches
+supplémentaires transmettre simplement l’entrée à la sortie. Les
+connexions résiduelles permettent cela. En conséquence, cela modifie le
+biais inductif, passant de fonctions simples de la forme <span
+class="math inline">\(f(\mathbf{x}) = 0\)</span> à des fonctions simples
+ressemblant à <span class="math inline">\(f(\mathbf{x}) =
+\mathbf{x}\)</span>.</p>
+<p>L’application résiduelle peut apprendre la fonction identité plus
+facilement, par exemple en poussant les paramètres de la couche de poids
+vers zéro. Nous pouvons entraîner un réseau de neurones <em>profond</em>
+efficace en ayant des blocs résiduels. Les entrées peuvent se propager
+vers l’avant plus rapidement grâce aux connexions résiduelles à travers
+les couches. En conséquence, nous pouvons ainsi entraîner des réseaux
+beaucoup plus profonds. Par exemple, l’article original sur ResNet
+[He.Zhang.Ren.ea.2016] permettait jusqu’à 152 couches. Un autre avantage
+des réseaux résiduels est qu’ils nous permettent d’ajouter des couches,
+initialisées comme la fonction identité, <em>pendant</em> le processus
+d’entraînement. Après tout, le comportement par défaut d’une couche est
+de laisser passer les données sans changement. Cela peut accélérer
+l’entraînement de très grands réseaux dans certains cas.</p>
+<p>Avant les connexions résiduelles, des chemins de contournement avec
+des unités de porte (gating units) ont été introduits pour entraîner
+efficacement des réseaux autoroutes avec plus de 100 couches
+[srivastava2015highway]. En utilisant des fonctions identités comme
+chemins de contournement, ResNet a obtenu des performances remarquables
+sur plusieurs tâches de vision par ordinateur. Les connexions
+résiduelles ont eu une influence majeure sur la conception des réseaux
+de neurones profonds ultérieurs, qu’ils soient de nature convolutive ou
+séquentielle. Comme nous l’introduirons plus tard, l’architecture
+Transformer [Vaswani.Shazeer.Parmar.ea.2017] adopte des connexions
+résiduelles (ainsi que d’autres choix de conception) et est omniprésente
+dans des domaines aussi divers que le langage, la vision, la parole et
+l’apprentissage par renforcement.</p>
+<p>ResNeXt est un exemple de la façon dont la conception des réseaux de
+neurones convolutifs a évolué au fil du temps : en étant plus économe en
+calcul et en faisant un compromis avec la taille des activations (nombre
+de canaux), il permet des réseaux plus rapides et plus précis à moindre
+coût. Une autre façon de voir les convolutions groupées est de penser à
+une matrice bloc-diagonale pour les poids convolutifs. Notez qu’il
+existe pas mal de « astuces » de ce genre qui mènent à des réseaux plus
+efficaces. Par exemple, ShiftNet [wu2018shift] imite les effets d’une
+convolution <span class="math inline">\(3 \times 3\)</span>, simplement
+en ajoutant des activations décalées aux canaux, offrant une complexité
+de fonction accrue, cette fois sans aucun coût computationnel.</p>
+<p>Une caractéristique commune des conceptions que nous avons discutées
+jusqu’à présent est que la conception du réseau est assez manuelle,
+reposant principalement sur l’ingéniosité du concepteur pour trouver les
+« bons » hyperparamètres de réseau. Bien que cela soit clairement
+réalisable, c’est aussi très coûteux en temps humain et il n’y a aucune
+garantie que le résultat soit optimal de quelque manière que ce soit.
+Dans la sec_cnn-design, nous discuterons d’un certain nombre de
+stratégies pour obtenir des réseaux de haute qualité de manière plus
+automatisée. En particulier, nous passerons en revue la notion
+d’<em>espaces de conception de réseaux</em> qui a conduit aux modèles
+RegNetX/Y [Radosavovic.Kosaraju.Girshick.ea.2020].</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Quelles sont les principales différences entre le bloc Inception de
+la fig_inception et le bloc résiduel ? Comment se comparent-ils en
+termes de calcul, de précision et des classes de fonctions qu’ils
+peuvent décrire ?</li>
+<li>Référez-vous au tableau 1 de l’article ResNet [He.Zhang.Ren.ea.2016]
+pour implémenter différentes variantes du réseau.</li>
+<li>Pour les réseaux plus profonds, ResNet introduit une architecture «
+goulot d’étranglement » (bottleneck) pour réduire la complexité du
+modèle. Essayez de l’implémenter.</li>
+<li>Dans les versions ultérieures de ResNet, les auteurs ont changé la
+structure « convolution, normalisation par lots et activation » en
+structure « normalisation par lots, activation et convolution ».
+Apportez vous-même cette amélioration. Voir la figure 1 dans
+[He.Zhang.Ren.ea.2016*1] pour plus de détails.</li>
+<li>Pourquoi ne pouvons-nous pas simplement augmenter la complexité des
+fonctions sans limite, même si les classes de fonctions sont imbriquées
+?</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/85">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/86">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/8737">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/18006">Discussions</a> :end_tab:</p>
+<div class="navlinks"><a class="prev" href="batch-norm.html">&larr; Normalisation par lots</a><a class="next" href="densenet.html">Réseaux à connexions denses (DenseNet) &rarr;</a></div></main></div></body></html>
