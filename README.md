@@ -15,6 +15,7 @@ Traduit en français :
 - Introduction (`chapter_introduction/index.md`)
 - Installation (`chapter_installation/index.md`)
 - Notation (`chapter_notation/index.md`)
+- Préliminaires (`chapter_preliminaries/*.md`)
 
 La traduction complète reste à poursuivre chapitre par chapitre avec des agents Gemini, en conservant le code, les équations, les labels, les références internes et la structure D2L-Book.
 
@@ -27,11 +28,11 @@ Pour reconstruire localement :
 
 ```bash
 cd "/Users/janslou/Desktop/livre IA/d2l-fr"
-. .venv-build/bin/activate
+. "/Users/janslou/Desktop/livre IA/d2l-fr-venv-build-fresh/bin/activate"
 d2lbook build eval --tab all
 d2lbook build rst --tab all
 install -m 0644 frontpage.html _build/rst_all/frontpage.html
-d2lbook build html --tab all
+sphinx-build -b html _build/rst_all _build/html
 rm -rf docs
 cp -RX _build/html docs
 touch docs/.nojekyll

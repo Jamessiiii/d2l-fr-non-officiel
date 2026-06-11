@@ -1,0 +1,1120 @@
+```{.python .input}
+%load_ext d2lbook.tab
+tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
+```
+
+# Probabilités et statistiques
+:label:`sec_prob`
+
+D'une manière ou d'une autre,
+l'apprentissage automatique est une affaire d'incertitude.
+Dans l'apprentissage supervisé, nous voulons prédire
+quelque chose d'inconnu (la *cible*)
+étant donné quelque chose de connu (les *caractéristiques*).
+Selon notre objectif,
+nous pourrions tenter de prédire
+la valeur la plus probable de la cible.
+Ou nous pourrions prédire la valeur avec la plus petite
+distance attendue par rapport à la cible.
+Et parfois, nous souhaitons non seulement
+prédire une valeur spécifique
+mais aussi *quantifier notre incertitude*.
+Par exemple, étant donné certaines caractéristiques
+décrivant un patient,
+nous pourrions vouloir savoir *quelle est la probabilité* qu'il
+souffre d'une crise cardiaque au cours de l'année à venir.
+Dans l'apprentissage non supervisé,
+nous nous soucions souvent de l'incertitude.
+Pour déterminer si un ensemble de mesures est anormal,
+il est utile de savoir quelle est la probabilité
+d'observer de telles valeurs dans une population d'intérêt.
+De plus, dans l'apprentissage par renforcement,
+nous souhaitons développer des agents
+qui agissent intelligemment dans divers environnements.
+Cela nécessite de raisonner sur
+la manière dont on peut s'attendre à ce qu'un environnement change
+et sur les récompenses auxquelles on peut s'attendre
+en réponse à chacune des actions disponibles.
+
+La *probabilité* est le domaine mathématique
+concerné par le raisonnement sous incertitude.
+Étant donné un modèle probabiliste d'un processus,
+nous pouvons raisonner sur la vraisemblance de divers événements.
+L'utilisation des probabilités pour décrire
+les fréquences d'événements répétables
+(comme les lancers de pièces)
+est assez peu controversée.
+En fait, les chercheurs *fréquentistes* adhèrent
+à une interprétation de la probabilité
+qui s'applique *uniquement* à de tels événements répétables.
+En revanche, les chercheurs *bayésiens*
+utilisent le langage des probabilités plus largement
+pour formaliser le raisonnement sous incertitude.
+La probabilité bayésienne est caractérisée
+par deux caractéristiques uniques :
+(i) l'attribution de degrés de croyance
+à des événements non répétables,
+par exemple, quelle est la *probabilité*
+qu'un barrage s'effondre ? ;
+et (ii) la subjectivité. Alors que la probabilité
+bayésienne fournit des règles sans ambiguïté
+sur la manière dont on devrait mettre à jour ses croyances
+à la lumière de nouvelles preuves,
+elle permet à différents individus
+de commencer avec des croyances *initiales* (ou *a priori*) différentes.
+La *statistique* nous aide à raisonner à l'envers,
+en commençant par la collecte et l'organisation des données
+et en remontant jusqu'aux inférences
+que nous pourrions tirer sur le processus
+qui a généré les données.
+Chaque fois que nous analysons un ensemble de données, à la recherche de motifs
+qui pourraient, nous l'espérons, caractériser une population plus large,
+nous employons une pensée statistique.
+De nombreux cours, majeures, thèses, carrières, départements,
+entreprises et institutions ont été consacrés
+à l'étude des probabilités et des statistiques.
+Bien que cette section ne fasse qu'effleurer la surface,
+nous fournirons les bases
+dont vous avez besoin pour commencer à construire des modèles.
+
+```{.python .input}
+%%tab mxnet
+%matplotlib inline
+from d2l import mxnet as d2l
+from mxnet import np, npx
+from mxnet.numpy.random import multinomial
+import random
+npx.set_np()
+```
+
+```{.python .input}
+%%tab pytorch
+%matplotlib inline
+from d2l import torch as d2l
+import random
+import torch
+from torch.distributions.multinomial import Multinomial
+```
+
+```{.python .input}
+%%tab tensorflow
+%matplotlib inline
+from d2l import tensorflow as d2l
+import random
+import tensorflow as tf
+from tensorflow_probability import distributions as tfd
+```
+
+```{.python .input}
+%%tab jax
+%matplotlib inline
+from d2l import jax as d2l
+import random
+import jax
+from jax import numpy as jnp
+import numpy as np
+```
+
+## Un exemple simple : lancer de pièces
+
+Imaginez que nous prévoyions de lancer une pièce
+et que nous voulions quantifier la probabilité
+que nous voyions face (vs pile).
+Si la pièce est *équilibrée*,
+alors les deux résultats
+(face et pile)
+sont également probables.
+De plus, si nous prévoyons de lancer la pièce $n$ fois,
+alors la fraction de "face"
+que nous nous *attendons* à voir
+devrait correspondre exactement
+à la fraction de "pile" *attendue*.
+Une façon intuitive de voir cela
+est par symétrie :
+pour chaque résultat possible
+avec $n_\textrm{f}$ faces et $n_\textrm{p} = (n - n_\textrm{f})$ piles,
+il y a un résultat tout aussi probable
+avec $n_\textrm{p}$ faces et $n_\textrm{f}$ piles.
+Notez que cela n'est possible
+que si, en moyenne, nous nous attendons à voir
+$1/2$ des lancers donner face
+et $1/2$ donner pile.
+Bien sûr, si vous menez cette expérience
+de nombreuses fois avec $n=1000000$ lancers chacun,
+vous pourriez ne jamais voir un essai
+où $n_\textrm{f} = n_\textrm{p}$ exactement.
+
+
+Formellement, la quantité $1/2$ est appelée une *probabilité*
+et ici elle capture la certitude avec laquelle
+n'importe quel lancer donné donnera face.
+Les probabilités attribuent des scores entre $0$ et $1$
+aux résultats d'intérêt, appelés *événements*.
+Ici, l'événement d'intérêt est $\textrm{face}$
+et nous notons la probabilité correspondante $P(\textrm{face})$.
+Une probabilité de $1$ indique une certitude absolue
+(imaginez une pièce truquée où les deux côtés seraient face)
+et une probabilité de $0$ indique l'impossibilité
+(par exemple, si les deux côtés étaient pile).
+Les fréquences $n_\textrm{f}/n$ et $n_\textrm{p}/n$ ne sont pas des probabilités
+mais plutôt des *statistiques*.
+Les probabilités sont des quantités *théoriques*
+qui sous-tendent le processus de génération de données.
+Ici, la probabilité $1/2$
+est une propriété de la pièce elle-même.
+En revanche, les statistiques sont des quantités *empiriques*
+qui sont calculées en fonction des données observées.
+Nos intérêts pour les quantités probabilistes et statistiques
+sont inextricablement liés.
+Nous concevons souvent des statistiques spéciales appelées *estimateurs*
+qui, étant donné un ensemble de données, produisent des *estimations*
+de paramètres de modèle tels que des probabilités.
+De plus, lorsque ces estimateurs satisfont
+une propriété intéressante appelée *consistance* (ou *convergence*),
+nos estimations convergeront
+vers la probabilité correspondante.
+À leur tour, ces probabilités inférées
+nous renseignent sur les propriétés statistiques probables
+des données de la même population
+que nous pourrions rencontrer à l'avenir.
+
+Supposons que nous soyons tombés sur une vraie pièce
+pour laquelle nous ne connaissions pas
+le vrai $P(\textrm{face})$.
+Pour étudier cette quantité
+avec des méthodes statistiques,
+nous devons (i) collecter des données ;
+et (ii) concevoir un estimateur.
+L'acquisition de données ici est facile ;
+nous pouvons lancer la pièce de nombreuses fois
+et enregistrer tous les résultats.
+Formellement, tirer des réalisations
+d'un processus aléatoire sous-jacent
+est appelé *échantillonnage*.
+Comme vous l'avez peut-être deviné,
+un estimateur naturel
+est le ratio du
+nombre de *faces* observées
+par rapport au nombre total de lancers.
+
+Maintenant, supposons que la pièce soit en fait équilibrée,
+c'est-à-dire $P(\textrm{face}) = 0,5$.
+Pour simuler les lancers d'une pièce équilibrée,
+nous pouvons invoquer n'importe quel générateur de nombres aléatoires.
+Il existe des moyens simples de tirer des échantillons
+ d'un événement de probabilité $0,5$.
+Par exemple, `random.random` de Python
+donne des nombres dans l'intervalle $[0,1]$
+où la probabilité de se trouver
+dans n'importe quel sous-intervalle $[a, b] \subset [0,1]$
+est égale à $b-a$.
+Ainsi, nous pouvons obtenir `0` et `1` avec une probabilité de `0,5` chacun
+en testant si le nombre flottant renvoyé est supérieur à `0,5` :
+
+```{.python .input}
+%%tab all
+num_tosses = 100
+heads = sum([random.random() > 0.5 for _ in range(num_tosses)])
+tails = num_tosses - heads
+print("heads, tails: ", [heads, tails])
+```
+
+Plus généralement, nous pouvons simuler plusieurs tirages
+à partir de n'importe quelle variable avec un nombre fini
+de résultats possibles
+(comme le lancer d'une pièce ou le jet d'un dé)
+en appelant la fonction multinomiale,
+en fixant le premier argument
+au nombre de tirages
+et le second comme une liste de probabilités
+associées à chacun des résultats possibles.
+Pour simuler dix lancers d'une pièce équilibrée,
+nous attribuons le vecteur de probabilité `[0,5, 0,5]`,
+en interprétant l'indice 0 comme face
+et l'indice 1 comme pile.
+La fonction renvoie un vecteur
+de longueur égale au nombre
+de résultats possibles (ici, 2),
+où la première composante nous indique
+le nombre d'occurrences de face
+et la seconde composante nous indique
+le nombre d'occurrences de pile.
+
+```{.python .input}
+%%tab mxnet
+fair_probs = [0.5, 0.5]
+multinomial(100, fair_probs)
+```
+
+```{.python .input}
+%%tab pytorch
+fair_probs = torch.tensor([0.5, 0.5])
+Multinomial(100, fair_probs).sample()
+```
+
+```{.python .input}
+%%tab tensorflow
+fair_probs = tf.ones(2) / 2
+tfd.Multinomial(100, fair_probs).sample()
+```
+
+```{.python .input}
+%%tab jax
+fair_probs = [0.5, 0.5]
+# jax.random does not have multinomial distribution implemented
+np.random.multinomial(100, fair_probs)
+```
+
+Chaque fois que vous exécutez ce processus d'échantillonnage,
+vous recevrez une nouvelle valeur aléatoire
+qui peut différer du résultat précédent.
+Diviser par le nombre de lancers
+nous donne la *fréquence*
+de chaque résultat dans nos données.
+Notez que ces fréquences,
+tout comme les probabilités
+qu'elles sont censées
+estimer, s'additionnent pour donner $1$.
+
+```{.python .input}
+%%tab mxnet
+multinomial(100, fair_probs) / 100
+```
+
+```{.python .input}
+%%tab pytorch
+Multinomial(100, fair_probs).sample() / 100
+```
+
+```{.python .input}
+%%tab tensorflow
+tfd.Multinomial(100, fair_probs).sample() / 100
+```
+
+```{.python .input}
+%%tab jax
+np.random.multinomial(100, fair_probs) / 100
+```
+
+Ici, même si notre pièce simulée est équilibrée
+(nous avons nous-mêmes fixé les probabilités `[0,5, 0,5]`),
+les comptes de faces et de piles peuvent ne pas être identiques.
+C'est parce que nous n'avons tiré qu'un nombre relativement faible d'échantillons.
+Si nous n'avions pas implémenté la simulation nous-mêmes,
+et n'avions vu que le résultat,
+comment saurions-nous si la pièce était légèrement déséquilibrée
+ou si l'écart possible par rapport à $1/2$ n'était
+qu'un artefact de la petite taille de l'échantillon ?
+Voyons ce qui se passe lorsque nous simulons 10 000 lancers.
+
+```{.python .input}
+%%tab mxnet
+counts = multinomial(10000, fair_probs).astype(np.float32)
+counts / 10000
+```
+
+```{.python .input}
+%%tab pytorch
+counts = Multinomial(10000, fair_probs).sample()
+counts / 10000
+```
+
+```{.python .input}
+%%tab tensorflow
+counts = tfd.Multinomial(10000, fair_probs).sample()
+counts / 10000
+```
+
+```{.python .input}
+%%tab jax
+counts = np.random.multinomial(10000, fair_probs).astype(np.float32)
+counts / 10000
+```
+
+En général, pour les moyennes d'événements répétés (comme les lancers de pièces),
+à mesure que le nombre de répétitions augmente,
+nos estimations sont garanties de converger
+vers les vraies probabilités sous-jacentes.
+La formulation mathématique de ce phénomène
+est appelée la *loi des grands nombres*
+et le *théorème central limite*
+nous dit que dans de nombreuses situations,
+à mesure que la taille de l'échantillon $n$ augmente,
+ces erreurs devraient diminuer
+à un taux de $(1/\sqrt{n})$.
+Obtenons un peu plus d'intuition en étudiant
+comment notre estimation évolue à mesure que nous augmentons
+le nombre de lancers de 1 à 10 000.
+
+```{.python .input}
+%%tab pytorch
+counts = Multinomial(1, fair_probs).sample((10000,))
+cum_counts = counts.cumsum(dim=0)
+estimates = cum_counts / cum_counts.sum(dim=1, keepdims=True)
+estimates = estimates.numpy()
+
+d2l.set_figsize((4.5, 3.5))
+d2l.plt.plot(estimates[:, 0], label=("P(coin=heads)"))
+d2l.plt.plot(estimates[:, 1], label=("P(coin=tails)"))
+d2l.plt.axhline(y=0.5, color='black', linestyle='dashed')
+d2l.plt.gca().set_xlabel('Samples')
+d2l.plt.gca().set_ylabel('Estimated probability')
+d2l.plt.legend();
+```
+
+```{.python .input}
+%%tab mxnet
+counts = multinomial(1, fair_probs, size=10000)
+cum_counts = counts.astype(np.float32).cumsum(axis=0)
+estimates = cum_counts / cum_counts.sum(axis=1, keepdims=True)
+```
+
+```{.python .input}
+%%tab tensorflow
+counts = tfd.Multinomial(1, fair_probs).sample(10000)
+cum_counts = tf.cumsum(counts, axis=0)
+estimates = cum_counts / tf.reduce_sum(cum_counts, axis=1, keepdims=True)
+estimates = estimates.numpy()
+```
+
+```{.python .input}
+%%tab jax
+counts = np.random.multinomial(1, fair_probs, size=10000).astype(np.float32)
+cum_counts = counts.cumsum(axis=0)
+estimates = cum_counts / cum_counts.sum(axis=1, keepdims=True)
+```
+
+```{.python .input}
+%%tab mxnet, tensorflow, jax
+d2l.set_figsize((4.5, 3.5))
+d2l.plt.plot(estimates[:, 0], label=("P(coin=heads)"))
+d2l.plt.plot(estimates[:, 1], label=("P(coin=tails)"))
+d2l.plt.axhline(y=0.5, color='black', linestyle='dashed')
+d2l.plt.gca().set_xlabel('Samples')
+d2l.plt.gca().set_ylabel('Estimated probability')
+d2l.plt.legend();
+```
+
+Chaque courbe pleine correspond à l'une des deux valeurs de la pièce
+et donne notre probabilité estimée que la pièce donne cette valeur
+après chaque groupe d'expériences.
+La ligne noire pointillée donne la vraie probabilité sous-jacente.
+À mesure que nous obtenons plus de données en menant plus d'expériences,
+les courbes convergent vers la vraie probabilité.
+Vous pourriez déjà commencer à voir la forme
+de certaines des questions les plus avancées
+qui préoccupent les statisticiens :
+À quelle vitesse cette convergence se produit-elle ?
+Si nous avions déjà testé de nombreuses pièces
+fabriquées dans la même usine,
+comment pourrions-nous intégrer cette information ?
+
+## Un traitement plus formel
+
+Nous sommes déjà allés assez loin : poser
+un modèle probabiliste,
+générer des données synthétiques,
+exécuter un estimateur statistique,
+évaluer empiriquement la convergence,
+et rapporter des mesures d'erreur (vérifier l'écart).
+Cependant, pour aller beaucoup plus loin,
+nous devrons être plus précis.
+
+
+Lorsque nous traitons du hasard,
+nous notons l'ensemble des résultats possibles $\mathcal{S}$
+et l'appelons l'*espace échantillonnal* ou *espace des résultats*.
+Ici, chaque élément est un *résultat* possible distinct.
+Dans le cas du lancer d'une seule pièce,
+$\mathcal{S} = \{\textrm{face}, \textrm{pile}\}$.
+Pour un seul dé, $\mathcal{S} = \{1, 2, 3, 4, 5, 6\}$.
+Lors du lancer de deux pièces, les résultats possibles sont
+$\{(\textrm{face}, \textrm{face}), (\textrm{face}, \textrm{pile}), (\textrm{pile}, \textrm{face}),  (\textrm{pile}, \textrm{pile})\}$.
+Les *événements* sont des sous-ensembles de l'espace échantillonnal.
+Par exemple, l'événement "le premier lancer de pièce donne face"
+correspond à l'ensemble $\{(\textrm{face}, \textrm{face}), (\textrm{face}, \textrm{pile})\}$.
+Chaque fois que le résultat $z$ d'une expérience aléatoire satisfait
+$z \in \mathcal{A}$, alors l'événement $\mathcal{A}$ s'est produit.
+Pour un seul jet de dé, nous pourrions définir les événements
+"voir un $5$" ($\mathcal{A} = \{5\}$)
+et "voir un nombre impair" ($\mathcal{B} = \{1, 3, 5\}$).
+Dans ce cas, si le dé donnait $5$,
+nous dirions que $\mathcal{A}$ et $\mathcal{B}$ se sont produits tous les deux.
+En revanche, si $z = 3$,
+alors $\mathcal{A}$ ne s'est pas produit
+mais $\mathcal{B}$ si.
+
+
+Une fonction de *probabilité* associe des événements
+à des valeurs réelles ${P: \mathcal{A} \subseteq \mathcal{S} \rightarrow [0,1]}$.
+La probabilité, notée $P(\mathcal{A})$, d'un événement $\mathcal{A}$
+dans l'espace échantillonnal donné $\mathcal{S}$,
+possède les propriétés suivantes :
+
+* La probabilité de tout événement $\mathcal{A}$ est un nombre réel non négatif, c'est-à-dire $P(\mathcal{A}) \geq 0$ ;
+* La probabilité de l'espace échantillonnal tout entier est $1$, c'est-à-dire $P(\mathcal{S}) = 1$ ;
+* Pour toute suite dénombrable d'événements $\mathcal{A}_1, \mathcal{A}_2, \ldots$ qui sont *mutuellement exclusifs* (c'est-à-dire $\mathcal{A}_i \cap \mathcal{A}_j = \emptyset$ pour tout $i \neq j$), la probabilité que l'un d'entre eux se produise est égale à la somme de leurs probabilités individuelles, c'est-à-dire $P(\bigcup_{i=1}^{\infty} \mathcal{A}_i) = \sum_{i=1}^{\infty} P(\mathcal{A}_i)$.
+
+Ces axiomes de la théorie des probabilités,
+proposés par :citet:`Kolmogorov.1933`,
+peuvent être appliqués pour dériver rapidement un certain nombre de conséquences importantes.
+Par exemple, il s'ensuit immédiatement
+que la probabilité que n'importe quel événement $\mathcal{A}$
+*ou* son complément $\mathcal{A}'$ se produise est 1
+(car $\mathcal{A} \cup \mathcal{A}' = \mathcal{S}$).
+Nous pouvons également prouver que $P(\emptyset) = 0$
+car $1 = P(\mathcal{S} \cup \mathcal{S}') = P(\mathcal{S} \cup \emptyset) = P(\mathcal{S}) + P(\emptyset) = 1 + P(\emptyset)$.
+Par conséquent, la probabilité que n'importe quel événement $\mathcal{A}$
+*et* son complément $\mathcal{A}'$ se produisent simultanément
+est $P(\mathcal{A} \cap \mathcal{A}') = 0$.
+Informellement, cela nous dit que les événements impossibles
+ont une probabilité nulle de se produire.
+
+
+
+## Variables aléatoires
+
+Lorsque nous avons parlé d'événements comme le jet d'un dé
+donnant un nombre impair ou le premier lancer de pièce donnant face,
+nous invoquions l'idée d'une *variable aléatoire*.
+Formellement, les variables aléatoires sont des applications
+d'un espace échantillonnal sous-jacent
+vers un ensemble de (éventuellement plusieurs) valeurs.
+Vous pourriez vous demander en quoi une variable aléatoire
+est différente de l'espace échantillonnal,
+puisque les deux sont des collections de résultats.
+Surtout, les variables aléatoires peuvent être beaucoup plus grossières
+que l'espace échantillonnal brut.
+Nous pouvons définir une variable aléatoire binaire comme "supérieure à 0,5"
+même lorsque l'espace échantillonnal sous-jacent est infini,
+par exemple les points sur le segment de droite entre $0$ et $1$.
+De plus, plusieurs variables aléatoires
+peuvent partager le même espace échantillonnal sous-jacent.
+Par exemple, "si mon alarme de maison se déclenche"
+et "si ma maison a été cambriolée"
+sont toutes deux des variables aléatoires binaires
+qui partagent un espace échantillonnal sous-jacent.
+Par conséquent, connaître la valeur prise par une variable aléatoire
+peut nous dire quelque chose sur la valeur probable d'une autre variable aléatoire.
+Sachant que l'alarme s'est déclenchée,
+nous pourrions soupçonner que la maison a probablement été cambriolée.
+
+
+Chaque valeur prise par une variable aléatoire correspond
+à un sous-ensemble de l'espace échantillonnal sous-jacent.
+Ainsi, l'occurrence où la variable aléatoire $X$
+prend la valeur $v$, notée par $X=v$, est un *événement*
+et $P(X=v)$ désigne sa probabilité.
+Parfois, cette notation peut devenir lourde,
+et nous pouvons abuser de la notation lorsque le contexte est clair.
+Par exemple, nous pourrions utiliser $P(X)$ pour nous référer largement
+à la *distribution* de $X$, c'est-à-dire
+la fonction qui nous indique la probabilité
+que $X$ prenne n'importe quelle valeur donnée.
+D'autres fois, nous écrivons des expressions
+comme $P(X,Y) = P(X) P(Y)$,
+comme un raccourci pour exprimer une affirmation
+qui est vraie pour toutes les valeurs
+que les variables aléatoires $X$ et $Y$ peuvent prendre, c'est-à-dire
+pour tous les $i,j$, il tient que $P(X=i \textrm{ et } Y=j) = P(X=i)P(Y=j)$.
+D'autres fois, nous abusons de la notation en écrivant
+$P(v)$ lorsque la variable aléatoire est claire d'après le contexte.
+Comme un événement en théorie des probabilités est un ensemble de résultats de l'espace échantillonnal,
+nous pouvons spécifier une plage de valeurs pour qu'une variable aléatoire les prenne.
+Par exemple, $P(1 \leq X \leq 3)$ désigne la probabilité de l'événement $\{1 \leq X \leq 3\}$.
+
+
+Notez qu'il y a une subtile différence
+entre les variables aléatoires *discrètes*,
+comme les lancers d'une pièce ou les jets d'un dé,
+et les variables *continues*,
+comme le poids et la taille d'une personne
+échantillonnée au hasard dans la population.
+Dans ce cas, nous nous soucions rarement réellement
+de la taille exacte de quelqu'un.
+De plus, si nous prenions des mesures assez précises,
+nous constaterions qu'aucune paire de personnes sur la planète
+n'a exactement la même taille.
+En fait, avec des mesures assez fines,
+vous n'auriez jamais la même taille
+au réveil et au coucher.
+Il est peu utile de s'interroger sur
+la probabilité exacte que quelqu'un
+mesure 1,801392782910287192 mètre.
+Au lieu de cela, nous nous soucions généralement plus de pouvoir dire
+si la taille de quelqu'un tombe dans un intervalle donné,
+disons entre 1,79 et 1,81 mètre.
+Dans ces cas, nous travaillons avec des *densités* de probabilité.
+La taille de exactement 1,80 mètre
+n'a aucune probabilité, mais une densité non nulle.
+Pour calculer la probabilité attribuée à un intervalle,
+nous devons prendre une *intégrale* de la densité
+sur cet intervalle.
+
+## Variables aléatoires multiples
+
+Vous avez peut-être remarqué que nous n'avons même pas pu
+terminer la section précédente sans
+faire des affirmations impliquant des interactions
+entre plusieurs variables aléatoires
+(rappelez-vous que $P(X,Y) = P(X) P(Y)$).
+La majeure partie de l'apprentissage automatique
+concerne de telles relations.
+Ici, l'espace échantillonnal serait
+la population d'intérêt,
+disons les clients qui effectuent des transactions avec une entreprise,
+des photographies sur Internet,
+ou des protéines connues des biologistes.
+Chaque variable aléatoire représenterait
+la valeur (inconnue) d'un attribut différent.
+Chaque fois que nous échantillonnons un individu de la population,
+nous observons une réalisation de chacune des variables aléatoires.
+Parce que les valeurs prises par les variables aléatoires
+correspondent à des sous-ensembles de l'espace échantillonnal
+qui pourraient se chevaucher, se chevaucher partiellement,
+ou être entièrement disjoints,
+connaître la valeur prise par une variable aléatoire
+peut nous amener à mettre à jour nos croyances
+sur les valeurs d'une autre variable aléatoire qui sont probables.
+Si un patient entre dans un hôpital
+et que nous observons qu'il
+a des difficultés à respirer
+et a perdu son sens de l'odorat,
+alors nous pensons qu'il est plus probable
+qu'il ait la COVID-19 que nous ne le pourrions
+s'il n'avait aucune difficulté à respirer
+et un sens de l'odorat parfaitement ordinaire.
+
+
+Lorsque nous travaillons avec plusieurs variables aléatoires,
+nous pouvons construire des événements correspondant
+à chaque combinaison de valeurs
+que les variables peuvent prendre conjointement.
+La fonction de probabilité qui attribue
+des probabilités à chacune de ces combinaisons
+(par exemple $A=a$ et $B=b$)
+est appelée la fonction de *probabilité jointe*
+et renvoie simplement la probabilité attribuée
+à l'intersection des sous-ensembles correspondants
+de l'espace échantillonnal.
+La *probabilité jointe* attribuée à l'événement
+où les variables aléatoires $A$ et $B$
+prennent les valeurs $a$ et $b$, respectivement,
+est notée $P(A = a, B = b)$,
+où la virgule indique "et".
+Notez que pour toutes valeurs $a$ et $b$,
+il s'ensuit que
+
+$$P(A=a, B=b) \leq P(A=a) \textrm{ et } P(A=a, B=b) \leq P(B = b),$$
+
+puisque pour que $A=a$ et $B=b$ se produisent,
+$A=a$ doit se produire *et* $B=b$ doit également se produire.
+Fait intéressant, la probabilité jointe
+nous dit tout ce que nous pouvons savoir sur ces
+variables aléatoires dans un sens probabiliste,
+et peut être utilisée pour dériver de nombreuses autres
+quantités utiles, y compris la récupération des
+distributions individuelles $P(A)$ et $P(B)$.
+Pour récupérer $P(A=a)$, nous additionnons simplement
+$P(A=a, B=v)$ sur toutes les valeurs $v$
+que la variable aléatoire $B$ peut prendre :
+$P(A=a) = \sum_v P(A=a, B=v)$.
+
+
+Le ratio $\frac{P(A=a, B=b)}{P(A=a)} \leq 1$
+s'avère être extrêmement important.
+Il est appelé la *probabilité conditionnelle*,
+et est noté via le symbole "$\mid$" :
+
+$$P(B=b \mid A=a) = P(A=a,B=b)/P(A=a).$$
+
+Il nous indique la nouvelle probabilité
+associée à l'événement $B=b$,
+une fois que nous conditionnons sur le fait que $A=a$ a eu lieu.
+Nous pouvons considérer cette probabilité conditionnelle
+comme restreignant l'attention uniquement au sous-ensemble
+de l'espace échantillonnal associé à $A=a$
+puis en renormalisant pour que
+toutes les probabilités s'additionnent à 1.
+Les probabilités conditionnelles
+sont en fait juste des probabilités ordinaires
+et respectent donc tous les axiomes,
+tant que nous conditionnons tous les termes
+sur le même événement et ainsi
+restreignons l'attention au même espace échantillonnal.
+Par exemple, pour des événements disjoints
+$\mathcal{B}$ et $\mathcal{B}'$, nous avons que
+$P(\mathcal{B} \cup \mathcal{B}' \mid A = a) = P(\mathcal{B} \mid A = a) + P(\mathcal{B}' \mid A = a)$.
+
+
+En utilisant la définition des probabilités conditionnelles,
+nous pouvons dériver le célèbre résultat appelé *théorème de Bayes*.
+Par construction, nous avons que $P(A, B) = P(B\mid A) P(A)$
+et $P(A, B) = P(A\mid B) P(B)$.
+La combinaison des deux équations donne
+$P(B\mid A) P(A) = P(A\mid B) P(B)$ et donc
+
+$$P(A \mid B) = \frac{P(B\mid A) P(A)}{P(B)}.$$
+
+
+
+
+
+
+Cette équation simple a des implications profondes car
+elle nous permet d'inverser l'ordre du conditionnement.
+Si nous savons comment estimer $P(B\mid A)$, $P(A)$ et $P(B)$,
+alors nous pouvons estimer $P(A\mid B)$.
+Nous trouvons souvent plus facile d'estimer directement un terme
+mais pas l'autre et le théorème de Bayes peut venir à la rescousse ici.
+Par exemple, si nous connaissons la prévalence des symptômes pour une maladie donnée,
+et les prévalences globales de la maladie et des symptômes, respectivement,
+nous pouvons déterminer quelle est la probabilité que quelqu'un
+ait la maladie en fonction de ses symptômes.
+Dans certains cas, nous pourrions ne pas avoir d'accès direct à $P(B)$,
+comme la prévalence des symptômes.
+Dans ce cas, une version simplifiée du théorème de Bayes s'avère utile :
+
+$$P(A \mid B) \propto P(B \mid A) P(A).$$
+
+Puisque nous savons que $P(A \mid B)$ doit être normalisé à $1$, c'est-à-dire $\sum_a P(A=a \mid B) = 1$,
+nous pouvons l'utiliser pour calculer
+
+$$P(A \mid B) = \frac{P(B \mid A) P(A)}{\sum_a P(B \mid A=a) P(A = a)}.$$
+
+En statistique bayésienne, nous considérons un observateur
+comme possédant certaines croyances initiales (subjectives)
+sur la plausibilité des hypothèses disponibles
+encodées dans la *probabilité a priori* $P(H)$,
+et une *fonction de vraisemblance* qui indique quelle est la probabilité
+d'observer n'importe quelle valeur des preuves collectées
+pour chacune des hypothèses de la classe $P(E \mid H)$.
+Le théorème de Bayes est alors interprété comme nous disant
+comment mettre à jour la *probabilité a priori* initiale $P(H)$
+à la lumière des preuves disponibles $E$
+pour produire des croyances *a posteriori*
+$P(H \mid E) = \frac{P(E \mid H) P(H)}{P(E)}$.
+Informellement, cela peut être énoncé comme
+"l'a posteriori est égal à l'a priori fois la vraisemblance, divisé par les preuves".
+Maintenant, parce que la preuve $P(E)$ est la même pour toutes les hypothèses,
+nous pouvons nous en sortir simplement en normalisant sur les hypothèses.
+
+Notez que $\sum_a P(A=a \mid B) = 1$ nous permet également de *marginaliser* sur des variables aléatoires. C'est-à-dire que nous pouvons supprimer des variables d'une distribution jointe telle que $P(A, B)$. Après tout, nous avons que
+
+$$\sum_a P(B \mid A=a) P(A=a) = \sum_a P(B, A=a) = P(B).$$
+
+L'indépendance est un autre concept fondamentalement important
+qui constitue l'épine dorsale de
+nombreuses idées importantes en statistique.
+En bref, deux variables sont *indépendantes*
+si le conditionnement sur la valeur de $A$ ne
+provoque aucun changement dans la distribution de probabilité
+associée à $B$ et vice versa.
+Plus formellement, l'indépendance, notée $A \perp B$,
+exige que $P(A \mid B) = P(A)$ et, par conséquent,
+que $P(A,B) = P(A \mid B) P(B) = P(A) P(B)$.
+L'indépendance est souvent une hypothèse appropriée.
+Par exemple, si la variable aléatoire $A$
+représente le résultat du lancer d'une pièce équilibrée
+et la variable aléatoire $B$
+représente le résultat du lancer d'une autre pièce,
+alors savoir si $A$ a donné face
+ne devrait pas influencer la probabilité
+que $B$ donne face.
+
+
+L'indépendance est particulièrement utile lorsqu'elle tient parmi les tirages successifs
+de nos données à partir d'une distribution sous-jacente
+(nous permettant de tirer des conclusions statistiques solides)
+ou lorsqu'elle tient parmi diverses variables dans nos données,
+nous permettant de travailler avec des modèles plus simples
+qui encodent cette structure d'indépendance.
+D'autre part, l'estimation des dépendances
+parmi les variables aléatoires est souvent le but même de l'apprentissage.
+Nous nous soucions d'estimer la probabilité de maladie étant donné les symptômes
+précisément parce que nous pensons
+que les maladies et les symptômes ne sont *pas* indépendants.
+
+
+Notez que parce que les probabilités conditionnelles sont des probabilités proprement dites,
+les concepts d'indépendance et de dépendance s'appliquent également à elles.
+Deux variables aléatoires $A$ et $B$ sont *conditionnellement indépendantes*
+étant donné une troisième variable $C$ si et seulement si $P(A, B \mid C) = P(A \mid C)P(B \mid C)$.
+Fait intéressant, deux variables peuvent être indépendantes en général
+mais devenir dépendantes lors du conditionnement sur une troisième.
+Cela se produit souvent lorsque les deux variables aléatoires $A$ et $B$
+correspondent aux causes d'une troisième variable $C$.
+Par exemple, les fractures osseuses et le cancer du poumon pourraient être indépendants
+dans la population générale, mais si nous conditionnons sur le fait d'être à l'hôpital,
+alors nous pourrions constater que les fractures osseuses sont corrélées négativement avec le cancer du poumon.
+C'est parce que la fracture osseuse *explique* pourquoi une personne est à l'hôpital
+et abaisse ainsi la probabilité qu'elle soit hospitalisée parce qu'elle a un cancer du poumon.
+
+
+Et inversement, deux variables aléatoires dépendantes
+peuvent devenir indépendantes lors du conditionnement sur une troisième.
+Cela arrive souvent lorsque deux événements autrement non liés
+ont une cause commune.
+La pointure et le niveau de lecture sont fortement corrélés
+parmi les élèves du primaire,
+mais cette corrélation disparaît si nous conditionnons sur l'âge.
+
+
+
+## Un exemple
+:label:`subsec_probability_hiv_app`
+
+Mettons nos compétences à l'épreuve.
+Supposons qu'un médecin administre un test de dépistage du VIH à un patient.
+Ce test est assez précis et n'échoue qu'avec une probabilité de 1 %
+si le patient est en bonne santé mais déclaré malade,
+c'est-à-dire que les patients sains sont testés positifs dans 1 % des cas.
+De plus, il ne manque jamais de détecter le VIH si le patient en est réellement atteint.
+Nous utilisons $D_1 \in \{0, 1\}$ pour indiquer le diagnostic
+($0$ si négatif et $1$ si positif)
+et $H \in \{0, 1\}$ pour désigner le statut VIH.
+
+| Probabilité conditionnelle | $H=1$ | $H=0$ |
+|:------------------------|------:|------:|
+| $P(D_1 = 1 \mid H)$        |     1 |  0,01 |
+| $P(D_1 = 0 \mid H)$        |     0 |  0,99 |
+
+Notez que les sommes des colonnes valent toutes 1 (mais pas les sommes des lignes),
+car il s'agit de probabilités conditionnelles.
+Calculons la probabilité que le patient soit atteint du VIH
+si le test revient positif, c'est-à-dire $P(H = 1 \mid D_1 = 1)$.
+Intuitivement, cela va dépendre de la fréquence de la maladie,
+car cela affecte le nombre de fausses alertes.
+Supposons que la population soit assez exempte de la maladie, par exemple $P(H=1) = 0,0015$.
+Pour appliquer le théorème de Bayes, nous devons appliquer la marginalisation
+pour déterminer
+
+$$\begin{aligned}
+P(D_1 = 1)
+=& P(D_1=1, H=0) + P(D_1=1, H=1)  \\
+=& P(D_1=1 \mid H=0) P(H=0) + P(D_1=1 \mid H=1) P(H=1) \\
+=& 0,011485.
+\end{aligned}
+$$
+
+Cela nous mène à
+
+$$P(H = 1 \mid D_1 = 1) = \frac{P(D_1=1 \mid H=1) P(H=1)}{P(D_1=1)} = 0,1306.$$
+
+En d'autres termes, il n'y a que 13,06 % de chances
+que le patient soit réellement atteint du VIH,
+bien que le test soit assez précis.
+Comme nous pouvons le voir, les probabilités peuvent être contre-intuitives.
+Que doit faire un patient en recevant une nouvelle aussi terrifiante ?
+Il est probable que le patient demande au médecin
+d'administrer un autre test pour y voir plus clair.
+Le deuxième test a des caractéristiques différentes
+et il n'est pas aussi bon que le premier.
+
+| Probabilité conditionnelle | $H=1$ | $H=0$ |
+|:------------------------|------:|------:|
+| $P(D_2 = 1 \mid H)$          |  0,98 |  0,03 |
+| $P(D_2 = 0 \mid H)$          |  0,02 |  0,97 |
+
+Malheureusement, le deuxième test revient également positif.
+Calculons les probabilités requises pour invoquer le théorème de Bayes
+en supposant l'indépendance conditionnelle :
+
+$$\begin{aligned}
+P(D_1 = 1, D_2 = 1 \mid H = 0)
+& = P(D_1 = 1 \mid H = 0) P(D_2 = 1 \mid H = 0)
+=& 0,0003, \\
+P(D_1 = 1, D_2 = 1 \mid H = 1)
+& = P(D_1 = 1 \mid H = 1) P(D_2 = 1 \mid H = 1)
+=& 0,98.
+\end{aligned}
+$$
+
+Nous pouvons maintenant appliquer la marginalisation pour obtenir la probabilité
+que les deux tests reviennent positifs :
+
+$$\begin{aligned}
+&P(D_1 = 1, D_2 = 1)\\
+&= P(D_1 = 1, D_2 = 1, H = 0) + P(D_1 = 1, D_2 = 1, H = 1)  \\
+&= P(D_1 = 1, D_2 = 1 \mid H = 0)P(H=0) + P(D_1 = 1, D_2 = 1 \mid H = 1)P(H=1)\\
+&= 0,00176955.
+\end{aligned}
+$$
+
+Enfin, la probabilité que le patient soit atteint du VIH sachant que les deux tests sont positifs est
+
+$$P(H = 1 \mid D_1 = 1, D_2 = 1)
+= \frac{P(D_1 = 1, D_2 = 1 \mid H=1) P(H=1)}{P(D_1 = 1, D_2 = 1)}
+= 0,8307.$$
+
+C'est-à-dire que le deuxième test nous a permis de gagner une confiance beaucoup plus élevée que tout ne va pas bien.
+Bien que le deuxième test soit considérablement moins précis que le premier,
+il a tout de même amélioré de manière significative notre estimation.
+L'hypothèse selon laquelle les deux tests sont conditionnellement indépendants l'un de l'autre
+était cruciale pour notre capacité à générer une estimation plus précise.
+Prenons le cas extrême où nous effectuons le même test deux fois.
+Dans cette situation, nous nous attendrions au même résultat les deux fois,
+donc aucune information supplémentaire n'est obtenue en effectuant à nouveau le même test.
+Le lecteur attentif aura peut-être remarqué que le diagnostic s'est comporté
+comme un classificateur caché à la vue de tous
+où notre capacité à décider si un patient est en bonne santé
+augmente à mesure que nous obtenons plus de caractéristiques (résultats de tests).
+
+
+## Espérances
+
+Souvent, prendre des décisions nécessite non seulement de regarder
+les probabilités attribuées aux événements individuels
+mais de les composer ensemble en agrégats utiles
+qui peuvent nous guider.
+Par exemple, lorsque des variables aléatoires prennent des valeurs scalaires continues,
+nous nous soucions souvent de savoir quelle valeur attendre *en moyenne*.
+Cette quantité est formellement appelée une *espérance*.
+Si nous faisons des investissements,
+la première quantité d'intérêt
+pourrait être le rendement auquel nous pouvons nous attendre,
+en faisant la moyenne de tous les résultats possibles
+(et en pondérant par les probabilités appropriées).
+Par exemple, disons qu'avec 50 % de probabilité,
+un investissement pourrait échouer complètement,
+avec 40 % de probabilité il pourrait fournir un rendement de 2$\times$,
+et avec 10 % de probabilité il pourrait fournir un rendement de 10$\times$.
+Pour calculer le rendement attendu,
+nous additionnons tous les rendements, en multipliant chacun
+par la probabilité qu'ils se produisent.
+Cela donne l'espérance
+$0,5 \cdot 0 + 0,4 \cdot 2 + 0,1 \cdot 10 = 1,8$.
+Le rendement attendu est donc de 1,8$\times$.
+
+
+En général, l'*espérance* (ou la moyenne)
+de la variable aléatoire $X$ est définie comme
+
+$$E[X] = E_{x \sim P}[x] = \sum_{x} x P(X = x).$$
+
+De même, pour les densités nous obtenons $E[X] = \int x \;dp(x)$.
+Parfois, nous sommes intéressés par la valeur attendue
+de certaines fonctions de $x$.
+Nous pouvons calculer ces espérances comme
+
+$$E_{x \sim P}[f(x)] = \sum_x f(x) P(x) \textrm{ et } E_{x \sim P}[f(x)] = \int f(x) p(x) \;dx$$
+
+respectivement pour les probabilités discrètes et les densités.
+En revenant à l'exemple d'investissement ci-dessus,
+$f$ pourrait être l'*utilité* (le bonheur)
+associée au rendement.
+Les économistes comportementaux ont noté depuis longtemps
+que les gens associent une plus grande désutilité
+à la perte d'argent que l'utilité gagnée
+à gagner un dollar par rapport à leur niveau de base.
+De plus, la valeur de l'argent a tendance à être sous-linéaire.
+Posséder 100k dollars contre zéro dollar
+peut faire la différence entre payer le loyer,
+bien manger et bénéficier de soins de santé de qualité
+ou souffrir de l'itinérance.
+D'un autre côté, les gains dus à la possession
+de 200k contre 100k sont moins dramatiques.
+Un tel raisonnement motive le cliché
+selon lequel "l'utilité de l'argent est logarithmique".
+
+
+Si l'utilité associée à une perte totale était de $-1$,
+et que les utilités associées à des rendements de $1$, $2$ et $10$
+étaient respectivement de $1$, $2$ et $4$,
+alors le bonheur attendu de l'investissement
+serait de $0,5 \cdot (-1) + 0,4 \cdot 2 + 0,1 \cdot 4 = 0,7$
+(une perte d'utilité attendue de 30 %).
+Si tel était effectivement votre fonction d'utilité,
+vous feriez peut-être mieux de garder l'argent à la banque.
+
+Pour les décisions financières,
+nous pourrions également vouloir mesurer
+à quel point un investissement est *risqué*.
+Ici, nous ne nous soucions pas seulement de la valeur attendue
+mais de la mesure dans laquelle les valeurs réelles ont tendance à *varier*
+par rapport à cette valeur.
+Notez que nous ne pouvons pas simplement prendre
+l'espérance de la différence
+entre les valeurs réelles et attendues.
+C'est parce que l'espérance d'une différence
+est la différence des espérances,
+c'est-à-dire $E[X - E[X]] = E[X] - E[E[X]] = 0$.
+Cependant, nous pouvons regarder l'espérance
+de n'importe quelle fonction non négative de cette différence.
+La *variance* d'une variable aléatoire est calculée en regardant
+la valeur attendue des différences au *carré* :
+
+$$\textrm{Var}[X] = E\left[(X - E[X])^2\right] = E[X^2] - E[X]^2.$$
+
+Ici, l'égalité s'ensuit en développant
+$(X - E[X])^2 = X^2 - 2 X E[X] + E[X]^2$
+et en prenant les espérances pour chaque terme.
+La racine carrée de la variance est une autre
+quantité utile appelée l'*écart-type*.
+Alors que celui-ci et la variance
+transmettent la même information (l'un peut être calculé à partir de l'autre),
+l'écart-type a la propriété intéressante
+d'être exprimé dans les mêmes unités
+que la quantité originale représentée
+par la variable aléatoire.
+
+Enfin, la variance d'une fonction
+d'une variable aléatoire
+est définie de manière analogue par
+
+$$\textrm{Var}_{x \sim P}[f(x)] = E_{x \sim P}[f^2(x)] - E_{x \sim P}[f(x)]^2.$$
+
+En revenant à notre exemple d'investissement,
+nous pouvons maintenant calculer la variance de l'investissement.
+Elle est donnée par $0,5 \cdot 0 + 0,4 \cdot 2^2 + 0,1 \cdot 10^2 - 1,8^2 = 8,36$.
+À toutes fins utiles, il s'agit d'un investissement risqué.
+Notez que par convention mathématique, la moyenne et la variance
+sont souvent désignées par $\mu$ et $\sigma^2$.
+C'est particulièrement le cas chaque fois que nous les utilisons
+pour paramétrer une distribution gaussienne.
+
+De la même manière que nous avons introduit les espérances
+et la variance pour les variables aléatoires *scalaires*,
+nous pouvons le faire pour les variables à valeurs vectorielles.
+Les espérances sont faciles, car nous pouvons les appliquer élément par élément.
+Par exemple, $\boldsymbol{\mu} \stackrel{\textrm{def}}{=} E_{\mathbf{x} \sim P}[\mathbf{x}]$
+a pour coordonnées $\mu_i = E_{\mathbf{x} \sim P}[x_i]$.
+Les *covariances* sont plus compliquées.
+Nous les définissons en prenant les espérances du *produit extérieur*
+de la différence entre les variables aléatoires et leur moyenne :
+
+$$\boldsymbol{\Sigma} \stackrel{\textrm{def}}{=} \textrm{Cov}_{\mathbf{x} \sim P}[\mathbf{x}] = E_{\mathbf{x} \sim P}\left[(\mathbf{x} - \boldsymbol{\mu}) (\mathbf{x} - \boldsymbol{\mu})^\top\right].$$
+
+Cette matrice $\boldsymbol{\Sigma}$ est appelée la matrice de covariance.
+Un moyen simple de voir son effet est de considérer un vecteur $\mathbf{v}$
+de la même taille que $\mathbf{x}$.
+Il s'ensuit que
+
+$$\mathbf{v}^\top \boldsymbol{\Sigma} \mathbf{v} = E_{\mathbf{x} \sim P}\left[\mathbf{v}^\top(\mathbf{x} - \boldsymbol{\mu}) (\mathbf{x} - \boldsymbol{\mu})^\top \mathbf{v}\right] = \textrm{Var}_{x \sim P}[\mathbf{v}^\top \mathbf{x}].$$
+
+En tant que tel, $\boldsymbol{\Sigma}$ nous permet de calculer la variance
+pour toute fonction linéaire de $\mathbf{x}$
+par une simple multiplication matricielle.
+Les éléments hors diagonale nous indiquent à quel point les coordonnées sont corrélées :
+une valeur de 0 signifie aucune corrélation,
+tandis qu'une valeur positive plus élevée
+signifie qu'elles sont plus fortement corrélées.
+
+
+
+## Discussion
+
+Dans l'apprentissage automatique, il y a beaucoup de choses sur lesquelles être incertain !
+Nous pouvons être incertains de la valeur d'une étiquette étant donné une entrée.
+Nous pouvons être incertains de la valeur estimée d'un paramètre.
+Nous pouvons même être incertains de savoir si les données arrivant lors du déploiement
+proviennent même de la même distribution que les données d'entraînement.
+
+Par *incertitude aléatoire* (ou *aléatoire*), nous entendons une incertitude
+qui est intrinsèque au problème,
+et due à un véritable hasard
+non pris en compte par les variables observées.
+Par *incertitude épistémique*, nous entendons l'incertitude
+sur les paramètres d'un modèle, le genre d'incertitude
+que nous pouvons espérer réduire en collectant plus de données.
+Nous pourrions avoir une incertitude épistémique
+concernant la probabilité
+qu'une pièce donne face,
+mais même une fois que nous connaissons cette probabilité,
+il nous reste une incertitude aléatoire
+sur le résultat de tout lancer futur.
+Peu importe combien de temps nous regardons quelqu'un lancer une pièce équilibrée,
+nous ne serons jamais plus ou moins certains à 50 %
+que le prochain lancer donnera face.
+Ces termes proviennent de la modélisation mécanique,
+(voir par exemple :citet:`Der-Kiureghian.Ditlevsen.2009` pour une revue sur cet aspect de [la quantification de l'incertitude](https://en.wikipedia.org/wiki/Uncertainty_quantification)).
+Il convient de noter, cependant, que ces termes constituent un léger abus de langage.
+Le terme *épistémique* fait référence à tout ce qui concerne la *connaissance*
+et donc, au sens philosophique, toute incertitude est épistémique.
+
+
+Nous avons vu que l'échantillonnage de données à partir d'une distribution de probabilité inconnue
+peut nous fournir des informations qui peuvent être utilisées pour estimer
+les paramètres de la distribution de génération de données.
+Cela dit, la vitesse à laquelle cela est possible peut être assez lente.
+Dans notre exemple de lancer de pièces (et bien d'autres),
+nous ne pouvons pas faire mieux que de concevoir des estimateurs
+qui convergent à un taux de $1/\sqrt{n}$,
+où $n$ est la taille de l'échantillon (par exemple, le nombre de lancers).
+Cela signifie qu'en passant de 10 à 1 000 observations (généralement une tâche très réalisable),
+nous voyons une réduction au décuple de l'incertitude,
+alors que les 1 000 observations suivantes aident comparativement peu,
+n'offrant qu'une réduction de 1,41 fois.
+C'est une caractéristique persistante de l'apprentissage automatique :
+bien qu'il y ait souvent des gains faciles, il faut une très grande quantité de données,
+et souvent avec elle une quantité énorme de calcul, pour réaliser d'autres gains.
+Pour une revue empirique de ce fait pour les modèles de langage à grande échelle, voir :citet:`Revels.Lubin.Papamarkou.2016`.
+
+Nous avons également affiné notre langage et nos outils pour la modélisation statistique.
+Au cours de ce processus, nous avons appris les probabilités conditionnelles
+et l'une des équations les plus importantes en statistique --- le théorème de Bayes.
+C'est un outil efficace pour découpler les informations transmises par les données
+via un terme de vraisemblance $P(B \mid A)$ qui traite de
+la mesure dans laquelle les observations $B$ correspondent à un choix de paramètres $A$,
+et une probabilité a priori $P(A)$ qui régit la plausibilité
+d'un choix particulier de $A$ au départ.
+En particulier, nous avons vu comment cette règle peut être appliquée
+pour attribuer des probabilités aux diagnostics,
+en fonction de l'efficacité du test *et*
+de la prévalence de la maladie elle-même (c'est-à-dire notre a priori).
+
+Enfin, nous avons introduit un premier ensemble de questions non triviales
+sur l'effet d'une distribution de probabilité spécifique,
+à savoir les espérances et les variances.
+Bien qu'il y ait bien plus que de simples espérances linéaires et quadratiques
+pour une distribution de probabilité,
+ces deux-là fournissent déjà une bonne dose de connaissances
+sur le comportement possible de la distribution.
+Par exemple, [l'inégalité de Bienaymé-Tchebychev](https://en.wikipedia.org/wiki/Chebyshev%27s_inequality)
+stipule que $P(|X - \mu| \geq k \sigma) \leq 1/k^2$,
+où $\mu$ est l'espérance, $\sigma^2$ est la variance de la distribution,
+et $k > 1$ est un paramètre de confiance de notre choix.
+Elle nous dit que les tirages d'une distribution se situent
+avec au moins 50 % de probabilité
+dans un intervalle $[-\sqrt{2} \sigma, \sqrt{2} \sigma]$
+centré sur l'espérance.
+
+
+
+
+## Exercices
+
+1. Donnez un exemple où l'observation de plus de données peut réduire la quantité d'incertitude sur le résultat à un niveau arbitrairement bas.
+1. Donnez un exemple où l'observation de plus de données ne réduira la quantité d'incertitude que jusqu'à un certain point et pas au-delà. Expliquez pourquoi c'est le cas et où vous vous attendez à ce que ce point se produise.
+1. Nous avons démontré empiriquement la convergence vers la moyenne pour le lancer d'une pièce. Calculez la variance de l'estimation de la probabilité que nous voyions face après avoir tiré $n$ échantillons.
+    1. Comment la variance évolue-t-elle avec le nombre d'observations ?
+    1. Utilisez l'inégalité de Tchebychev pour borner l'écart par rapport à l'espérance.
+    1. Quel est le lien avec le théorème central limite ?
+1. Supposons que nous tirions $m$ échantillons $x_i$ d'une distribution de probabilité de moyenne nulle et de variance unitaire. Calculez les moyennes $z_m \stackrel{\textrm{def}}{=} m^{-1} \sum_{i=1}^m x_i$. Pouvons-nous appliquer l'inégalité de Tchebychev pour chaque $z_m$ indépendamment ? Pourquoi pas ?
+1. Étant donné deux événements de probabilité $P(\mathcal{A})$ et $P(\mathcal{B})$, calculez les bornes supérieure et inférieure de $P(\mathcal{A} \cup \mathcal{B})$ et $P(\mathcal{A} \cap \mathcal{B})$. Astuce : représentez graphiquement la situation à l'aide d'un [diagramme de Venn](https://en.wikipedia.org/wiki/Venn_diagram).
+1. Supposons que nous ayons une suite de variables aléatoires, disons $A$, $B$ et $C$, où $B$ ne dépend que de $A$, et $C$ ne dépend que de $B$, pouvez-vous simplifier la probabilité jointe $P(A, B, C)$ ? Astuce : c'est une [chaîne de Markov](https://en.wikipedia.org/wiki/Markov_chain).
+1. Dans la :numref:`subsec_probability_hiv_app`, supposez que les résultats des deux tests ne sont pas indépendants. En particulier, supposez que chaque test à lui seul a un taux de faux positifs de 10 % et un taux de faux négatifs de 1 %. C'est-à-dire, supposez que $P(D =1 \mid H=0) = 0,1$ et que $P(D = 0 \mid H=1) = 0,01$. De plus, supposez que pour $H = 1$ (infecté), les résultats des tests sont conditionnellement indépendants, c'est-à-dire que $P(D_1, D_2 \mid H=1) = P(D_1 \mid H=1) P(D_2 \mid H=1)$ mais que pour les patients sains, les résultats sont couplés via $P(D_1 = D_2 = 1 \mid H=0) = 0,02$.
+    1. Établissez le tableau de probabilité jointe pour $D_1$ et $D_2$, sachant $H=0$ sur la base des informations dont vous disposez jusqu'à présent.
+    1. Déduisez la probabilité que le patient soit malade ($H=1$) après qu'un test soit revenu positif. Vous pouvez supposer la même probabilité de base $P(H=1) = 0,0015$ qu'auparavant.
+    1. Déduisez la probabilité que le patient soit malade ($H=1$) après que les deux tests soient revenus positifs.
+1. Supposez que vous êtes un gestionnaire d'actifs pour une banque d'investissement et que vous avez le choix entre des actions $s_i$ dans lesquelles investir. Votre portefeuille doit totaliser $1$ avec des poids $\alpha_i$ pour chaque action. Les actions ont un rendement moyen $\boldsymbol{\mu} = E_{\mathbf{s} \sim P}[\mathbf{s}]$ et une covariance $\boldsymbol{\Sigma} = \textrm{Cov}_{\mathbf{s} \sim P}[\mathbf{s}]$.
+    1. Calculez le rendement attendu pour un portefeuille donné $\boldsymbol{\alpha}$.
+    1. Si vous vouliez maximiser le rendement du portefeuille, comment devriez-vous choisir votre investissement ?
+    1. Calculez la *variance* du portefeuille.
+    1. Formulez un problème d'optimisation consistant à maximiser le rendement tout en maintenant la variance contrainte à une borne supérieure. C'est le [portefeuille de Markowitz](https://en.wikipedia.org/wiki/Markowitz_model), lauréat du prix Nobel :cite:`Mangram.2013`. Pour le résoudre, vous aurez besoin d'un solveur de programmation quadratique, quelque chose qui dépasse largement le cadre de ce livre.
+
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/36)
+:end_tab:
+
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/37)
+:end_tab:
+
+:begin_tab:`tensorflow`
+[Discussions](https://discuss.d2l.ai/t/198)
+:end_tab:
+
+:begin_tab:`jax`
+[Discussions](https://discuss.d2l.ai/t/17971)
+:end_tab:

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>2.5. Différentiation automatique &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2.6. Probabilités et statistiques" href="probability.html" />
+    <link rel="prev" title="2.4. Calcul" href="calculus.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">2. </span>Préliminaires</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">2.5. </span>Différentiation automatique</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_preliminaries/autograd.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="differentiation-automatique">
+<h1><span class="section-number">2.5. </span>Différentiation automatique<a class="headerlink" href="#differentiation-automatique" title="Permalink to this heading">¶</a></h1>
+<p>:label:<code class="docutils literal notranslate"><span class="pre">sec_autograd</span></code></p>
+<p>Rappelez-vous de :numref:<code class="docutils literal notranslate"><span class="pre">sec_calculus</span></code> que le calcul des dérivées est
+l’étape cruciale dans tous les algorithmes d’optimisation que nous
+utiliserons pour entraîner des réseaux profonds. Bien que les calculs
+soient simples, les effectuer à la main peut être fastidieux et sujet à
+erreur, et ces problèmes ne font que croître à mesure que nos modèles
+deviennent plus complexes.</p>
+<p>Heureusement, tous les frameworks de deep learning modernes nous
+déchargent de ce travail en proposant la <em>différentiation automatique</em>
+(souvent abrégée en <em>autograd</em>). À mesure que nous passons les données à
+travers chaque fonction successive, le framework construit un <em>graphe de
+calcul</em> qui suit comment chaque valeur dépend des autres. Pour calculer
+les dérivées, la différentiation automatique travaille à rebours à
+travers ce graphe en appliquant la règle de la chaîne. L’algorithme de
+calcul pour appliquer la règle de la chaîne de cette manière est appelé
+<em>rétropropagation</em> (backpropagation).</p>
+<p>Bien que les bibliothèques d’autograd soient devenues une préoccupation
+majeure au cours de la dernière décennie, elles ont une longue histoire.
+En fait, les premières références à l’autograd remontent à plus d’un
+demi-siècle :cite:<code class="docutils literal notranslate"><span class="pre">Wengert.1964</span></code>. Les idées fondamentales derrière la
+rétropropagation moderne datent d’une thèse de doctorat de 1980
+:cite:<code class="docutils literal notranslate"><span class="pre">Speelpenning.1980</span></code> et ont été développées davantage à la fin
+des années 1980 :cite:<code class="docutils literal notranslate"><span class="pre">Griewank.1989</span></code>. Bien que la rétropropagation
+soit devenue la méthode par défaut pour calculer les gradients, ce n’est
+pas la seule option. Pour instance, le langage de programmation Julia
+utilise la propagation avant (forward propagation)
+:cite:<code class="docutils literal notranslate"><span class="pre">Revels.Lubin.Papamarkou.2016</span></code>. Avant d’explorer les méthodes,
+maîtrisons d’abord le package autograd.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+</pre></div>
+</div>
+<section id="une-fonction-simple">
+<h2><span class="section-number">2.5.1. </span>Une fonction simple<a class="headerlink" href="#une-fonction-simple" title="Permalink to this heading">¶</a></h2>
+<p>Supposons que nous soyons intéressés par (<strong>la différenciation de la
+fonction :math:`y = 2mathbf{x}^{top}mathbf{x}` par rapport au vecteur
+colonne :math:`mathbf{x}`.</strong>) Pour commencer, nous assignons à <code class="docutils literal notranslate"><span class="pre">x</span></code>
+une valeur initiale.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">4.0</span><span class="p">)</span>
+<span class="n">x</span>
+</pre></div>
+</div>
+<p>[<strong>Avant de calculer le gradient de :math:`y` par rapport à
+:math:`mathbf{x}`, nous avons besoin d’un endroit pour le stocker.</strong>]
+En général, nous évitons d’allouer de la nouvelle mémoire chaque fois
+que nous calculons une dérivée car le deep learning nécessite le calcul
+successif de dérivées par rapport aux mêmes paramètres un très grand
+nombre de fois, et nous risquerions de manquer de mémoire. Notez que le
+gradient d’une fonction à valeur scalaire par rapport à un vecteur
+<span class="math notranslate nohighlight">\(\mathbf{x}\)</span> est à valeur vectorielle avec la même forme que
+<span class="math notranslate nohighlight">\(\mathbf{x}\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Can also create x = torch.arange(4.0, requires_grad=True)</span>
+<span class="n">x</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">x</span><span class="o">.</span><span class="n">grad</span>  <span class="c1"># The gradient is None by default</span>
+</pre></div>
+</div>
+<p>(<strong>Nous calculons maintenant notre fonction de ``x`` et assignons le
+résultat à ``y``.</strong>)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">y</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+<span class="n">y</span>
+</pre></div>
+</div>
+<p>[<strong>Nous pouvons maintenant prendre le gradient de ``y`` par rapport à
+``x``</strong>] en appelant sa méthode <code class="docutils literal notranslate"><span class="pre">backward</span></code>. Ensuite, nous pouvons
+accéder au gradient via l’attribut <code class="docutils literal notranslate"><span class="pre">grad</span></code> de <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">y</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<span class="n">x</span><span class="o">.</span><span class="n">grad</span>
+</pre></div>
+</div>
+<p>(<strong>Nous savons déjà que le gradient de la fonction
+:math:`y = 2mathbf{x}^{top}mathbf{x}` par rapport à
+:math:`mathbf{x}` devrait être :math:`4mathbf{x}`.</strong>) Nous pouvons
+maintenant vérifier que le calcul automatique du gradient et le résultat
+attendu sont identiques.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="o">.</span><span class="n">grad</span> <span class="o">==</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">x</span>
+</pre></div>
+</div>
+<p>[<strong>Calculons maintenant une autre fonction de ``x`` et prenons son
+gradient.</strong>] Notez que PyTorch ne réinitialise pas automatiquement le
+tampon de gradient lorsque nous enregistrons un nouveau gradient. Au
+lieu de cela, le nouveau gradient est ajouté au gradient déjà stocké. Ce
+comportement est utile lorsque nous voulons optimiser la somme de
+plusieurs fonctions d’objectif. Pour réinitialiser le tampon de
+gradient, nous pouvons appeler <code class="docutils literal notranslate"><span class="pre">x.grad.zero_()</span></code> comme suit :</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">zero_</span><span class="p">()</span>  <span class="c1"># Reset the gradient</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="n">y</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<span class="n">x</span><span class="o">.</span><span class="n">grad</span>
+</pre></div>
+</div>
+</section>
+<section id="retropropagation-pour-les-variables-non-scalaires">
+<h2><span class="section-number">2.5.2. </span>Rétropropagation pour les variables non scalaires<a class="headerlink" href="#retropropagation-pour-les-variables-non-scalaires" title="Permalink to this heading">¶</a></h2>
+<p>Lorsque <code class="docutils literal notranslate"><span class="pre">y</span></code> est un vecteur, la représentation la plus naturelle de la
+dérivée de <code class="docutils literal notranslate"><span class="pre">y</span></code> par rapport à un vecteur <code class="docutils literal notranslate"><span class="pre">x</span></code> est une matrice appelée
+la <em>Jacobienne</em> qui contient les dérivées partielles de chaque
+composante de <code class="docutils literal notranslate"><span class="pre">y</span></code> par rapport à chaque composante de <code class="docutils literal notranslate"><span class="pre">x</span></code>. De même,
+pour des <code class="docutils literal notranslate"><span class="pre">y</span></code> et <code class="docutils literal notranslate"><span class="pre">x</span></code> d’ordre supérieur, le résultat de la
+différenciation pourrait être un tenseur d’ordre encore plus élevé.</p>
+<p>Bien que les Jacobiennes apparaissent dans certaines techniques de
+machine learning avancées, plus couramment nous voulons sommer les
+gradients de chaque composante de <code class="docutils literal notranslate"><span class="pre">y</span></code> par rapport au vecteur complet
+<code class="docutils literal notranslate"><span class="pre">x</span></code>, donnant un vecteur de la même forme que <code class="docutils literal notranslate"><span class="pre">x</span></code>. Par exemple, nous
+avons souvent un vecteur représentant la valeur de notre fonction de
+perte calculée séparément pour chaque exemple parmi un <em>lot</em> (batch)
+d’exemples d’entraînement. Ici, nous voulons simplement (<strong>sommer les
+gradients calculés individuellement pour chaque exemple</strong>).</p>
+<p>Parce que les frameworks de deep learning varient dans leur façon
+d’interpréter les gradients de tenseurs non scalaires, PyTorch prend des
+mesures pour éviter toute confusion. Invoquer <code class="docutils literal notranslate"><span class="pre">backward</span></code> sur un
+non-scalaire provoque une erreur à moins que nous n’indiquions à PyTorch
+comment réduire l’objet en un scalaire. Plus formellement, nous devons
+fournir un vecteur <span class="math notranslate nohighlight">\(\mathbf{v}\)</span> tel que <code class="docutils literal notranslate"><span class="pre">backward</span></code> calculera
+<span class="math notranslate nohighlight">\(\mathbf{v}^\top \partial_{\mathbf{x}} \mathbf{y}\)</span> plutôt que
+<span class="math notranslate nohighlight">\(\partial_{\mathbf{x}} \mathbf{y}\)</span>. Cette partie suivante peut
+être déroutante, mais pour des raisons qui deviendront claires plus
+tard, cet argument (représentant <span class="math notranslate nohighlight">\(\mathbf{v}\)</span>) est nommé
+<code class="docutils literal notranslate"><span class="pre">gradient</span></code>. Pour une description plus détaillée, voir le <a class="reference external" href="https://zhang-yang.medium.com/the-gradient-argument-in-pytorchs-backward-function-explained-by-examples-68f266950c29">bilan sur
+Medium</a>
+de Yang Zhang.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">zero_</span><span class="p">()</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
+<span class="n">y</span><span class="o">.</span><span class="n">backward</span><span class="p">(</span><span class="n">gradient</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>  <span class="c1"># Faster: y.sum().backward()</span>
+<span class="n">x</span><span class="o">.</span><span class="n">grad</span>
+</pre></div>
+</div>
+</section>
+<section id="detacher-le-calcul">
+<h2><span class="section-number">2.5.3. </span>Détacher le calcul<a class="headerlink" href="#detacher-le-calcul" title="Permalink to this heading">¶</a></h2>
+<p>Parfois, nous souhaitons [<strong>déplacer certains calculs en dehors du
+graphe de calcul enregistré.</strong>] Par exemple, supposons que nous
+utilisions l’entrée pour créer certains termes intermédiaires
+auxiliaires pour lesquels nous ne voulons pas calculer de gradient. Dans
+ce cas, nous devons <em>détacher</em> le graphe de calcul respectif du résultat
+final. L’exemple jouet suivant rend cela plus clair : supposons que nous
+ayons <code class="docutils literal notranslate"><span class="pre">z</span> <span class="pre">=</span> <span class="pre">x</span> <span class="pre">*</span> <span class="pre">y</span></code> et <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">x</span> <span class="pre">*</span> <span class="pre">x</span></code> mais que nous voulions nous
+concentrer sur l’influence <em>directe</em> de <code class="docutils literal notranslate"><span class="pre">x</span></code> sur <code class="docutils literal notranslate"><span class="pre">z</span></code> plutôt que sur
+l’influence transmise via <code class="docutils literal notranslate"><span class="pre">y</span></code>. Dans ce cas, nous pouvons créer une
+nouvelle variable <code class="docutils literal notranslate"><span class="pre">u</span></code> qui prend la même valeur que <code class="docutils literal notranslate"><span class="pre">y</span></code> mais dont la
+<em>provenance</em> (comment elle a été créée) a été effacée. Ainsi, <code class="docutils literal notranslate"><span class="pre">u</span></code> n’a
+pas d’ancêtres dans le graphe et les gradients ne coulent pas à travers
+<code class="docutils literal notranslate"><span class="pre">u</span></code> vers <code class="docutils literal notranslate"><span class="pre">x</span></code>. Par exemple, prendre le gradient de <code class="docutils literal notranslate"><span class="pre">z</span> <span class="pre">=</span> <span class="pre">x</span> <span class="pre">*</span> <span class="pre">u</span></code>
+donnera le résultat <code class="docutils literal notranslate"><span class="pre">u</span></code>, (pas <code class="docutils literal notranslate"><span class="pre">3</span> <span class="pre">*</span> <span class="pre">x</span> <span class="pre">*</span> <span class="pre">x</span></code> comme vous auriez pu vous
+y attendre puisque <code class="docutils literal notranslate"><span class="pre">z</span> <span class="pre">=</span> <span class="pre">x</span> <span class="pre">*</span> <span class="pre">x</span> <span class="pre">*</span> <span class="pre">x</span></code>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">zero_</span><span class="p">()</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
+<span class="n">u</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">u</span> <span class="o">*</span> <span class="n">x</span>
+
+<span class="n">z</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<span class="n">x</span><span class="o">.</span><span class="n">grad</span> <span class="o">==</span> <span class="n">u</span>
+</pre></div>
+</div>
+<p>Notez que bien que cette procédure détache les ancêtres de <code class="docutils literal notranslate"><span class="pre">y</span></code> du
+graphe menant à <code class="docutils literal notranslate"><span class="pre">z</span></code>, le graphe de calcul menant à <code class="docutils literal notranslate"><span class="pre">y</span></code> persiste et
+nous pouvons donc calculer le gradient de <code class="docutils literal notranslate"><span class="pre">y</span></code> par rapport à <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">zero_</span><span class="p">()</span>
+<span class="n">y</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<span class="n">x</span><span class="o">.</span><span class="n">grad</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span>
+</pre></div>
+</div>
+</section>
+<section id="gradients-et-flux-de-controle-python">
+<h2><span class="section-number">2.5.4. </span>Gradients et flux de contrôle Python<a class="headerlink" href="#gradients-et-flux-de-controle-python" title="Permalink to this heading">¶</a></h2>
+<p>Jusqu’à présent, nous avons passé en revue des cas où le chemin de
+l’entrée à la sortie était bien défini via une fonction telle que
+<code class="docutils literal notranslate"><span class="pre">z</span> <span class="pre">=</span> <span class="pre">x</span> <span class="pre">*</span> <span class="pre">x</span> <span class="pre">*</span> <span class="pre">x</span></code>. La programmation nous offre beaucoup plus de liberté
+dans la façon dont nous calculons les résultats. Par exemple, nous
+pouvons les faire dépendre de variables auxiliaires ou conditionner des
+choix sur des résultats intermédiaires. L’un des avantages de
+l’utilisation de la différentiation automatique est que [<strong>même si</strong>] la
+construction du graphe de calcul de (<strong>une fonction nécessitait de
+passer par un labyrinthe de flux de contrôle Python</strong>) (par exemple, des
+conditions, des boucles et des appels de fonction arbitraires), (<strong>nous
+pouvons toujours calculer le gradient de la variable résultante.</strong>) Pour
+illustrer cela, considérons l’extrait de code suivant où le nombre
+d’itérations de la boucle <code class="docutils literal notranslate"><span class="pre">while</span></code> et l’évaluation de l’instruction
+<code class="docutils literal notranslate"><span class="pre">if</span></code> dépendent tous deux de la valeur de l’entrée <code class="docutils literal notranslate"><span class="pre">a</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="k">while</span> <span class="n">b</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">b</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">b</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">b</span>
+    <span class="k">return</span> <span class="n">c</span>
+</pre></div>
+</div>
+<p>Ci-dessous, nous appelons cette fonction, en passant une valeur
+aléatoire, comme entrée. Comme l’entrée est une variable aléatoire, nous
+ne savons pas quelle forme le graphe de calcul prendra. Cependant,
+chaque fois que nous exécutons <code class="docutils literal notranslate"><span class="pre">f(a)</span></code> sur une entrée spécifique, nous
+réalisons un graphe de calcul spécifique et pouvons ensuite exécuter
+<code class="docutils literal notranslate"><span class="pre">backward</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+<span class="n">d</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Même si notre fonction <code class="docutils literal notranslate"><span class="pre">f</span></code> est, à des fins de démonstration, un peu
+artificielle, sa dépendance par rapport à l’entrée est assez simple :
+c’est une fonction <em>linéaire</em> de <code class="docutils literal notranslate"><span class="pre">a</span></code> avec une échelle définie par
+morceaux. À ce titre, <code class="docutils literal notranslate"><span class="pre">f(a)</span> <span class="pre">/</span> <span class="pre">a</span></code> est un vecteur d’entrées constantes
+et, de plus, <code class="docutils literal notranslate"><span class="pre">f(a)</span> <span class="pre">/</span> <span class="pre">a</span></code> doit correspondre au gradient de <code class="docutils literal notranslate"><span class="pre">f(a)</span></code> par
+rapport à <code class="docutils literal notranslate"><span class="pre">a</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="o">.</span><span class="n">grad</span> <span class="o">==</span> <span class="n">d</span> <span class="o">/</span> <span class="n">a</span>
+</pre></div>
+</div>
+<p>Le flux de contrôle dynamique est très courant en deep learning. Par
+exemple, lors du traitement de texte, le graphe de calcul dépend de la
+longueur de l’entrée. Dans ces cas, la différentiation automatique
+devient vitale pour la modélisation statistique puisqu’il est impossible
+de calculer le gradient <em>a priori</em>.</p>
+</section>
+<section id="discussion">
+<h2><span class="section-number">2.5.5. </span>Discussion<a class="headerlink" href="#discussion" title="Permalink to this heading">¶</a></h2>
+<p>Vous avez maintenant eu un aperçu de la puissance de la différentiation
+automatique. Le développement de bibliothèques pour calculer les
+dérivées de manière à la fois automatique et efficace a été un gain de
+productivité massif pour les praticiens du deep learning, les libérant
+pour qu’ils puissent se concentrer sur des tâches moins ingrates. De
+plus, autograd nous permet de concevoir des modèles massifs pour
+lesquels les calculs de gradient au stylo et au papier seraient
+prohibitifs en temps. Il est intéressant de noter que, alors que nous
+utilisons autograd pour <em>optimiser</em> des modèles (au sens statistique),
+l’<em>optimisation</em> des bibliothèques d’autograd elles-mêmes (au sens
+informatique) est un sujet riche d’un intérêt vital pour les concepteurs
+de frameworks. Ici, des outils issus des compilateurs et de la
+manipulation de graphes sont exploités pour calculer les résultats de la
+manière la plus rapide et la plus économe en mémoire.</p>
+<p>Pour l’instant, essayez de vous souvenir de ces bases : (i) attacher des
+gradients aux variables par rapport auxquelles nous désirons des
+dérivées ; (ii) enregistrer le calcul de la valeur cible ; (iii)
+exécuter la fonction de rétropropagation ; et (iv) accéder au gradient
+résultant.</p>
+</section>
+<section id="exercices">
+<h2><span class="section-number">2.5.6. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Pourquoi la dérivée seconde est-elle beaucoup plus coûteuse à
+calculer que la dérivée première ?</p></li>
+<li><p>Après avoir exécuté la fonction de rétropropagation, exécutez-la à
+nouveau immédiatement et voyez ce qui se passe. Enquêtez.</p></li>
+<li><p>Dans l’exemple de flux de contrôle où nous calculons la dérivée de
+<code class="docutils literal notranslate"><span class="pre">d</span></code> par rapport à <code class="docutils literal notranslate"><span class="pre">a</span></code>, que se passerait-il si nous changions la
+variable <code class="docutils literal notranslate"><span class="pre">a</span></code> en un vecteur aléatoire ou une matrice ? À ce stade,
+le résultat du calcul <code class="docutils literal notranslate"><span class="pre">f(a)</span></code> n’est plus un scalaire. Qu’advient-il
+du résultat ? Comment analyser cela ?</p></li>
+<li><p>Soit <span class="math notranslate nohighlight">\(f(x) = \sin(x)\)</span>. Tracez le graphe de <span class="math notranslate nohighlight">\(f\)</span> et de sa
+dérivée <span class="math notranslate nohighlight">\(f'\)</span>. N’exploitez pas le fait que
+<span class="math notranslate nohighlight">\(f'(x) = \cos(x)\)</span> mais utilisez plutôt la différentiation
+automatique pour obtenir le résultat.</p></li>
+<li><p>Soit <span class="math notranslate nohighlight">\(f(x) = ((\log x^2) \cdot \sin x) + x^{-1}\)</span>. Écrivez un
+graphe de dépendance traçant les résultats de <span class="math notranslate nohighlight">\(x\)</span> vers
+<span class="math notranslate nohighlight">\(f(x)\)</span>.</p></li>
+<li><p>Utilisez la règle de la chaîne pour calculer la dérivée
+<span class="math notranslate nohighlight">\(\frac{df}{dx}\)</span> de la fonction susmentionnée, en plaçant chaque
+terme sur le graphe de dépendance que vous avez construit
+précédemment.</p></li>
+<li><p>Étant donné le graphe et les résultats de dérivées intermédiaires,
+vous avez un certain nombre d’options lors du calcul du gradient.
+Évaluez le résultat une fois en partant de <span class="math notranslate nohighlight">\(x\)</span> vers <span class="math notranslate nohighlight">\(f\)</span>
+et une fois de <span class="math notranslate nohighlight">\(f\)</span> en remontant vers <span class="math notranslate nohighlight">\(x\)</span>. Le chemin de
+<span class="math notranslate nohighlight">\(x\)</span> vers <span class="math notranslate nohighlight">\(f\)</span> est communément appelé <em>différenciation
+avant</em> (forward differentiation), tandis que le chemin de <span class="math notranslate nohighlight">\(f\)</span>
+vers <span class="math notranslate nohighlight">\(x\)</span> est appelé différenciation arrière (backward
+differentiation).</p></li>
+<li><p>Quand pourriez-vous vouloir utiliser la différenciation avant, et
+quand la différenciation arrière ? Indice : considérez la quantité de
+données intermédiaires nécessaires, la capacité à paralléliser les
+étapes, et la taille des matrices et vecteurs impliqués.</p></li>
+</ol>
+<p><a class="reference external" href="https://discuss.d2l.ai/t/35">Discussions</a></p>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">2.5. Différentiation automatique</a><ul>
+<li><a class="reference internal" href="#une-fonction-simple">2.5.1. Une fonction simple</a></li>
+<li><a class="reference internal" href="#retropropagation-pour-les-variables-non-scalaires">2.5.2. Rétropropagation pour les variables non scalaires</a></li>
+<li><a class="reference internal" href="#detacher-le-calcul">2.5.3. Détacher le calcul</a></li>
+<li><a class="reference internal" href="#gradients-et-flux-de-controle-python">2.5.4. Gradients et flux de contrôle Python</a></li>
+<li><a class="reference internal" href="#discussion">2.5.5. Discussion</a></li>
+<li><a class="reference internal" href="#exercices">2.5.6. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="calculus.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>2.4. Calcul</div>
+         </div>
+     </a>
+     <a id="button-next" href="probability.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>2.6. Probabilités et statistiques</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

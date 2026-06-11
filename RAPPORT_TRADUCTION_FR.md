@@ -54,6 +54,14 @@ Traduction réalisée par agent Gemini :
 - `chapter_introduction/index.md` : traduit en français par `translate_introduction.txt`.
 - `chapter_installation/index.md` : traduit en français par `translate_installation.txt`.
 - `chapter_notation/index.md` : traduit en français par `translate_notation.txt`.
+- `chapter_preliminaries/index.md` : traduit en français par `preliminaries_index.txt`.
+- `chapter_preliminaries/ndarray.md` : traduit en français par `preliminaries_ndarray.txt`.
+- `chapter_preliminaries/pandas.md` : traduit en français par `preliminaries_pandas.txt`.
+- `chapter_preliminaries/linear-algebra.md` : traduit en français par `preliminaries_linear_algebra.txt`.
+- `chapter_preliminaries/calculus.md` : traduit en français par `preliminaries_calculus.txt`.
+- `chapter_preliminaries/autograd.md` : traduit en français par `preliminaries_autograd.txt`.
+- `chapter_preliminaries/probability.md` : traduit en français par `preliminaries_probability.txt`.
+- `chapter_preliminaries/lookup-api.md` : traduit en français par `preliminaries_lookup_api.txt`.
 
 Ajouts manuels de structure française :
 
@@ -63,6 +71,7 @@ Ajouts manuels de structure française :
 - `README.md` et `ATTRIBUTION.md` : avertissement de traduction non officielle, lien vers le dépôt original, crédits et licences.
 - `docs/` : copie du site HTML prête pour GitHub Pages.
 - `notebooks/` : notebooks générés à partir du build partiel.
+- `img/polygon-circle.svg` : figure utilisée par `chapter_preliminaries/calculus.md`.
 
 ## Non traduit / restant à faire
 
@@ -90,14 +99,26 @@ Tentative d'authentification :
 
 Après réactivation de l'authentification Gemini CLI, les agents `translate_installation.txt`, `translate_notation.txt` et `translate_introduction.txt` ont été relancés avec succès.
 
+Lors de la traduction de `chapter_preliminaries`, deux agents ont d'abord rencontré `MODEL_CAPACITY_EXHAUSTED` (`ndarray` et `autograd`). Ils ont été relancés avec `--max-parallel 1`; `ndarray` a terminé normalement. Le run `autograd` a écrit le fichier traduit mais s'est ensuite bloqué dans Gemini; le fichier a été vérifié localement et intégré au build.
+
+Après traduction, les blocs de code fenced de `chapter_preliminaries` ont été restaurés depuis le dépôt original anglais afin de préserver exactement le code, les commentaires de code, les directives tabulaires et les sorties techniques.
+
 ## Limites du build partiel
 
-Le build HTML a réussi avec 66 avertissements attendus pour une version partielle :
+Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un build complet précédent du même état avait listé 88 avertissements attendus pour une version partielle :
 
 - plusieurs citations et labels pointent vers des chapitres absents du build partiel ;
 - le site ne contient que les chapitres copiés/traduits à ce stade.
 
 Pour le build complet, il faudra restaurer une copie complète ou des liens robustes vers toutes les images et tous les chapitres, puis rétablir `resources` dans `config.ini` pour se rapprocher du dépôt officiel.
+
+Note technique : l'ancien environnement `.venv-build` placé dans la racine du dépôt a fini par bloquer `pkg_resources`/`notedown`. Le build courant utilise un environnement virtuel frais hors dépôt :
+
+```bash
+/Users/janslou/Desktop/livre IA/d2l-fr-venv-build-fresh
+```
+
+Le HTML a été produit en lançant directement Sphinx sur `_build/rst_all` après génération des notebooks/RST, afin d'éviter la réécriture de deux notebooks `eval_all` vides observée pendant un run interrompu.
 
 ## État GitHub
 

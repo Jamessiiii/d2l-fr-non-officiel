@@ -1,0 +1,904 @@
+
+.. _sec_linear-algebra:
+
+Algèbre linéaire
+================
+
+
+À ce stade, nous savons charger des jeux de données dans des tenseurs et
+manipuler ces tenseurs avec des opérations mathématiques de base. Pour
+commencer à construire des modèles sophistiqués, nous aurons également
+besoin de quelques outils de l’algèbre linéaire. Cette section propose
+une introduction douce aux concepts les plus essentiels, en partant de
+l’arithmétique scalaire jusqu’à la multiplication de matrices.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    import torch
+
+Scalaires
+---------
+
+La plupart des mathématiques quotidiennes consistent à manipuler des
+nombres un par un. Formellement, nous appelons ces valeurs des
+*scalaires*. Par exemple, la température à Palo Alto est de :math:`72`
+degrés Fahrenheit. Si vous vouliez convertir la température en Celsius,
+vous évalueriez l’expression :math:`c = \frac{5}{9}(f - 32)`, en fixant
+:math:`f` à :math:`72`. Dans cette équation, les valeurs :math:`5`,
+:math:`9` et :math:`32` sont des scalaires constants. Les variables
+:math:`c` et :math:`f` représentent en général des scalaires inconnus.
+
+Nous désignons les scalaires par des lettres minuscules ordinaires (par
+exemple, :math:`x`, :math:`y` et :math:`z`) et l’espace de tous les
+scalaires (continus) *à valeurs réelles* par :math:`\mathbb{R}`. Par
+souci de concision, nous ferons l’impasse sur les définitions
+rigoureuses d’\ *espaces* : retenez simplement que l’expression
+:math:`x \in \mathbb{R}` est une manière formelle de dire que :math:`x`
+est un scalaire à valeur réelle. Le symbole :math:`\in` (prononcé
+“appartient à”) désigne l’appartenance à un ensemble. Par exemple,
+:math:`x, y \in \{0, 1\}` indique que :math:`x` et :math:`y` sont des
+variables qui ne peuvent prendre que les valeurs :math:`0` ou :math:`1`.
+
+Les scalaires sont implémentés comme des tenseurs qui ne contiennent
+qu’un seul élément. Ci-dessous, nous assignons deux scalaires et
+effectuons les opérations familières d’addition, de multiplication, de
+division et d’exponentiation.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    x = torch.tensor(3.0)
+    y = torch.tensor(2.0)
+    
+    x + y, x * y, x / y, x**y
+
+Vecteurs
+--------
+
+Pour les besoins actuels, vous pouvez considérer un vecteur comme un
+tableau de scalaires de longueur fixe. Comme pour leurs équivalents en
+code, nous appelons ces scalaires les *éléments* du vecteur (les
+synonymes incluent *entrées* et *composantes*). Lorsque les vecteurs
+représentent des exemples issus de jeux de données réels, leurs valeurs
+ont une signification concrète. Par exemple, si nous entraînions un
+modèle pour prédire le risque de défaut de paiement d’un prêt, nous
+pourrions associer chaque demandeur à un vecteur dont les composantes
+correspondent à des quantités telles que leur revenu, la durée de leur
+emploi, ou le nombre de défauts de paiement précédents. Si nous
+étudiions le risque de crise cardiaque, chaque vecteur pourrait
+représenter un patient et ses composantes pourraient correspondre à ses
+signes vitaux les plus récents, son taux de cholestérol, ses minutes
+d’exercice par jour, etc. Nous désignons les vecteurs par des lettres
+minuscules en gras, (par exemple, :math:`\mathbf{x}`, :math:`\mathbf{y}`
+et :math:`\mathbf{z}`).
+
+Les vecteurs sont implémentés comme des tenseurs d’ordre :math:`1`. En
+général, de tels tenseurs peuvent avoir des longueurs arbitraires, sous
+réserve des limitations de mémoire. Attention : en Python, comme dans la
+plupart des langages de programmation, les indices de vecteurs
+commencent à :math:`0`, ce que l’on appelle également l’\ *indexation à
+partir de zéro*, alors qu’en algèbre linéaire, les indices commencent à
+:math:`1` (indexation à partir de un).
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    x = torch.arange(3)
+    x
+
+Nous pouvons nous référer à un élément d’un vecteur en utilisant un
+indice. Par exemple, :math:`x_2` désigne le deuxième élément de
+:math:`\mathbf{x}`. Comme :math:`x_2` est un scalaire, nous ne le
+mettons pas en gras. Par défaut, nous visualisons les vecteurs en
+empilant leurs éléments verticalement :
+
+.. math:: \mathbf{x} =\begin{bmatrix}x_{1}  \\ \vdots  \\x_{n}\end{bmatrix}.
+   :label: eq_vec_def
+
+Ici :math:`x_1, \ldots, x_n` sont les éléments du vecteur. Plus tard,
+nous distinguerons ces *vecteurs colonnes* des *vecteurs lignes* dont
+les éléments sont empilés horizontalement. Rappelez-vous que nous
+accédons aux éléments d’un tenseur via l’indexation.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    x[2]
+
+Pour indiquer qu’un vecteur contient :math:`n` éléments, nous écrivons
+:math:`\mathbf{x} \in \mathbb{R}^n`. Formellement, nous appelons
+:math:`n` la *dimensionnalité* du vecteur. En code, cela correspond à la
+longueur du tenseur, accessible via la fonction intégrée ``len`` de
+Python.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    len(x)
+
+Nous pouvons également accéder à la longueur via l’attribut ``shape``.
+La forme (*shape*) est un tuple qui indique la longueur d’un tenseur le
+long de chaque axe. Les tenseurs avec un seul axe ont des formes avec un
+seul élément.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    x.shape
+
+Souvent, le mot “dimension” est surchargé pour signifier à la fois le
+nombre d’axes et la longueur le long d’un axe particulier. Pour éviter
+cette confusion, nous utilisons *ordre* pour désigner le nombre d’axes
+et *dimensionnalité* exclusivement pour désigner le nombre de
+composantes.
+
+Matrices
+--------
+
+Tout comme les scalaires sont des tenseurs d’ordre :math:`0` et les
+vecteurs sont des tenseurs d’ordre :math:`1`, les matrices sont des
+tenseurs d’ordre :math:`2`. Nous désignons les matrices par des lettres
+majuscules en gras (par exemple, :math:`\mathbf{X}`, :math:`\mathbf{Y}`
+et :math:`\mathbf{Z}`), et nous les représentons en code par des
+tenseurs à deux axes. L’expression
+:math:`\mathbf{A} \in \mathbb{R}^{m \times n}` indique qu’une matrice
+:math:`\mathbf{A}` contient :math:`m \times n` scalaires à valeurs
+réelles, disposés en :math:`m` lignes et :math:`n` colonnes. Lorsque
+:math:`m = n`, nous disons qu’une matrice est *carrée*. Visuellement,
+nous pouvons illustrer n’importe quelle matrice sous forme de tableau.
+Pour désigner un élément individuel, nous mettons en indice les indices
+de ligne et de colonne, par exemple, :math:`a_{ij}` est la valeur qui
+appartient à la :math:`i^{\textrm{ème}}` ligne et à la
+:math:`j^{\textrm{ème}}` colonne de :math:`\mathbf{A}` :
+
+.. math:: \mathbf{A}=\begin{bmatrix} a_{11} & a_{12} & \cdots & a_{1n} \\ a_{21} & a_{22} & \cdots & a_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ a_{m1} & a_{m2} & \cdots & a_{mn} \\ \end{bmatrix}.
+   :label: eq_matrix_def
+
+En code, nous représentons une matrice
+:math:`\mathbf{A} \in \mathbb{R}^{m \times n}` par un tenseur d’ordre
+:math:`2` avec la forme (:math:`m`, :math:`n`). Nous pouvons convertir
+n’importe quel tenseur de taille appropriée :math:`m \times n` en une
+matrice :math:`m \times n` en passant la forme souhaitée à ``reshape`` :
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A = torch.arange(6).reshape(3, 2)
+    A
+
+Parfois, nous voulons inverser les axes. Lorsque nous échangeons les
+lignes et les colonnes d’une matrice, le résultat est appelé sa
+*transposée*. Formellement, nous désignons la transposée d’une matrice
+:math:`\mathbf{A}` par :math:`\mathbf{A}^\top` et si
+:math:`\mathbf{B} = \mathbf{A}^\top`, alors :math:`b_{ij} = a_{ji}` pour
+tous :math:`i` et :math:`j`. Ainsi, la transposée d’une matrice
+:math:`m \times n` est une matrice :math:`n \times m` :
+
+.. math::
+
+
+   \mathbf{A}^\top =
+   \begin{bmatrix}
+       a_{11} & a_{21} & \dots  & a_{m1} \\
+       a_{12} & a_{22} & \dots  & a_{m2} \\
+       \vdots & \vdots & \ddots  & \vdots \\
+       a_{1n} & a_{2n} & \dots  & a_{mn}
+   \end{bmatrix}.
+
+En code, nous pouvons accéder à la transposée de n’importe quelle
+matrice comme suit :
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A.T
+
+Les matrices symétriques sont le sous-ensemble des matrices carrées qui
+sont égales à leurs propres transposées :
+:math:`\mathbf{A} = \mathbf{A}^\top`. La matrice suivante est symétrique
+:
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A = torch.tensor([[1, 2, 3], [2, 0, 4], [3, 4, 5]])
+    A == A.T
+
+Les matrices sont utiles pour représenter des jeux de données.
+Généralement, les lignes correspondent à des enregistrements individuels
+et les colonnes correspondent à des attributs distincts.
+
+Tenseurs
+--------
+
+Bien que vous puissiez aller loin dans votre parcours d’apprentissage
+automatique avec seulement des scalaires, des vecteurs et des matrices,
+vous pourriez éventuellement avoir besoin de travailler avec des
+tenseurs d’ordre supérieur. Les tenseurs nous offrent une manière
+générique de décrire des extensions aux tableaux d’ordre :math:`n`. Nous
+appelons les objets logiciels de la *classe tenseur* “tenseurs”
+précisément parce qu’ils peuvent également avoir un nombre arbitraire
+d’axes. Bien qu’il puisse être déroutant d’utiliser le mot *tenseur* à
+la fois pour l’objet mathématique et sa réalisation en code, notre sens
+devrait généralement être clair d’après le contexte. Nous désignons les
+tenseurs généraux par des lettres majuscules avec une police de
+caractères spéciale (par exemple, :math:`\mathsf{X}`, :math:`\mathsf{Y}`
+et :math:`\mathsf{Z}`) et leur mécanisme d’indexation (par exemple,
+:math:`x_{ijk}` et :math:`[\mathsf{X}]_{1, 2i-1, 3}`) découle
+naturellement de celui des matrices.
+
+Les tenseurs deviendront plus importants lorsque nous commencerons à
+travailler avec des images. Chaque image arrive comme un tenseur d’ordre
+:math:`3` avec des axes correspondant à la hauteur, à la largeur et au
+*canal*. À chaque emplacement spatial, les intensités de chaque couleur
+(rouge, vert et bleu) sont empilées le long du canal. De plus, une
+collection d’images est représentée en code par un tenseur d’ordre
+:math:`4`, où les images distinctes sont indexées le long du premier
+axe. Les tenseurs d’ordre supérieur sont construits, comme l’étaient les
+vecteurs et les matrices, en augmentant le nombre de composantes de la
+forme.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    torch.arange(24).reshape(2, 3, 4)
+
+Propriétés fondamentales de l’arithmétique des tenseurs
+-------------------------------------------------------
+
+Les scalaires, les vecteurs, les matrices et les tenseurs d’ordre
+supérieur ont tous des propriétés pratiques. Par exemple, les opérations
+élément par élément produisent des sorties qui ont la même forme que
+leurs opérandes.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A = torch.arange(6, dtype=torch.float32).reshape(2, 3)
+    B = A.clone()  # Assign a copy of A to B by allocating new memory
+    A, A + B
+
+Le produit élément par élément de deux matrices est appelé leur *produit
+de Hadamard* (noté :math:`\odot`). Nous pouvons détailler les entrées du
+produit de Hadamard de deux matrices
+:math:`\mathbf{A}, \mathbf{B} \in \mathbb{R}^{m \times n}` :
+
+.. math::
+
+
+   \mathbf{A} \odot \mathbf{B} =
+   \begin{bmatrix}
+       a_{11}  b_{11} & a_{12}  b_{12} & \dots  & a_{1n}  b_{1n} \\
+       a_{21}  b_{21} & a_{22}  b_{22} & \dots  & a_{2n}  b_{2n} \\
+       \vdots & \vdots & \ddots & \vdots \\
+       a_{m1}  b_{m1} & a_{m2}  b_{m2} & \dots  & a_{mn}  b_{mn}
+   \end{bmatrix}.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A * B
+
+L’addition ou la multiplication d’un scalaire et d’un tenseur produit un
+résultat avec la même forme que le tenseur original. Ici, chaque élément
+du tenseur est ajouté au (ou multiplié par le) scalaire.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    a = 2
+    X = torch.arange(24).reshape(2, 3, 4)
+    a + X, (a * X).shape
+
+.. _subsec_lin-alg-reduction:
+
+Réduction
+---------
+
+
+Souvent, nous souhaitons calculer la somme des éléments d’un tenseur.
+Pour exprimer la somme des éléments d’un vecteur :math:`\mathbf{x}` de
+longueur :math:`n`, nous écrivons :math:`\sum_{i=1}^n x_i`. Il existe
+une fonction simple pour cela :
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    x = torch.arange(3, dtype=torch.float32)
+    x, x.sum()
+
+Pour exprimer des sommes sur les éléments de tenseurs de forme
+arbitraire, nous faisons simplement la somme sur tous ses axes. Par
+exemple, la somme des éléments d’une matrice :math:`m \times n`
+:math:`\mathbf{A}` pourrait s’écrire
+:math:`\sum_{i=1}^{m} \sum_{j=1}^{n} a_{ij}`.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A.shape, A.sum()
+
+Par défaut, l’invocation de la fonction somme *réduit* un tenseur le
+long de tous ses axes, produisant finalement un scalaire. Nos
+bibliothèques nous permettent également de spécifier les axes le long
+desquels le tenseur doit être réduit. Pour faire la somme de tous les
+éléments le long des lignes (axe 0), nous spécifions ``axis=0`` dans
+``sum``. Comme la matrice d’entrée se réduit le long de l’axe 0 pour
+générer le vecteur de sortie, cet axe est absent de la forme de la
+sortie.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A.shape, A.sum(axis=0).shape
+
+Spécifier ``axis=1`` réduira la dimension des colonnes (axe 1) en
+additionnant les éléments de toutes les colonnes.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A.shape, A.sum(axis=1).shape
+
+Réduire une matrice à la fois selon les lignes et les colonnes via une
+sommation équivaut à additionner tous les éléments de la matrice.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A.sum(axis=[0, 1]) == A.sum()  # Same as A.sum()
+
+Une quantité liée est la *moyenne*. Nous calculons la moyenne en
+divisant la somme par le nombre total d’éléments. Parce que le calcul de
+la moyenne est si courant, il dispose d’une fonction de bibliothèque
+dédiée qui fonctionne de manière analogue à ``sum``.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A.mean(), A.sum() / A.numel()
+
+De même, la fonction permettant de calculer la moyenne peut également
+réduire un tenseur le long d’axes spécifiques.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A.mean(axis=0), A.sum(axis=0) / A.shape[0]
+
+.. _subsec_lin-alg-non-reduction:
+
+Somme sans réduction
+--------------------
+
+
+Parfois, il peut être utile de garder le nombre d’axes inchangé lors de
+l’invocation de la fonction pour calculer la somme ou la moyenne. Ceci
+est important lorsque nous voulons utiliser le mécanisme de diffusion
+(*broadcasting*).
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    sum_A = A.sum(axis=1, keepdims=True)
+    sum_A, sum_A.shape
+
+Par exemple, puisque ``sum_A`` conserve ses deux axes après avoir sommé
+chaque ligne, nous pouvons diviser ``A`` par ``sum_A`` par diffusion
+pour créer une matrice où chaque ligne totalise :math:`1`.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A / sum_A
+
+Si nous voulons calculer la somme cumulative des éléments de ``A`` le
+long d’un certain axe, disons ``axis=0`` (ligne par ligne), nous pouvons
+appeler la fonction ``cumsum``. Par conception, cette fonction ne réduit
+pas le tenseur d’entrée le long d’aucun axe.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A.cumsum(axis=0)
+
+Produits scalaires
+------------------
+
+Jusqu’à présent, nous n’avons effectué que des opérations élément par
+élément, des sommes et des moyennes. Et si c’était tout ce que nous
+pouvions faire, l’algèbre linéaire ne mériterait pas sa propre section.
+Heureusement, c’est ici que les choses deviennent plus intéressantes.
+L’une des opérations les plus fondamentales est le produit scalaire.
+Étant donné deux vecteurs
+:math:`\mathbf{x}, \mathbf{y} \in \mathbb{R}^d`, leur *produit scalaire*
+:math:`\mathbf{x}^\top \mathbf{y}` (également connu sous le nom de
+*produit intérieur*, :math:`\langle \mathbf{x}, \mathbf{y}  \rangle`)
+est une somme des produits des éléments à la même position :
+:math:`\mathbf{x}^\top \mathbf{y} = \sum_{i=1}^{d} x_i y_i`.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    y = torch.ones(3, dtype = torch.float32)
+    x, y, torch.dot(x, y)
+
+De manière équivalente, nous pouvons calculer le produit scalaire de
+deux vecteurs en effectuant une multiplication élément par élément
+suivie d’une somme :
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    torch.sum(x * y)
+
+Les produits scalaires sont utiles dans un large éventail de contextes.
+Par exemple, étant donné un certain ensemble de valeurs, noté par un
+vecteur :math:`\mathbf{x}  \in \mathbb{R}^n`, et un ensemble de poids,
+noté par :math:`\mathbf{w} \in \mathbb{R}^n`, la somme pondérée des
+valeurs de :math:`\mathbf{x}` selon les poids :math:`\mathbf{w}`
+pourrait être exprimée par le produit scalaire
+:math:`\mathbf{x}^\top \mathbf{w}`. Lorsque les poids sont non négatifs
+et que leur somme est égale à :math:`1`, c’est-à-dire
+:math:`\left(\sum_{i=1}^{n} {w_i} = 1\right)`, le produit scalaire
+exprime une *moyenne pondérée*. Après avoir normalisé deux vecteurs pour
+qu’ils aient une longueur unitaire, les produits scalaires expriment le
+cosinus de l’angle entre eux. Plus tard dans cette section, nous
+introduirons formellement cette notion de *longueur*.
+
+Produits matrice–vecteur
+------------------------
+
+Maintenant que nous savons calculer les produits scalaires, nous pouvons
+commencer à comprendre le *produit* entre une matrice :math:`m \times n`
+:math:`\mathbf{A}` et un vecteur de dimension :math:`n`
+:math:`\mathbf{x}`. Pour commencer, nous visualisons notre matrice en
+termes de ses vecteurs lignes
+
+.. math::
+
+   \mathbf{A}=
+   \begin{bmatrix}
+   \mathbf{a}^\top_{1} \\
+   \mathbf{a}^\top_{2} \\
+   \vdots \\
+   \mathbf{a}^\top_m \\
+   \end{bmatrix},
+
+où chaque :math:`\mathbf{a}^\top_{i} \in \mathbb{R}^n` est un vecteur
+ligne représentant la :math:`i^\textrm{ème}` ligne de la matrice
+:math:`\mathbf{A}`.
+
+Le produit matrice–vecteur :math:`\mathbf{A}\mathbf{x}` est simplement
+un vecteur colonne de longueur :math:`m`, dont le :math:`i^\textrm{ème}`
+élément est le produit scalaire :math:`\mathbf{a}^\top_i \mathbf{x}` :
+
+.. math::
+
+
+   \mathbf{A}\mathbf{x}
+   = \begin{bmatrix}
+   \mathbf{a}^\top_{1} \\
+   \mathbf{a}^\top_{2} \\
+   \vdots \\
+   \mathbf{a}^\top_m \\
+   \end{bmatrix}\mathbf{x}
+   = \begin{bmatrix}
+    \mathbf{a}^\top_{1} \mathbf{x}  \\
+    \mathbf{a}^\top_{2} \mathbf{x} \\
+   \vdots\\
+    \mathbf{a}^\top_{m} \mathbf{x}\\
+   \end{bmatrix}.
+
+Nous pouvons considérer la multiplication par une matrice
+:math:`\mathbf{A}\in \mathbb{R}^{m \times n}` comme une transformation
+qui projette des vecteurs de :math:`\mathbb{R}^{n}` vers
+:math:`\mathbb{R}^{m}`. Ces transformations sont remarquablement utiles.
+Par exemple, nous pouvons représenter les rotations comme des
+multiplications par certaines matrices carrées. Les produits
+matrice–vecteur décrivent également le calcul clé impliqué dans le
+calcul des sorties de chaque couche d’un réseau de neurones étant donné
+les sorties de la couche précédente.
+
+Pour exprimer un produit matrice–vecteur en code, nous utilisons la
+fonction ``mv``. Notez que la dimension des colonnes de ``A`` (sa
+longueur le long de l’axe 1) doit être la même que la dimension de ``x``
+(sa longueur). Python dispose d’un opérateur pratique ``@`` qui peut
+exécuter à la fois des produits matrice–vecteur et matrice–matrice
+(selon ses arguments). Ainsi, nous pouvons écrire ``A@x``.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    A.shape, x.shape, torch.mv(A, x), A@x
+
+Multiplication matrice–matrice
+------------------------------
+
+Une fois que vous avez compris les produits scalaires et les produits
+matrice–vecteur, alors la *multiplication matrice–matrice* devrait être
+simple.
+
+Supposons que nous ayons deux matrices
+:math:`\mathbf{A} \in \mathbb{R}^{n \times k}` et
+:math:`\mathbf{B} \in \mathbb{R}^{k \times m}` :
+
+.. math::
+
+   \mathbf{A}=\begin{bmatrix}
+    a_{11} & a_{12} & \cdots & a_{1k} \\
+    a_{21} & a_{22} & \cdots & a_{2k} \\
+   \vdots & \vdots & \ddots & \vdots \\
+    a_{n1} & a_{n2} & \cdots & a_{nk} \\
+   \end{bmatrix},\quad
+   \mathbf{B}=\begin{bmatrix}
+    b_{11} & b_{12} & \cdots & b_{1m} \\
+    b_{21} & b_{22} & \cdots & b_{2m} \\
+   \vdots & \vdots & \ddots & \vdots \\
+    b_{k1} & b_{k2} & \cdots & b_{km} \\
+   \end{bmatrix}.
+
+Soit :math:`\mathbf{a}^\top_{i} \in \mathbb{R}^k` le vecteur ligne
+représentant la :math:`i^\textrm{ème}` ligne de la matrice
+:math:`\mathbf{A}` et soit :math:`\mathbf{b}_{j} \in \mathbb{R}^k` le
+vecteur colonne de la :math:`j^\textrm{ème}` colonne de la matrice
+:math:`\mathbf{B}` :
+
+.. math::
+
+   \mathbf{A}=
+   \begin{bmatrix}
+   \mathbf{a}^\top_{1} \\
+   \mathbf{a}^\top_{2} \\
+   \vdots \\
+   \mathbf{a}^\top_n \\
+   \end{bmatrix},
+   \quad \mathbf{B}=\begin{bmatrix}
+    \mathbf{b}_{1} & \mathbf{b}_{2} & \cdots & \mathbf{b}_{m} \\
+   \end{bmatrix}.
+
+Pour former le produit matriciel
+:math:`\mathbf{C} \in \mathbb{R}^{n \times m}`, nous calculons
+simplement chaque élément :math:`c_{ij}` comme le produit scalaire entre
+la :math:`i^{\textrm{ème}}` ligne de :math:`\mathbf{A}` et la
+:math:`j^{\textrm{ème}}` colonne de :math:`\mathbf{B}`, c’est-à-dire
+:math:`\mathbf{a}^\top_i \mathbf{b}_j` :
+
+.. math::
+
+   \mathbf{C} = \mathbf{AB} = \begin{bmatrix}
+   \mathbf{a}^\top_{1} \\
+   \mathbf{a}^\top_{2} \\
+   \vdots \\
+   \mathbf{a}^\top_n \\
+   \end{bmatrix}
+   \begin{bmatrix}
+    \mathbf{b}_{1} & \mathbf{b}_{2} & \cdots & \mathbf{b}_{m} \\
+   \end{bmatrix}
+   = \begin{bmatrix}
+   \mathbf{a}^\top_{1} \mathbf{b}_1 & \mathbf{a}^\top_{1}\mathbf{b}_2& \cdots & \mathbf{a}^\top_{1} \mathbf{b}_m \\
+    \mathbf{a}^\top_{2}\mathbf{b}_1 & \mathbf{a}^\top_{2} \mathbf{b}_2 & \cdots & \mathbf{a}^\top_{2} \mathbf{b}_m \\
+    \vdots & \vdots & \ddots &\vdots\\
+   \mathbf{a}^\top_{n} \mathbf{b}_1 & \mathbf{a}^\top_{n}\mathbf{b}_2& \cdots& \mathbf{a}^\top_{n} \mathbf{b}_m
+   \end{bmatrix}.
+
+Nous pouvons considérer la multiplication matrice–matrice
+:math:`\mathbf{AB}` comme l’exécution de :math:`m` produits
+matrice–vecteur ou de :math:`m \times n` produits scalaires et
+l’assemblage des résultats pour former une matrice :math:`n \times m`.
+Dans l’extrait suivant, nous effectuons une multiplication matricielle
+sur ``A`` et ``B``. Ici, ``A`` est une matrice avec deux lignes et trois
+colonnes, et ``B`` est une matrice avec trois lignes et quatre colonnes.
+Après multiplication, nous obtenons une matrice avec deux lignes et
+quatre colonnes.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    B = torch.ones(3, 4)
+    torch.mm(A, B), A@B
+
+Le terme *multiplication matrice–matrice* est souvent simplifié en
+*multiplication matricielle*, et ne doit pas être confondu avec le
+produit de Hadamard.
+
+.. _subsec_lin-algebra-norms:
+
+Normes
+------
+
+
+Certains des opérateurs les plus utiles en algèbre linéaire sont les
+*normes*. Informellement, la norme d’un vecteur nous dit à quel point il
+est *grand*. Par exemple, la norme :math:`\ell_2` mesure la longueur
+(euclidienne) d’un vecteur. Ici, nous utilisons une notion de *taille*
+qui concerne l’ampleur des composantes d’un vecteur (et non sa
+dimensionnalité).
+
+Une norme est une fonction :math:`\| \cdot \|` qui projette un vecteur
+vers un scalaire et satisfait les trois propriétés suivantes :
+
+1. Étant donné n’importe quel vecteur :math:`\mathbf{x}`, si nous
+   redimensionnons (tous les éléments du) vecteur par un scalaire
+   :math:`\alpha \in \mathbb{R}`, sa norme change en conséquence :
+
+   .. math:: \|\alpha \mathbf{x}\| = |\alpha| \|\mathbf{x}\|.
+2. Pour n’importe quels vecteurs :math:`\mathbf{x}` et
+   :math:`\mathbf{y}` : les normes satisfont l’inégalité triangulaire :
+
+   .. math:: \|\mathbf{x} + \mathbf{y}\| \leq \|\mathbf{x}\| + \|\mathbf{y}\|.
+3. La norme d’un vecteur est non négative et elle ne s’annule que si le
+   vecteur est nul :
+
+   .. math:: \|\mathbf{x}\| > 0 \textrm{ pour tout } \mathbf{x} \neq 0.
+
+De nombreuses fonctions sont des normes valides et différentes normes
+encodent différentes notions de taille. La norme euclidienne que nous
+avons tous apprise en géométrie à l’école primaire lors du calcul de
+l’hypoténuse d’un triangle rectangle est la racine carrée de la somme
+des carrés des éléments d’un vecteur. Formellement, on l’appelle la
+*norme* :math:`\ell_2` et elle s’exprime comme
+
+.. math:: \|\mathbf{x}\|_2 = \sqrt{\sum_{i=1}^n x_i^2}.
+
+La méthode ``norm`` calcule la norme :math:`\ell_2`.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    u = torch.tensor([3.0, -4.0])
+    torch.norm(u)
+
+La norme :math:`\ell_1` est également courante et la mesure associée est
+appelée distance de Manhattan. Par définition, la norme :math:`\ell_1`
+additionne les valeurs absolues des éléments d’un vecteur :
+
+.. math:: \|\mathbf{x}\|_1 = \sum_{i=1}^n \left|x_i \right|.
+
+Par rapport à la norme :math:`\ell_2`, elle est moins sensible aux
+valeurs aberrantes. Pour calculer la norme :math:`\ell_1`, nous
+composons la valeur absolue avec l’opération de somme.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    torch.abs(u).sum()
+
+Les normes :math:`\ell_2` et :math:`\ell_1` sont toutes deux des cas
+particuliers des *normes* :math:`\ell_p` plus générales :
+
+.. math:: \|\mathbf{x}\|_p = \left(\sum_{i=1}^n \left|x_i \right|^p \right)^{1/p}.
+
+Dans le cas des matrices, les choses sont plus compliquées. Après tout,
+les matrices peuvent être considérées à la fois comme des collections
+d’entrées individuelles *et* comme des objets qui agissent sur des
+vecteurs et les transforment en d’autres vecteurs. Par exemple, nous
+pouvons nous demander de combien plus long le produit matrice–vecteur
+:math:`\mathbf{X} \mathbf{v}` pourrait être par rapport à
+:math:`\mathbf{v}`. Cette ligne de pensée mène à ce qu’on appelle la
+norme *spectrale*. Pour l’instant, nous introduisons la *norme de
+Frobenius*, qui est beaucoup plus facile à calculer et définie comme la
+racine carrée de la somme des carrés des éléments d’une matrice :
+
+.. math:: \|\mathbf{X}\|_\textrm{F} = \sqrt{\sum_{i=1}^m \sum_{j=1}^n x_{ij}^2}.
+
+La norme de Frobenius se comporte comme s’il s’agissait d’une norme
+:math:`\ell_2` d’un vecteur ayant la forme d’une matrice. L’invocation
+de la fonction suivante calculera la norme de Frobenius d’une matrice.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    torch.norm(torch.ones((4, 9)))
+
+Bien que nous ne voulions pas trop anticiper sur la suite, nous pouvons
+déjà donner une idée de la raison pour laquelle ces concepts sont
+utiles. En apprentissage profond, nous essayons souvent de résoudre des
+problèmes d’optimisation : *maximiser* la probabilité assignée aux
+données observées ; *maximiser* les revenus associés à un modèle de
+recommandation ; *minimiser* la distance entre les prédictions et les
+observations de vérité terrain ; *minimiser* la distance entre les
+représentations de photos de la même personne tout en *maximisant* la
+distance entre les représentations de photos de personnes différentes.
+Ces distances, qui constituent les objectifs des algorithmes
+d’apprentissage profond, sont souvent exprimées sous forme de normes.
+
+Discussion
+----------
+
+Dans cette section, nous avons passé en revue toute l’algèbre linéaire
+dont vous aurez besoin pour comprendre une part importante de
+l’apprentissage profond moderne. Il y a bien plus encore dans l’algèbre
+linéaire, cependant, et une grande partie est utile pour l’apprentissage
+automatique. Par exemple, les matrices peuvent être décomposées en
+facteurs, et ces décompositions peuvent révéler une structure de faible
+dimension dans des jeux de données réels. Il existe des sous-domaines
+entiers de l’apprentissage automatique qui se concentrent sur
+l’utilisation de décompositions matricielles et de leurs généralisations
+à des tenseurs d’ordre élevé pour découvrir une structure dans les jeux
+de données et résoudre des problèmes de prédiction. Mais ce livre se
+concentre sur l’apprentissage profond. Et nous pensons que vous serez
+plus enclin à apprendre davantage de mathématiques une fois que vous
+vous serez sali les mains en appliquant l’apprentissage automatique à de
+vrais jeux de données. Ainsi, bien que nous nous réservions le droit
+d’introduire plus de mathématiques plus tard, nous concluons cette
+section ici.
+
+Si vous avez hâte d’en apprendre davantage sur l’algèbre linéaire, il
+existe de nombreux livres et ressources en ligne excellents. Pour un
+cours accéléré plus avancé, envisagez de consulter
+:cite:t:`Strang.1993`, :cite:t:`Kolter.2008` et
+:cite:t:`Petersen.Pedersen.ea.2008`.
+
+Pour récapituler :
+
+- Les scalaires, les vecteurs, les matrices et les tenseurs sont les
+  objets mathématiques de base utilisés en algèbre linéaire et possèdent
+  respectivement zéro, un, deux et un nombre arbitraire d’axes.
+- Les tenseurs peuvent être découpés ou réduits le long d’axes spécifiés
+  via l’indexation, ou des opérations telles que ``sum`` et ``mean``,
+  respectivement.
+- Les produits élément par élément sont appelés produits de Hadamard. En
+  revanche, les produits scalaires, les produits matrice–vecteur et les
+  produits matrice–matrice ne sont pas des opérations élément par
+  élément et renvoient en général des objets ayant des formes
+  différentes de celles des opérandes.
+- Par rapport aux produits de Hadamard, les produits matrice–matrice
+  prennent beaucoup plus de temps à calculer (temps cubique plutôt que
+  quadratique).
+- Les normes capturent diverses notions de l’ampleur d’un vecteur (ou
+  d’une matrice), et sont couramment appliquées à la différence de deux
+  vecteurs pour mesurer leur distance.
+- Les normes de vecteur courantes incluent les normes :math:`\ell_1` et
+  :math:`\ell_2`, et les normes de matrice courantes incluent les normes
+  *spectrale* et de *Frobenius*.
+
+Exercices
+---------
+
+1.  Prouvez que la transposée de la transposée d’une matrice est la
+    matrice elle-même : :math:`(\mathbf{A}^\top)^\top = \mathbf{A}`.
+2.  Étant donné deux matrices :math:`\mathbf{A}` et :math:`\mathbf{B}`,
+    montrez que la somme et la transposition commutent :
+    :math:`\mathbf{A}^\top + \mathbf{B}^\top = (\mathbf{A} + \mathbf{B})^\top`.
+3.  Étant donné n’importe quelle matrice carrée :math:`\mathbf{A}`,
+    est-ce que :math:`\mathbf{A} + \mathbf{A}^\top` est toujours
+    symétrique ? Pouvez-vous prouver le résultat en utilisant uniquement
+    les résultats des deux exercices précédents ?
+4.  Nous avons défini le tenseur ``X`` de forme (2, 3, 4) dans cette
+    section. Quel est le résultat de ``len(X)`` ? Écrivez votre réponse
+    sans implémenter de code, puis vérifiez votre réponse à l’aide de
+    code.
+5.  Pour un tenseur ``X`` de forme arbitraire, est-ce que ``len(X)``
+    correspond toujours à la longueur d’un certain axe de ``X`` ? Quel
+    est cet axe ?
+6.  Exécutez ``A / A.sum(axis=1)`` et voyez ce qui se passe. Pouvez-vous
+    analyser les résultats ?
+7.  Lors d’un déplacement entre deux points du centre de Manhattan,
+    quelle est la distance que vous devez parcourir en fonction des
+    coordonnées, c’est-à-dire en fonction des avenues et des rues ?
+    Pouvez-vous voyager en diagonale ?
+8.  Considérons un tenseur de forme (2, 3, 4). Quelles sont les formes
+    des sorties de sommation selon les axes 0, 1 et 2 ?
+9.  Fournissez un tenseur avec trois axes ou plus à la fonction
+    ``linalg.norm`` et observez sa sortie. Que calcule cette fonction
+    pour des tenseurs de forme arbitraire ?
+10. Considérons trois grandes matrices, disons
+    :math:`\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}`,
+    :math:`\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}` et
+    :math:`\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{14}}`,
+    initialisées avec des variables aléatoires gaussiennes. Vous
+    souhaitez calculer le produit
+    :math:`\mathbf{A} \mathbf{B} \mathbf{C}`. Y a-t-il une différence en
+    termes d’empreinte mémoire et de vitesse, selon que vous calculiez
+    :math:`(\mathbf{A} \mathbf{B}) \mathbf{C}` ou
+    :math:`\mathbf{A} (\mathbf{B} \mathbf{C})` ? Pourquoi ?
+11. Considérons trois grandes matrices, disons
+    :math:`\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}`,
+    :math:`\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}` et
+    :math:`\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{16}}`. Y a-t-il
+    une différence de vitesse selon que vous calculez
+    :math:`\mathbf{A} \mathbf{B}` ou :math:`\mathbf{A} \mathbf{C}^\top`
+    ? Pourquoi ? Qu’est-ce qui change si vous initialisez
+    :math:`\mathbf{C} = \mathbf{B}^\top` sans cloner la mémoire ?
+    Pourquoi ?
+12. Considérons trois matrices, disons
+    :math:`\mathbf{A}, \mathbf{B}, \mathbf{C} \in \mathbb{R}^{100 \times 200}`.
+    Construisez un tenseur à trois axes en empilant
+    :math:`[\mathbf{A}, \mathbf{B}, \mathbf{C}]`. Quelle est la
+    dimensionnalité ? Extrayez la deuxième coordonnée du troisième axe
+    pour récupérer :math:`\mathbf{B}`. Vérifiez que votre réponse est
+    correcte.
+
+`Discussions <https://discuss.d2l.ai/t/31>`__

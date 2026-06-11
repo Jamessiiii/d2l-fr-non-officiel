@@ -1,0 +1,215 @@
+```{.python .input}
+%load_ext d2lbook.tab
+tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
+```
+
+# Prétraitement des données
+:label:`sec_pandas`
+
+Jusqu'à présent, nous avons travaillé avec des données synthétiques
+qui arrivaient dans des tenseurs prêts à l'emploi.
+Cependant, pour appliquer l'apprentissage profond en conditions réelles,
+nous devons extraire des données désordonnées
+stockées dans des formats arbitraires
+et les prétraiter pour les adapter à nos besoins.
+Heureusement, la bibliothèque *pandas* [library](https://pandas.pydata.org/) 
+peut s'occuper d'une grande partie de ce travail fastidieux.
+Cette section, bien qu'elle ne remplace pas 
+un véritable [tutoriel](https://pandas.pydata.org/pandas-docs/stable/user_guide/10min.html) *pandas*,
+vous donnera un cours accéléré
+sur certaines des routines les plus courantes.
+
+## Lecture du jeu de données
+
+Les fichiers CSV (Comma-separated values) sont omniprésents 
+pour le stockage de données tabulaires (semblables à des feuilles de calcul).
+Dans ceux-ci, chaque ligne correspond à un enregistrement
+et se compose de plusieurs champs (séparés par des virgules), par exemple,
+"Albert Einstein,March 14 1879,Ulm,Federal polytechnic school,field of gravitational physics".
+Pour démontrer comment charger des fichiers CSV avec `pandas`, 
+nous (**créons un fichier CSV ci-dessous**) `../data/house_tiny.csv`. 
+Ce fichier représente un jeu de données de maisons,
+où chaque ligne correspond à une maison distincte
+et les colonnes correspondent au nombre de pièces (`NumRooms`),
+au type de toit (`RoofType`) et au prix (`Price`).
+
+```{.python .input}
+%%tab all
+import os
+
+os.makedirs(os.path.join('..', 'data'), exist_ok=True)
+data_file = os.path.join('..', 'data', 'house_tiny.csv')
+with open(data_file, 'w') as f:
+    f.write('''NumRooms,RoofType,Price
+NA,NA,127500
+2,NA,106000
+4,Slate,178100
+NA,NA,140000''')
+```
+
+Maintenant, importons `pandas` et chargeons le jeu de données avec `read_csv`.
+
+```{.python .input}
+%%tab all
+import pandas as pd
+
+data = pd.read_csv(data_file)
+print(data)
+```
+
+## Préparation des données
+
+Dans l'apprentissage supervisé, nous entraînons des modèles
+pour prédire une valeur *cible* désignée,
+étant donné un ensemble de valeurs d'*entrée*. 
+Notre première étape dans le traitement du jeu de données
+consiste à séparer les colonnes correspondant
+aux valeurs d'entrée de celles correspondant aux valeurs cibles. 
+Nous pouvons sélectionner les colonnes soit par leur nom, soit
+via l'indexation basée sur la localisation entière (`iloc`).
+
+Vous avez peut-être remarqué que `pandas` a remplacé
+toutes les entrées CSV ayant la valeur `NA`
+par une valeur spéciale `NaN` (*not a number*). 
+Cela peut également se produire chaque fois qu'une entrée est vide,
+par exemple, "3,,,270000".
+Ce sont ce qu'on appelle des *valeurs manquantes* 
+et elles sont les "punaises de lit" de la science des données,
+une menace persistante à laquelle vous serez confronté
+tout au long de votre carrière. 
+Selon le contexte, 
+les valeurs manquantes peuvent être traitées
+soit par *imputation*, soit par *suppression*.
+L'imputation remplace les valeurs manquantes 
+par des estimations de leurs valeurs
+tandis que la suppression écarte simplement 
+soit ces lignes, soit ces colonnes
+qui contiennent des valeurs manquantes. 
+
+Voici quelques heuristiques d'imputation courantes.
+[**Pour les champs d'entrée catégoriels, 
+nous pouvons traiter `NaN` comme une catégorie.**]
+Comme la colonne `RoofType` prend les valeurs `Slate` et `NaN`,
+`pandas` peut convertir cette colonne 
+en deux colonnes `RoofType_Slate` et `RoofType_nan`.
+Une ligne dont le type de toit est `Slate` fixera les valeurs 
+de `RoofType_Slate` et `RoofType_nan` à 1 et 0, respectivement.
+L'inverse est vrai pour une ligne avec une valeur `RoofType` manquante.
+
+```{.python .input}
+%%tab all
+inputs, targets = data.iloc[:, 0:2], data.iloc[:, 2]
+inputs = pd.get_dummies(inputs, dummy_na=True)
+print(inputs)
+```
+
+Pour les valeurs numériques manquantes, 
+une heuristique courante consiste à 
+[**remplacer les entrées `NaN` par 
+la valeur moyenne de la colonne correspondante**].
+
+```{.python .input}
+%%tab all
+inputs = inputs.fillna(inputs.mean())
+print(inputs)
+```
+
+## Conversion au format tenseur
+
+Maintenant que [**toutes les entrées dans `inputs` et `targets` sont numériques,
+nous pouvons les charger dans un tenseur**] (rappelez-vous :numref:`sec_ndarray`).
+
+```{.python .input}
+%%tab mxnet
+from mxnet import np
+
+X, y = np.array(inputs.to_numpy(dtype=float)), np.array(targets.to_numpy(dtype=float))
+X, y
+```
+
+```{.python .input}
+%%tab pytorch
+import torch
+
+X = torch.tensor(inputs.to_numpy(dtype=float))
+y = torch.tensor(targets.to_numpy(dtype=float))
+X, y
+```
+
+```{.python .input}
+%%tab tensorflow
+import tensorflow as tf
+
+X = tf.constant(inputs.to_numpy(dtype=float))
+y = tf.constant(targets.to_numpy(dtype=float))
+X, y
+```
+
+```{.python .input}
+%%tab jax
+from jax import numpy as jnp
+
+X = jnp.array(inputs.to_numpy(dtype=float))
+y = jnp.array(targets.to_numpy(dtype=float))
+X, y
+```
+
+## Discussion
+
+Vous savez maintenant comment partitionner les colonnes de données, 
+imputer les variables manquantes 
+et charger des données `pandas` dans des tenseurs. 
+Dans :numref:`sec_kaggle_house`, vous 
+acquerrez d'autres compétences en traitement de données. 
+Bien que ce cours accéléré soit resté simple,
+le traitement des données peut devenir complexe.
+Par exemple, plutôt que d'arriver dans un seul fichier CSV,
+notre jeu de données pourrait être réparti sur plusieurs fichiers
+extraits d'une base de données relationnelle.
+Par exemple, dans une application de commerce électronique,
+les adresses des clients peuvent résider dans une table
+et les données d'achat dans une autre.
+De plus, les praticiens sont confrontés à une multitude de types de données
+au-delà du catégoriel et du numérique, par exemple,
+des chaînes de texte, des images,
+des données audio et des nuages de points. 
+Souvent, des outils avancés et des algorithmes efficaces 
+sont nécessaires afin d'empêcher le traitement des données de devenir
+le plus grand goulot d'étranglement dans le pipeline d'apprentissage automatique. 
+Ces problèmes surgissent lorsque nous aborderons 
+la vision par ordinateur et le traitement du langage naturel. 
+Enfin, nous devons prêter attention à la qualité des données.
+Les jeux de données du monde réel sont souvent truffés 
+de valeurs aberrantes, de mesures défectueuses provenant de capteurs et d'erreurs d'enregistrement, 
+qui doivent être traitées avant 
+d'injecter les données dans n'importe quel modèle. 
+Des outils de visualisation de données tels que [seaborn](https://seaborn.pydata.org/), 
+[Bokeh](https://docs.bokeh.org/) ou [matplotlib](https://matplotlib.org/)
+peuvent vous aider à inspecter manuellement les données 
+et à développer des intuitions sur 
+le type de problèmes que vous pourriez avoir à traiter.
+
+
+## Exercices
+
+1. Essayez de charger des jeux de données, par exemple, Abalone du [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets) et inspectez leurs propriétés. Quelle fraction d'entre eux présente des valeurs manquantes ? Quelle fraction des variables est numérique, catégorielle ou textuelle ?
+1. Essayez d'indexer et de sélectionner des colonnes de données par leur nom plutôt que par leur numéro de colonne. La documentation pandas sur l'[indexation](https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html) contient plus de détails sur la façon de procéder.
+1. Quelle taille de jeu de données pensez-vous pouvoir charger de cette manière ? Quelles pourraient être les limites ? Conseil : considérez le temps de lecture des données, la représentation, le traitement et l'empreinte mémoire. Essayez cela sur votre ordinateur portable. Que se passe-t-il si vous l'essayez sur un serveur ? 
+1. Comment géreriez-vous des données qui ont un très grand nombre de catégories ? Et si les étiquettes de catégorie sont toutes uniques ? Devriez-vous inclure ces dernières ?
+1. Quelles alternatives à pandas pouvez-vous imaginer ? Que diriez-vous de [charger des tenseurs NumPy à partir d'un fichier](https://numpy.org/doc/stable/reference/generated/numpy.load.html) ? Jetez un œil à [Pillow](https://python-pillow.org/), la bibliothèque d'imagerie Python. 
+
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/28)
+:end_tab:
+
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/29)
+:end_tab:
+
+:begin_tab:`tensorflow`
+[Discussions](https://discuss.d2l.ai/t/195)
+:end_tab:
+
+:begin_tab:`jax`
+[Discussions](https://discuss.d2l.ai/t/17967)
+:end_tab:

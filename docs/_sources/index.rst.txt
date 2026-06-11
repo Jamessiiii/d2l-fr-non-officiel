@@ -20,3 +20,26 @@ Plonger au coeur du Deep Learning
    :numbered:
 
    chapter_introduction/index
+   chapter_preliminaries/index
+
+Plonger au coeur du Deep Learning
+=================================
+
+
+
+.. raw:: html
+   :file: frontpage.html
+
+.. toctree::
+   :maxdepth: 1
+
+   chapter_preface/index
+   chapter_preface/translation-attribution
+   chapter_installation/index
+   chapter_notation/index
+
+.. toctree::
+   :maxdepth: 2
+   :numbered:
+
+   chapter_introduction/index

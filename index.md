@@ -22,4 +22,5 @@ chapter_notation/index
 :numbered:
 
 chapter_introduction/index
+chapter_preliminaries/index
 ```

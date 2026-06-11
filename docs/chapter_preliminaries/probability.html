@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>2.6. Probabilités et statistiques &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2.7. Documentation" href="lookup-api.html" />
+    <link rel="prev" title="2.5. Différentiation automatique" href="autograd.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">2. </span>Préliminaires</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">2.6. </span>Probabilités et statistiques</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_preliminaries/probability.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="probabilites-et-statistiques">
+<span id="sec-prob"></span><h1><span class="section-number">2.6. </span>Probabilités et statistiques<a class="headerlink" href="#probabilites-et-statistiques" title="Permalink to this heading">¶</a></h1>
+<p>D’une manière ou d’une autre, l’apprentissage automatique est une
+affaire d’incertitude. Dans l’apprentissage supervisé, nous voulons
+prédire quelque chose d’inconnu (la <em>cible</em>) étant donné quelque chose
+de connu (les <em>caractéristiques</em>). Selon notre objectif, nous pourrions
+tenter de prédire la valeur la plus probable de la cible. Ou nous
+pourrions prédire la valeur avec la plus petite distance attendue par
+rapport à la cible. Et parfois, nous souhaitons non seulement prédire
+une valeur spécifique mais aussi <em>quantifier notre incertitude</em>. Par
+exemple, étant donné certaines caractéristiques décrivant un patient,
+nous pourrions vouloir savoir <em>quelle est la probabilité</em> qu’il souffre
+d’une crise cardiaque au cours de l’année à venir. Dans l’apprentissage
+non supervisé, nous nous soucions souvent de l’incertitude. Pour
+déterminer si un ensemble de mesures est anormal, il est utile de savoir
+quelle est la probabilité d’observer de telles valeurs dans une
+population d’intérêt. De plus, dans l’apprentissage par renforcement,
+nous souhaitons développer des agents qui agissent intelligemment dans
+divers environnements. Cela nécessite de raisonner sur la manière dont
+on peut s’attendre à ce qu’un environnement change et sur les
+récompenses auxquelles on peut s’attendre en réponse à chacune des
+actions disponibles.</p>
+<p>La <em>probabilité</em> est le domaine mathématique concerné par le
+raisonnement sous incertitude. Étant donné un modèle probabiliste d’un
+processus, nous pouvons raisonner sur la vraisemblance de divers
+événements. L’utilisation des probabilités pour décrire les fréquences
+d’événements répétables (comme les lancers de pièces) est assez peu
+controversée. En fait, les chercheurs <em>fréquentistes</em> adhèrent à une
+interprétation de la probabilité qui s’applique <em>uniquement</em> à de tels
+événements répétables. En revanche, les chercheurs <em>bayésiens</em> utilisent
+le langage des probabilités plus largement pour formaliser le
+raisonnement sous incertitude. La probabilité bayésienne est
+caractérisée par deux caractéristiques uniques : (i) l’attribution de
+degrés de croyance à des événements non répétables, par exemple, quelle
+est la <em>probabilité</em> qu’un barrage s’effondre ? ; et (ii) la
+subjectivité. Alors que la probabilité bayésienne fournit des règles
+sans ambiguïté sur la manière dont on devrait mettre à jour ses
+croyances à la lumière de nouvelles preuves, elle permet à différents
+individus de commencer avec des croyances <em>initiales</em> (ou <em>a priori</em>)
+différentes. La <em>statistique</em> nous aide à raisonner à l’envers, en
+commençant par la collecte et l’organisation des données et en remontant
+jusqu’aux inférences que nous pourrions tirer sur le processus qui a
+généré les données. Chaque fois que nous analysons un ensemble de
+données, à la recherche de motifs qui pourraient, nous l’espérons,
+caractériser une population plus large, nous employons une pensée
+statistique. De nombreux cours, majeures, thèses, carrières,
+départements, entreprises et institutions ont été consacrés à l’étude
+des probabilités et des statistiques. Bien que cette section ne fasse
+qu’effleurer la surface, nous fournirons les bases dont vous avez besoin
+pour commencer à construire des modèles.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributions.multinomial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Multinomial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">d2l</span><span class="w"> </span><span class="kn">import</span> <span class="n">torch</span> <span class="k">as</span> <span class="n">d2l</span>
+</pre></div>
+</div>
+<section id="un-exemple-simple-lancer-de-pieces">
+<h2><span class="section-number">2.6.1. </span>Un exemple simple : lancer de pièces<a class="headerlink" href="#un-exemple-simple-lancer-de-pieces" title="Permalink to this heading">¶</a></h2>
+<p>Imaginez que nous prévoyions de lancer une pièce et que nous voulions
+quantifier la probabilité que nous voyions face (vs pile). Si la pièce
+est <em>équilibrée</em>, alors les deux résultats (face et pile) sont également
+probables. De plus, si nous prévoyons de lancer la pièce <span class="math notranslate nohighlight">\(n\)</span> fois,
+alors la fraction de “face” que nous nous <em>attendons</em> à voir devrait
+correspondre exactement à la fraction de “pile” <em>attendue</em>. Une façon
+intuitive de voir cela est par symétrie : pour chaque résultat possible
+avec <span class="math notranslate nohighlight">\(n_\textrm{f}\)</span> faces et
+<span class="math notranslate nohighlight">\(n_\textrm{p} = (n - n_\textrm{f})\)</span> piles, il y a un résultat tout
+aussi probable avec <span class="math notranslate nohighlight">\(n_\textrm{p}\)</span> faces et <span class="math notranslate nohighlight">\(n_\textrm{f}\)</span>
+piles. Notez que cela n’est possible que si, en moyenne, nous nous
+attendons à voir <span class="math notranslate nohighlight">\(1/2\)</span> des lancers donner face et <span class="math notranslate nohighlight">\(1/2\)</span>
+donner pile. Bien sûr, si vous menez cette expérience de nombreuses fois
+avec <span class="math notranslate nohighlight">\(n=1000000\)</span> lancers chacun, vous pourriez ne jamais voir un
+essai où <span class="math notranslate nohighlight">\(n_\textrm{f} = n_\textrm{p}\)</span> exactement.</p>
+<p>Formellement, la quantité <span class="math notranslate nohighlight">\(1/2\)</span> est appelée une <em>probabilité</em> et
+ici elle capture la certitude avec laquelle n’importe quel lancer donné
+donnera face. Les probabilités attribuent des scores entre <span class="math notranslate nohighlight">\(0\)</span> et
+<span class="math notranslate nohighlight">\(1\)</span> aux résultats d’intérêt, appelés <em>événements</em>. Ici,
+l’événement d’intérêt est <span class="math notranslate nohighlight">\(\textrm{face}\)</span> et nous notons la
+probabilité correspondante <span class="math notranslate nohighlight">\(P(\textrm{face})\)</span>. Une probabilité de
+<span class="math notranslate nohighlight">\(1\)</span> indique une certitude absolue (imaginez une pièce truquée où
+les deux côtés seraient face) et une probabilité de <span class="math notranslate nohighlight">\(0\)</span> indique
+l’impossibilité (par exemple, si les deux côtés étaient pile). Les
+fréquences <span class="math notranslate nohighlight">\(n_\textrm{f}/n\)</span> et <span class="math notranslate nohighlight">\(n_\textrm{p}/n\)</span> ne sont pas
+des probabilités mais plutôt des <em>statistiques</em>. Les probabilités sont
+des quantités <em>théoriques</em> qui sous-tendent le processus de génération
+de données. Ici, la probabilité <span class="math notranslate nohighlight">\(1/2\)</span> est une propriété de la
+pièce elle-même. En revanche, les statistiques sont des quantités
+<em>empiriques</em> qui sont calculées en fonction des données observées. Nos
+intérêts pour les quantités probabilistes et statistiques sont
+inextricablement liés. Nous concevons souvent des statistiques spéciales
+appelées <em>estimateurs</em> qui, étant donné un ensemble de données,
+produisent des <em>estimations</em> de paramètres de modèle tels que des
+probabilités. De plus, lorsque ces estimateurs satisfont une propriété
+intéressante appelée <em>consistance</em> (ou <em>convergence</em>), nos estimations
+convergeront vers la probabilité correspondante. À leur tour, ces
+probabilités inférées nous renseignent sur les propriétés statistiques
+probables des données de la même population que nous pourrions
+rencontrer à l’avenir.</p>
+<p>Supposons que nous soyons tombés sur une vraie pièce pour laquelle nous
+ne connaissions pas le vrai <span class="math notranslate nohighlight">\(P(\textrm{face})\)</span>. Pour étudier cette
+quantité avec des méthodes statistiques, nous devons (i) collecter des
+données ; et (ii) concevoir un estimateur. L’acquisition de données ici
+est facile ; nous pouvons lancer la pièce de nombreuses fois et
+enregistrer tous les résultats. Formellement, tirer des réalisations
+d’un processus aléatoire sous-jacent est appelé <em>échantillonnage</em>. Comme
+vous l’avez peut-être deviné, un estimateur naturel est le ratio du
+nombre de <em>faces</em> observées par rapport au nombre total de lancers.</p>
+<p>Maintenant, supposons que la pièce soit en fait équilibrée, c’est-à-dire
+<span class="math notranslate nohighlight">\(P(\textrm{face}) = 0,5\)</span>. Pour simuler les lancers d’une pièce
+équilibrée, nous pouvons invoquer n’importe quel générateur de nombres
+aléatoires. Il existe des moyens simples de tirer des échantillons d’un
+événement de probabilité <span class="math notranslate nohighlight">\(0,5\)</span>. Par exemple, <code class="docutils literal notranslate"><span class="pre">random.random</span></code> de
+Python donne des nombres dans l’intervalle <span class="math notranslate nohighlight">\([0,1]\)</span> où la
+probabilité de se trouver dans n’importe quel sous-intervalle
+<span class="math notranslate nohighlight">\([a, b] \subset [0,1]\)</span> est égale à <span class="math notranslate nohighlight">\(b-a\)</span>. Ainsi, nous
+pouvons obtenir <code class="docutils literal notranslate"><span class="pre">0</span></code> et <code class="docutils literal notranslate"><span class="pre">1</span></code> avec une probabilité de <code class="docutils literal notranslate"><span class="pre">0,5</span></code> chacun en
+testant si le nombre flottant renvoyé est supérieur à <code class="docutils literal notranslate"><span class="pre">0,5</span></code> :</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">num_tosses</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">heads</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">0.5</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_tosses</span><span class="p">)])</span>
+<span class="n">tails</span> <span class="o">=</span> <span class="n">num_tosses</span> <span class="o">-</span> <span class="n">heads</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;heads, tails: &quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">heads</span><span class="p">,</span> <span class="n">tails</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Plus généralement, nous pouvons simuler plusieurs tirages à partir de
+n’importe quelle variable avec un nombre fini de résultats possibles
+(comme le lancer d’une pièce ou le jet d’un dé) en appelant la fonction
+multinomiale, en fixant le premier argument au nombre de tirages et le
+second comme une liste de probabilités associées à chacun des résultats
+possibles. Pour simuler dix lancers d’une pièce équilibrée, nous
+attribuons le vecteur de probabilité <code class="docutils literal notranslate"><span class="pre">[0,5,</span> <span class="pre">0,5]</span></code>, en interprétant
+l’indice 0 comme face et l’indice 1 comme pile. La fonction renvoie un
+vecteur de longueur égale au nombre de résultats possibles (ici, 2), où
+la première composante nous indique le nombre d’occurrences de face et
+la seconde composante nous indique le nombre d’occurrences de pile.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fair_probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
+<span class="n">Multinomial</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">fair_probs</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Chaque fois que vous exécutez ce processus d’échantillonnage, vous
+recevrez une nouvelle valeur aléatoire qui peut différer du résultat
+précédent. Diviser par le nombre de lancers nous donne la <em>fréquence</em> de
+chaque résultat dans nos données. Notez que ces fréquences, tout comme
+les probabilités qu’elles sont censées estimer, s’additionnent pour
+donner <span class="math notranslate nohighlight">\(1\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Multinomial</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">fair_probs</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span> <span class="o">/</span> <span class="mi">100</span>
+</pre></div>
+</div>
+<p>Ici, même si notre pièce simulée est équilibrée (nous avons nous-mêmes
+fixé les probabilités <code class="docutils literal notranslate"><span class="pre">[0,5,</span> <span class="pre">0,5]</span></code>), les comptes de faces et de piles
+peuvent ne pas être identiques. C’est parce que nous n’avons tiré qu’un
+nombre relativement faible d’échantillons. Si nous n’avions pas
+implémenté la simulation nous-mêmes, et n’avions vu que le résultat,
+comment saurions-nous si la pièce était légèrement déséquilibrée ou si
+l’écart possible par rapport à <span class="math notranslate nohighlight">\(1/2\)</span> n’était qu’un artefact de la
+petite taille de l’échantillon ? Voyons ce qui se passe lorsque nous
+simulons 10 000 lancers.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">counts</span> <span class="o">=</span> <span class="n">Multinomial</span><span class="p">(</span><span class="mi">10000</span><span class="p">,</span> <span class="n">fair_probs</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<span class="n">counts</span> <span class="o">/</span> <span class="mi">10000</span>
+</pre></div>
+</div>
+<p>En général, pour les moyennes d’événements répétés (comme les lancers de
+pièces), à mesure que le nombre de répétitions augmente, nos estimations
+sont garanties de converger vers les vraies probabilités sous-jacentes.
+La formulation mathématique de ce phénomène est appelée la <em>loi des
+grands nombres</em> et le <em>théorème central limite</em> nous dit que dans de
+nombreuses situations, à mesure que la taille de l’échantillon <span class="math notranslate nohighlight">\(n\)</span>
+augmente, ces erreurs devraient diminuer à un taux de
+<span class="math notranslate nohighlight">\((1/\sqrt{n})\)</span>. Obtenons un peu plus d’intuition en étudiant
+comment notre estimation évolue à mesure que nous augmentons le nombre
+de lancers de 1 à 10 000.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">counts</span> <span class="o">=</span> <span class="n">Multinomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">fair_probs</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="mi">10000</span><span class="p">,))</span>
+<span class="n">cum_counts</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">estimates</span> <span class="o">=</span> <span class="n">cum_counts</span> <span class="o">/</span> <span class="n">cum_counts</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">estimates</span> <span class="o">=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+<span class="n">d2l</span><span class="o">.</span><span class="n">set_figsize</span><span class="p">((</span><span class="mf">4.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">))</span>
+<span class="n">d2l</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">estimates</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;P(coin=heads)&quot;</span><span class="p">))</span>
+<span class="n">d2l</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">estimates</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;P(coin=tails)&quot;</span><span class="p">))</span>
+<span class="n">d2l</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;dashed&#39;</span><span class="p">)</span>
+<span class="n">d2l</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Samples&#39;</span><span class="p">)</span>
+<span class="n">d2l</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Estimated probability&#39;</span><span class="p">)</span>
+<span class="n">d2l</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Chaque courbe pleine correspond à l’une des deux valeurs de la pièce et
+donne notre probabilité estimée que la pièce donne cette valeur après
+chaque groupe d’expériences. La ligne noire pointillée donne la vraie
+probabilité sous-jacente. À mesure que nous obtenons plus de données en
+menant plus d’expériences, les courbes convergent vers la vraie
+probabilité. Vous pourriez déjà commencer à voir la forme de certaines
+des questions les plus avancées qui préoccupent les statisticiens : À
+quelle vitesse cette convergence se produit-elle ? Si nous avions déjà
+testé de nombreuses pièces fabriquées dans la même usine, comment
+pourrions-nous intégrer cette information ?</p>
+</section>
+<section id="un-traitement-plus-formel">
+<h2><span class="section-number">2.6.2. </span>Un traitement plus formel<a class="headerlink" href="#un-traitement-plus-formel" title="Permalink to this heading">¶</a></h2>
+<p>Nous sommes déjà allés assez loin : poser un modèle probabiliste,
+générer des données synthétiques, exécuter un estimateur statistique,
+évaluer empiriquement la convergence, et rapporter des mesures d’erreur
+(vérifier l’écart). Cependant, pour aller beaucoup plus loin, nous
+devrons être plus précis.</p>
+<p>Lorsque nous traitons du hasard, nous notons l’ensemble des résultats
+possibles <span class="math notranslate nohighlight">\(\mathcal{S}\)</span> et l’appelons l’<em>espace échantillonnal</em>
+ou <em>espace des résultats</em>. Ici, chaque élément est un <em>résultat</em>
+possible distinct. Dans le cas du lancer d’une seule pièce,
+<span class="math notranslate nohighlight">\(\mathcal{S} = \{\textrm{face}, \textrm{pile}\}\)</span>. Pour un seul dé,
+<span class="math notranslate nohighlight">\(\mathcal{S} = \{1, 2, 3, 4, 5, 6\}\)</span>. Lors du lancer de deux
+pièces, les résultats possibles sont
+<span class="math notranslate nohighlight">\(\{(\textrm{face}, \textrm{face}), (\textrm{face}, \textrm{pile}), (\textrm{pile}, \textrm{face}),  (\textrm{pile}, \textrm{pile})\}\)</span>.
+Les <em>événements</em> sont des sous-ensembles de l’espace échantillonnal. Par
+exemple, l’événement “le premier lancer de pièce donne face” correspond
+à l’ensemble
+<span class="math notranslate nohighlight">\(\{(\textrm{face}, \textrm{face}), (\textrm{face}, \textrm{pile})\}\)</span>.
+Chaque fois que le résultat <span class="math notranslate nohighlight">\(z\)</span> d’une expérience aléatoire
+satisfait <span class="math notranslate nohighlight">\(z \in \mathcal{A}\)</span>, alors l’événement
+<span class="math notranslate nohighlight">\(\mathcal{A}\)</span> s’est produit. Pour un seul jet de dé, nous
+pourrions définir les événements “voir un <span class="math notranslate nohighlight">\(5\)</span>”
+(<span class="math notranslate nohighlight">\(\mathcal{A} = \{5\}\)</span>) et “voir un nombre impair”
+(<span class="math notranslate nohighlight">\(\mathcal{B} = \{1, 3, 5\}\)</span>). Dans ce cas, si le dé donnait
+<span class="math notranslate nohighlight">\(5\)</span>, nous dirions que <span class="math notranslate nohighlight">\(\mathcal{A}\)</span> et <span class="math notranslate nohighlight">\(\mathcal{B}\)</span>
+se sont produits tous les deux. En revanche, si <span class="math notranslate nohighlight">\(z = 3\)</span>, alors
+<span class="math notranslate nohighlight">\(\mathcal{A}\)</span> ne s’est pas produit mais <span class="math notranslate nohighlight">\(\mathcal{B}\)</span> si.</p>
+<p>Une fonction de <em>probabilité</em> associe des événements à des valeurs
+réelles
+<span class="math notranslate nohighlight">\({P: \mathcal{A} \subseteq \mathcal{S} \rightarrow [0,1]}\)</span>. La
+probabilité, notée <span class="math notranslate nohighlight">\(P(\mathcal{A})\)</span>, d’un événement
+<span class="math notranslate nohighlight">\(\mathcal{A}\)</span> dans l’espace échantillonnal donné
+<span class="math notranslate nohighlight">\(\mathcal{S}\)</span>, possède les propriétés suivantes :</p>
+<ul class="simple">
+<li><p>La probabilité de tout événement <span class="math notranslate nohighlight">\(\mathcal{A}\)</span> est un nombre
+réel non négatif, c’est-à-dire <span class="math notranslate nohighlight">\(P(\mathcal{A}) \geq 0\)</span> ;</p></li>
+<li><p>La probabilité de l’espace échantillonnal tout entier est <span class="math notranslate nohighlight">\(1\)</span>,
+c’est-à-dire <span class="math notranslate nohighlight">\(P(\mathcal{S}) = 1\)</span> ;</p></li>
+<li><p>Pour toute suite dénombrable d’événements
+<span class="math notranslate nohighlight">\(\mathcal{A}_1, \mathcal{A}_2, \ldots\)</span> qui sont <em>mutuellement
+exclusifs</em> (c’est-à-dire
+<span class="math notranslate nohighlight">\(\mathcal{A}_i \cap \mathcal{A}_j = \emptyset\)</span> pour tout
+<span class="math notranslate nohighlight">\(i \neq j\)</span>), la probabilité que l’un d’entre eux se produise est
+égale à la somme de leurs probabilités individuelles, c’est-à-dire
+<span class="math notranslate nohighlight">\(P(\bigcup_{i=1}^{\infty} \mathcal{A}_i) = \sum_{i=1}^{\infty} P(\mathcal{A}_i)\)</span>.</p></li>
+</ul>
+<p>Ces axiomes de la théorie des probabilités, proposés par
+<span id="id1"></span>, peuvent être appliqués pour dériver
+rapidement un certain nombre de conséquences importantes. Par exemple,
+il s’ensuit immédiatement que la probabilité que n’importe quel
+événement <span class="math notranslate nohighlight">\(\mathcal{A}\)</span> <em>ou</em> son complément <span class="math notranslate nohighlight">\(\mathcal{A}'\)</span>
+se produise est 1 (car
+<span class="math notranslate nohighlight">\(\mathcal{A} \cup \mathcal{A}' = \mathcal{S}\)</span>). Nous pouvons
+également prouver que <span class="math notranslate nohighlight">\(P(\emptyset) = 0\)</span> car
+<span class="math notranslate nohighlight">\(1 = P(\mathcal{S} \cup \mathcal{S}') = P(\mathcal{S} \cup \emptyset) = P(\mathcal{S}) + P(\emptyset) = 1 + P(\emptyset)\)</span>.
+Par conséquent, la probabilité que n’importe quel événement
+<span class="math notranslate nohighlight">\(\mathcal{A}\)</span> <em>et</em> son complément <span class="math notranslate nohighlight">\(\mathcal{A}'\)</span> se
+produisent simultanément est
+<span class="math notranslate nohighlight">\(P(\mathcal{A} \cap \mathcal{A}') = 0\)</span>. Informellement, cela nous
+dit que les événements impossibles ont une probabilité nulle de se
+produire.</p>
+</section>
+<section id="variables-aleatoires">
+<h2><span class="section-number">2.6.3. </span>Variables aléatoires<a class="headerlink" href="#variables-aleatoires" title="Permalink to this heading">¶</a></h2>
+<p>Lorsque nous avons parlé d’événements comme le jet d’un dé donnant un
+nombre impair ou le premier lancer de pièce donnant face, nous
+invoquions l’idée d’une <em>variable aléatoire</em>. Formellement, les
+variables aléatoires sont des applications d’un espace échantillonnal
+sous-jacent vers un ensemble de (éventuellement plusieurs) valeurs. Vous
+pourriez vous demander en quoi une variable aléatoire est différente de
+l’espace échantillonnal, puisque les deux sont des collections de
+résultats. Surtout, les variables aléatoires peuvent être beaucoup plus
+grossières que l’espace échantillonnal brut. Nous pouvons définir une
+variable aléatoire binaire comme “supérieure à 0,5” même lorsque
+l’espace échantillonnal sous-jacent est infini, par exemple les points
+sur le segment de droite entre <span class="math notranslate nohighlight">\(0\)</span> et <span class="math notranslate nohighlight">\(1\)</span>. De plus,
+plusieurs variables aléatoires peuvent partager le même espace
+échantillonnal sous-jacent. Par exemple, “si mon alarme de maison se
+déclenche” et “si ma maison a été cambriolée” sont toutes deux des
+variables aléatoires binaires qui partagent un espace échantillonnal
+sous-jacent. Par conséquent, connaître la valeur prise par une variable
+aléatoire peut nous dire quelque chose sur la valeur probable d’une
+autre variable aléatoire. Sachant que l’alarme s’est déclenchée, nous
+pourrions soupçonner que la maison a probablement été cambriolée.</p>
+<p>Chaque valeur prise par une variable aléatoire correspond à un
+sous-ensemble de l’espace échantillonnal sous-jacent. Ainsi,
+l’occurrence où la variable aléatoire <span class="math notranslate nohighlight">\(X\)</span> prend la valeur
+<span class="math notranslate nohighlight">\(v\)</span>, notée par <span class="math notranslate nohighlight">\(X=v\)</span>, est un <em>événement</em> et <span class="math notranslate nohighlight">\(P(X=v)\)</span>
+désigne sa probabilité. Parfois, cette notation peut devenir lourde, et
+nous pouvons abuser de la notation lorsque le contexte est clair. Par
+exemple, nous pourrions utiliser <span class="math notranslate nohighlight">\(P(X)\)</span> pour nous référer
+largement à la <em>distribution</em> de <span class="math notranslate nohighlight">\(X\)</span>, c’est-à-dire la fonction qui
+nous indique la probabilité que <span class="math notranslate nohighlight">\(X\)</span> prenne n’importe quelle valeur
+donnée. D’autres fois, nous écrivons des expressions comme
+<span class="math notranslate nohighlight">\(P(X,Y) = P(X) P(Y)\)</span>, comme un raccourci pour exprimer une
+affirmation qui est vraie pour toutes les valeurs que les variables
+aléatoires <span class="math notranslate nohighlight">\(X\)</span> et <span class="math notranslate nohighlight">\(Y\)</span> peuvent prendre, c’est-à-dire pour
+tous les <span class="math notranslate nohighlight">\(i,j\)</span>, il tient que
+<span class="math notranslate nohighlight">\(P(X=i \textrm{ et } Y=j) = P(X=i)P(Y=j)\)</span>. D’autres fois, nous
+abusons de la notation en écrivant <span class="math notranslate nohighlight">\(P(v)\)</span> lorsque la variable
+aléatoire est claire d’après le contexte. Comme un événement en théorie
+des probabilités est un ensemble de résultats de l’espace
+échantillonnal, nous pouvons spécifier une plage de valeurs pour qu’une
+variable aléatoire les prenne. Par exemple, <span class="math notranslate nohighlight">\(P(1 \leq X \leq 3)\)</span>
+désigne la probabilité de l’événement <span class="math notranslate nohighlight">\(\{1 \leq X \leq 3\}\)</span>.</p>
+<p>Notez qu’il y a une subtile différence entre les variables aléatoires
+<em>discrètes</em>, comme les lancers d’une pièce ou les jets d’un dé, et les
+variables <em>continues</em>, comme le poids et la taille d’une personne
+échantillonnée au hasard dans la population. Dans ce cas, nous nous
+soucions rarement réellement de la taille exacte de quelqu’un. De plus,
+si nous prenions des mesures assez précises, nous constaterions
+qu’aucune paire de personnes sur la planète n’a exactement la même
+taille. En fait, avec des mesures assez fines, vous n’auriez jamais la
+même taille au réveil et au coucher. Il est peu utile de s’interroger
+sur la probabilité exacte que quelqu’un mesure 1,801392782910287192
+mètre. Au lieu de cela, nous nous soucions généralement plus de pouvoir
+dire si la taille de quelqu’un tombe dans un intervalle donné, disons
+entre 1,79 et 1,81 mètre. Dans ces cas, nous travaillons avec des
+<em>densités</em> de probabilité. La taille de exactement 1,80 mètre n’a aucune
+probabilité, mais une densité non nulle. Pour calculer la probabilité
+attribuée à un intervalle, nous devons prendre une <em>intégrale</em> de la
+densité sur cet intervalle.</p>
+</section>
+<section id="variables-aleatoires-multiples">
+<h2><span class="section-number">2.6.4. </span>Variables aléatoires multiples<a class="headerlink" href="#variables-aleatoires-multiples" title="Permalink to this heading">¶</a></h2>
+<p>Vous avez peut-être remarqué que nous n’avons même pas pu terminer la
+section précédente sans faire des affirmations impliquant des
+interactions entre plusieurs variables aléatoires (rappelez-vous que
+<span class="math notranslate nohighlight">\(P(X,Y) = P(X) P(Y)\)</span>). La majeure partie de l’apprentissage
+automatique concerne de telles relations. Ici, l’espace échantillonnal
+serait la population d’intérêt, disons les clients qui effectuent des
+transactions avec une entreprise, des photographies sur Internet, ou des
+protéines connues des biologistes. Chaque variable aléatoire
+représenterait la valeur (inconnue) d’un attribut différent. Chaque fois
+que nous échantillonnons un individu de la population, nous observons
+une réalisation de chacune des variables aléatoires. Parce que les
+valeurs prises par les variables aléatoires correspondent à des
+sous-ensembles de l’espace échantillonnal qui pourraient se chevaucher,
+se chevaucher partiellement, ou être entièrement disjoints, connaître la
+valeur prise par une variable aléatoire peut nous amener à mettre à jour
+nos croyances sur les valeurs d’une autre variable aléatoire qui sont
+probables. Si un patient entre dans un hôpital et que nous observons
+qu’il a des difficultés à respirer et a perdu son sens de l’odorat,
+alors nous pensons qu’il est plus probable qu’il ait la COVID-19 que
+nous ne le pourrions s’il n’avait aucune difficulté à respirer et un
+sens de l’odorat parfaitement ordinaire.</p>
+<p>Lorsque nous travaillons avec plusieurs variables aléatoires, nous
+pouvons construire des événements correspondant à chaque combinaison de
+valeurs que les variables peuvent prendre conjointement. La fonction de
+probabilité qui attribue des probabilités à chacune de ces combinaisons
+(par exemple <span class="math notranslate nohighlight">\(A=a\)</span> et <span class="math notranslate nohighlight">\(B=b\)</span>) est appelée la fonction de
+<em>probabilité jointe</em> et renvoie simplement la probabilité attribuée à
+l’intersection des sous-ensembles correspondants de l’espace
+échantillonnal. La <em>probabilité jointe</em> attribuée à l’événement où les
+variables aléatoires <span class="math notranslate nohighlight">\(A\)</span> et <span class="math notranslate nohighlight">\(B\)</span> prennent les valeurs
+<span class="math notranslate nohighlight">\(a\)</span> et <span class="math notranslate nohighlight">\(b\)</span>, respectivement, est notée
+<span class="math notranslate nohighlight">\(P(A = a, B = b)\)</span>, où la virgule indique “et”. Notez que pour
+toutes valeurs <span class="math notranslate nohighlight">\(a\)</span> et <span class="math notranslate nohighlight">\(b\)</span>, il s’ensuit que</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-0">
+<span class="eqno">(2.6.1)<a class="headerlink" href="#equation-chapter-preliminaries-probability-0" title="Permalink to this equation">¶</a></span>\[P(A=a, B=b) \leq P(A=a) \textrm{ et } P(A=a, B=b) \leq P(B = b),\]</div>
+<p>puisque pour que <span class="math notranslate nohighlight">\(A=a\)</span> et <span class="math notranslate nohighlight">\(B=b\)</span> se produisent, <span class="math notranslate nohighlight">\(A=a\)</span>
+doit se produire <em>et</em> <span class="math notranslate nohighlight">\(B=b\)</span> doit également se produire. Fait
+intéressant, la probabilité jointe nous dit tout ce que nous pouvons
+savoir sur ces variables aléatoires dans un sens probabiliste, et peut
+être utilisée pour dériver de nombreuses autres quantités utiles, y
+compris la récupération des distributions individuelles <span class="math notranslate nohighlight">\(P(A)\)</span> et
+<span class="math notranslate nohighlight">\(P(B)\)</span>. Pour récupérer <span class="math notranslate nohighlight">\(P(A=a)\)</span>, nous additionnons
+simplement <span class="math notranslate nohighlight">\(P(A=a, B=v)\)</span> sur toutes les valeurs <span class="math notranslate nohighlight">\(v\)</span> que la
+variable aléatoire <span class="math notranslate nohighlight">\(B\)</span> peut prendre :
+<span class="math notranslate nohighlight">\(P(A=a) = \sum_v P(A=a, B=v)\)</span>.</p>
+<p>Le ratio <span class="math notranslate nohighlight">\(\frac{P(A=a, B=b)}{P(A=a)} \leq 1\)</span> s’avère être
+extrêmement important. Il est appelé la <em>probabilité conditionnelle</em>, et
+est noté via le symbole “<span class="math notranslate nohighlight">\(\mid\)</span>” :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-1">
+<span class="eqno">(2.6.2)<a class="headerlink" href="#equation-chapter-preliminaries-probability-1" title="Permalink to this equation">¶</a></span>\[P(B=b \mid A=a) = P(A=a,B=b)/P(A=a).\]</div>
+<p>Il nous indique la nouvelle probabilité associée à l’événement
+<span class="math notranslate nohighlight">\(B=b\)</span>, une fois que nous conditionnons sur le fait que <span class="math notranslate nohighlight">\(A=a\)</span>
+a eu lieu. Nous pouvons considérer cette probabilité conditionnelle
+comme restreignant l’attention uniquement au sous-ensemble de l’espace
+échantillonnal associé à <span class="math notranslate nohighlight">\(A=a\)</span> puis en renormalisant pour que
+toutes les probabilités s’additionnent à 1. Les probabilités
+conditionnelles sont en fait juste des probabilités ordinaires et
+respectent donc tous les axiomes, tant que nous conditionnons tous les
+termes sur le même événement et ainsi restreignons l’attention au même
+espace échantillonnal. Par exemple, pour des événements disjoints
+<span class="math notranslate nohighlight">\(\mathcal{B}\)</span> et <span class="math notranslate nohighlight">\(\mathcal{B}'\)</span>, nous avons que
+<span class="math notranslate nohighlight">\(P(\mathcal{B} \cup \mathcal{B}' \mid A = a) = P(\mathcal{B} \mid A = a) + P(\mathcal{B}' \mid A = a)\)</span>.</p>
+<p>En utilisant la définition des probabilités conditionnelles, nous
+pouvons dériver le célèbre résultat appelé <em>théorème de Bayes</em>. Par
+construction, nous avons que <span class="math notranslate nohighlight">\(P(A, B) = P(B\mid A) P(A)\)</span> et
+<span class="math notranslate nohighlight">\(P(A, B) = P(A\mid B) P(B)\)</span>. La combinaison des deux équations
+donne <span class="math notranslate nohighlight">\(P(B\mid A) P(A) = P(A\mid B) P(B)\)</span> et donc</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-2">
+<span class="eqno">(2.6.3)<a class="headerlink" href="#equation-chapter-preliminaries-probability-2" title="Permalink to this equation">¶</a></span>\[P(A \mid B) = \frac{P(B\mid A) P(A)}{P(B)}.\]</div>
+<p>Cette équation simple a des implications profondes car elle nous permet
+d’inverser l’ordre du conditionnement. Si nous savons comment estimer
+<span class="math notranslate nohighlight">\(P(B\mid A)\)</span>, <span class="math notranslate nohighlight">\(P(A)\)</span> et <span class="math notranslate nohighlight">\(P(B)\)</span>, alors nous pouvons
+estimer <span class="math notranslate nohighlight">\(P(A\mid B)\)</span>. Nous trouvons souvent plus facile d’estimer
+directement un terme mais pas l’autre et le théorème de Bayes peut venir
+à la rescousse ici. Par exemple, si nous connaissons la prévalence des
+symptômes pour une maladie donnée, et les prévalences globales de la
+maladie et des symptômes, respectivement, nous pouvons déterminer quelle
+est la probabilité que quelqu’un ait la maladie en fonction de ses
+symptômes. Dans certains cas, nous pourrions ne pas avoir d’accès direct
+à <span class="math notranslate nohighlight">\(P(B)\)</span>, comme la prévalence des symptômes. Dans ce cas, une
+version simplifiée du théorème de Bayes s’avère utile :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-3">
+<span class="eqno">(2.6.4)<a class="headerlink" href="#equation-chapter-preliminaries-probability-3" title="Permalink to this equation">¶</a></span>\[P(A \mid B) \propto P(B \mid A) P(A).\]</div>
+<p>Puisque nous savons que <span class="math notranslate nohighlight">\(P(A \mid B)\)</span> doit être normalisé à
+<span class="math notranslate nohighlight">\(1\)</span>, c’est-à-dire <span class="math notranslate nohighlight">\(\sum_a P(A=a \mid B) = 1\)</span>, nous pouvons
+l’utiliser pour calculer</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-4">
+<span class="eqno">(2.6.5)<a class="headerlink" href="#equation-chapter-preliminaries-probability-4" title="Permalink to this equation">¶</a></span>\[P(A \mid B) = \frac{P(B \mid A) P(A)}{\sum_a P(B \mid A=a) P(A = a)}.\]</div>
+<p>En statistique bayésienne, nous considérons un observateur comme
+possédant certaines croyances initiales (subjectives) sur la
+plausibilité des hypothèses disponibles encodées dans la <em>probabilité a
+priori</em> <span class="math notranslate nohighlight">\(P(H)\)</span>, et une <em>fonction de vraisemblance</em> qui indique
+quelle est la probabilité d’observer n’importe quelle valeur des preuves
+collectées pour chacune des hypothèses de la classe <span class="math notranslate nohighlight">\(P(E \mid H)\)</span>.
+Le théorème de Bayes est alors interprété comme nous disant comment
+mettre à jour la <em>probabilité a priori</em> initiale <span class="math notranslate nohighlight">\(P(H)\)</span> à la
+lumière des preuves disponibles <span class="math notranslate nohighlight">\(E\)</span> pour produire des croyances <em>a
+posteriori</em> <span class="math notranslate nohighlight">\(P(H \mid E) = \frac{P(E \mid H) P(H)}{P(E)}\)</span>.
+Informellement, cela peut être énoncé comme “l’a posteriori est égal à
+l’a priori fois la vraisemblance, divisé par les preuves”. Maintenant,
+parce que la preuve <span class="math notranslate nohighlight">\(P(E)\)</span> est la même pour toutes les hypothèses,
+nous pouvons nous en sortir simplement en normalisant sur les
+hypothèses.</p>
+<p>Notez que <span class="math notranslate nohighlight">\(\sum_a P(A=a \mid B) = 1\)</span> nous permet également de
+<em>marginaliser</em> sur des variables aléatoires. C’est-à-dire que nous
+pouvons supprimer des variables d’une distribution jointe telle que
+<span class="math notranslate nohighlight">\(P(A, B)\)</span>. Après tout, nous avons que</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-5">
+<span class="eqno">(2.6.6)<a class="headerlink" href="#equation-chapter-preliminaries-probability-5" title="Permalink to this equation">¶</a></span>\[\sum_a P(B \mid A=a) P(A=a) = \sum_a P(B, A=a) = P(B).\]</div>
+<p>L’indépendance est un autre concept fondamentalement important qui
+constitue l’épine dorsale de nombreuses idées importantes en
+statistique. En bref, deux variables sont <em>indépendantes</em> si le
+conditionnement sur la valeur de <span class="math notranslate nohighlight">\(A\)</span> ne provoque aucun changement
+dans la distribution de probabilité associée à <span class="math notranslate nohighlight">\(B\)</span> et vice versa.
+Plus formellement, l’indépendance, notée <span class="math notranslate nohighlight">\(A \perp B\)</span>, exige que
+<span class="math notranslate nohighlight">\(P(A \mid B) = P(A)\)</span> et, par conséquent, que
+<span class="math notranslate nohighlight">\(P(A,B) = P(A \mid B) P(B) = P(A) P(B)\)</span>. L’indépendance est
+souvent une hypothèse appropriée. Par exemple, si la variable aléatoire
+<span class="math notranslate nohighlight">\(A\)</span> représente le résultat du lancer d’une pièce équilibrée et la
+variable aléatoire <span class="math notranslate nohighlight">\(B\)</span> représente le résultat du lancer d’une
+autre pièce, alors savoir si <span class="math notranslate nohighlight">\(A\)</span> a donné face ne devrait pas
+influencer la probabilité que <span class="math notranslate nohighlight">\(B\)</span> donne face.</p>
+<p>L’indépendance est particulièrement utile lorsqu’elle tient parmi les
+tirages successifs de nos données à partir d’une distribution
+sous-jacente (nous permettant de tirer des conclusions statistiques
+solides) ou lorsqu’elle tient parmi diverses variables dans nos données,
+nous permettant de travailler avec des modèles plus simples qui encodent
+cette structure d’indépendance. D’autre part, l’estimation des
+dépendances parmi les variables aléatoires est souvent le but même de
+l’apprentissage. Nous nous soucions d’estimer la probabilité de maladie
+étant donné les symptômes précisément parce que nous pensons que les
+maladies et les symptômes ne sont <em>pas</em> indépendants.</p>
+<p>Notez que parce que les probabilités conditionnelles sont des
+probabilités proprement dites, les concepts d’indépendance et de
+dépendance s’appliquent également à elles. Deux variables aléatoires
+<span class="math notranslate nohighlight">\(A\)</span> et <span class="math notranslate nohighlight">\(B\)</span> sont <em>conditionnellement indépendantes</em> étant
+donné une troisième variable <span class="math notranslate nohighlight">\(C\)</span> si et seulement si
+<span class="math notranslate nohighlight">\(P(A, B \mid C) = P(A \mid C)P(B \mid C)\)</span>. Fait intéressant, deux
+variables peuvent être indépendantes en général mais devenir dépendantes
+lors du conditionnement sur une troisième. Cela se produit souvent
+lorsque les deux variables aléatoires <span class="math notranslate nohighlight">\(A\)</span> et <span class="math notranslate nohighlight">\(B\)</span>
+correspondent aux causes d’une troisième variable <span class="math notranslate nohighlight">\(C\)</span>. Par
+exemple, les fractures osseuses et le cancer du poumon pourraient être
+indépendants dans la population générale, mais si nous conditionnons sur
+le fait d’être à l’hôpital, alors nous pourrions constater que les
+fractures osseuses sont corrélées négativement avec le cancer du poumon.
+C’est parce que la fracture osseuse <em>explique</em> pourquoi une personne est
+à l’hôpital et abaisse ainsi la probabilité qu’elle soit hospitalisée
+parce qu’elle a un cancer du poumon.</p>
+<p>Et inversement, deux variables aléatoires dépendantes peuvent devenir
+indépendantes lors du conditionnement sur une troisième. Cela arrive
+souvent lorsque deux événements autrement non liés ont une cause
+commune. La pointure et le niveau de lecture sont fortement corrélés
+parmi les élèves du primaire, mais cette corrélation disparaît si nous
+conditionnons sur l’âge.</p>
+</section>
+<section id="un-exemple">
+<span id="subsec-probability-hiv-app"></span><h2><span class="section-number">2.6.5. </span>Un exemple<a class="headerlink" href="#un-exemple" title="Permalink to this heading">¶</a></h2>
+<p>Mettons nos compétences à l’épreuve. Supposons qu’un médecin administre
+un test de dépistage du VIH à un patient. Ce test est assez précis et
+n’échoue qu’avec une probabilité de 1 % si le patient est en bonne santé
+mais déclaré malade, c’est-à-dire que les patients sains sont testés
+positifs dans 1 % des cas. De plus, il ne manque jamais de détecter le
+VIH si le patient en est réellement atteint. Nous utilisons
+<span class="math notranslate nohighlight">\(D_1 \in \{0, 1\}\)</span> pour indiquer le diagnostic (<span class="math notranslate nohighlight">\(0\)</span> si
+négatif et <span class="math notranslate nohighlight">\(1\)</span> si positif) et <span class="math notranslate nohighlight">\(H \in \{0, 1\}\)</span> pour désigner
+le statut VIH.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Probabilité conditionnelle</p></th>
+<th class="head"><p><span class="math notranslate nohighlight">\(H=1\)</span></p></th>
+<th class="head"><p><span class="math notranslate nohighlight">\(H=0\)</span></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(P(D_1 = 1 \mid H)\)</span></p></td>
+<td><p>1</p></td>
+<td><p>0,01</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(P(D_1 = 0 \mid H)\)</span></p></td>
+<td><p>0</p></td>
+<td><p>0,99</p></td>
+</tr>
+</tbody>
+</table>
+<p>Notez que les sommes des colonnes valent toutes 1 (mais pas les sommes
+des lignes), car il s’agit de probabilités conditionnelles. Calculons la
+probabilité que le patient soit atteint du VIH si le test revient
+positif, c’est-à-dire <span class="math notranslate nohighlight">\(P(H = 1 \mid D_1 = 1)\)</span>. Intuitivement, cela
+va dépendre de la fréquence de la maladie, car cela affecte le nombre de
+fausses alertes. Supposons que la population soit assez exempte de la
+maladie, par exemple <span class="math notranslate nohighlight">\(P(H=1) = 0,0015\)</span>. Pour appliquer le théorème
+de Bayes, nous devons appliquer la marginalisation pour déterminer</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-6">
+<span class="eqno">(2.6.7)<a class="headerlink" href="#equation-chapter-preliminaries-probability-6" title="Permalink to this equation">¶</a></span>\[\begin{split}\begin{aligned}
+P(D_1 = 1)
+=&amp; P(D_1=1, H=0) + P(D_1=1, H=1)  \\
+=&amp; P(D_1=1 \mid H=0) P(H=0) + P(D_1=1 \mid H=1) P(H=1) \\
+=&amp; 0,011485.
+\end{aligned}\end{split}\]</div>
+<p>Cela nous mène à</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-7">
+<span class="eqno">(2.6.8)<a class="headerlink" href="#equation-chapter-preliminaries-probability-7" title="Permalink to this equation">¶</a></span>\[P(H = 1 \mid D_1 = 1) = \frac{P(D_1=1 \mid H=1) P(H=1)}{P(D_1=1)} = 0,1306.\]</div>
+<p>En d’autres termes, il n’y a que 13,06 % de chances que le patient soit
+réellement atteint du VIH, bien que le test soit assez précis. Comme
+nous pouvons le voir, les probabilités peuvent être contre-intuitives.
+Que doit faire un patient en recevant une nouvelle aussi terrifiante ?
+Il est probable que le patient demande au médecin d’administrer un autre
+test pour y voir plus clair. Le deuxième test a des caractéristiques
+différentes et il n’est pas aussi bon que le premier.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Probabilité conditionnelle</p></th>
+<th class="head"><p><span class="math notranslate nohighlight">\(H=1\)</span></p></th>
+<th class="head"><p><span class="math notranslate nohighlight">\(H=0\)</span></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(P(D_2 = 1 \mid H)\)</span></p></td>
+<td><p>0,98</p></td>
+<td><p>0,03</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(P(D_2 = 0 \mid H)\)</span></p></td>
+<td><p>0,02</p></td>
+<td><p>0,97</p></td>
+</tr>
+</tbody>
+</table>
+<p>Malheureusement, le deuxième test revient également positif. Calculons
+les probabilités requises pour invoquer le théorème de Bayes en
+supposant l’indépendance conditionnelle :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-8">
+<span class="eqno">(2.6.9)<a class="headerlink" href="#equation-chapter-preliminaries-probability-8" title="Permalink to this equation">¶</a></span>\[\begin{split}\begin{aligned}
+P(D_1 = 1, D_2 = 1 \mid H = 0)
+&amp; = P(D_1 = 1 \mid H = 0) P(D_2 = 1 \mid H = 0)
+=&amp; 0,0003, \\
+P(D_1 = 1, D_2 = 1 \mid H = 1)
+&amp; = P(D_1 = 1 \mid H = 1) P(D_2 = 1 \mid H = 1)
+=&amp; 0,98.
+\end{aligned}\end{split}\]</div>
+<p>Nous pouvons maintenant appliquer la marginalisation pour obtenir la
+probabilité que les deux tests reviennent positifs :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-9">
+<span class="eqno">(2.6.10)<a class="headerlink" href="#equation-chapter-preliminaries-probability-9" title="Permalink to this equation">¶</a></span>\[\begin{split}\begin{aligned}
+&amp;P(D_1 = 1, D_2 = 1)\\
+&amp;= P(D_1 = 1, D_2 = 1, H = 0) + P(D_1 = 1, D_2 = 1, H = 1)  \\
+&amp;= P(D_1 = 1, D_2 = 1 \mid H = 0)P(H=0) + P(D_1 = 1, D_2 = 1 \mid H = 1)P(H=1)\\
+&amp;= 0,00176955.
+\end{aligned}\end{split}\]</div>
+<p>Enfin, la probabilité que le patient soit atteint du VIH sachant que les
+deux tests sont positifs est</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-10">
+<span class="eqno">(2.6.11)<a class="headerlink" href="#equation-chapter-preliminaries-probability-10" title="Permalink to this equation">¶</a></span>\[P(H = 1 \mid D_1 = 1, D_2 = 1)
+= \frac{P(D_1 = 1, D_2 = 1 \mid H=1) P(H=1)}{P(D_1 = 1, D_2 = 1)}
+= 0,8307.\]</div>
+<p>C’est-à-dire que le deuxième test nous a permis de gagner une confiance
+beaucoup plus élevée que tout ne va pas bien. Bien que le deuxième test
+soit considérablement moins précis que le premier, il a tout de même
+amélioré de manière significative notre estimation. L’hypothèse selon
+laquelle les deux tests sont conditionnellement indépendants l’un de
+l’autre était cruciale pour notre capacité à générer une estimation plus
+précise. Prenons le cas extrême où nous effectuons le même test deux
+fois. Dans cette situation, nous nous attendrions au même résultat les
+deux fois, donc aucune information supplémentaire n’est obtenue en
+effectuant à nouveau le même test. Le lecteur attentif aura peut-être
+remarqué que le diagnostic s’est comporté comme un classificateur caché
+à la vue de tous où notre capacité à décider si un patient est en bonne
+santé augmente à mesure que nous obtenons plus de caractéristiques
+(résultats de tests).</p>
+</section>
+<section id="esperances">
+<h2><span class="section-number">2.6.6. </span>Espérances<a class="headerlink" href="#esperances" title="Permalink to this heading">¶</a></h2>
+<p>Souvent, prendre des décisions nécessite non seulement de regarder les
+probabilités attribuées aux événements individuels mais de les composer
+ensemble en agrégats utiles qui peuvent nous guider. Par exemple,
+lorsque des variables aléatoires prennent des valeurs scalaires
+continues, nous nous soucions souvent de savoir quelle valeur attendre
+<em>en moyenne</em>. Cette quantité est formellement appelée une <em>espérance</em>.
+Si nous faisons des investissements, la première quantité d’intérêt
+pourrait être le rendement auquel nous pouvons nous attendre, en faisant
+la moyenne de tous les résultats possibles (et en pondérant par les
+probabilités appropriées). Par exemple, disons qu’avec 50 % de
+probabilité, un investissement pourrait échouer complètement, avec 40 %
+de probabilité il pourrait fournir un rendement de 2<span class="math notranslate nohighlight">\(\times\)</span>, et
+avec 10 % de probabilité il pourrait fournir un rendement de
+10<span class="math notranslate nohighlight">\(\times\)</span>. Pour calculer le rendement attendu, nous
+additionnons tous les rendements, en multipliant chacun par la
+probabilité qu’ils se produisent. Cela donne l’espérance
+<span class="math notranslate nohighlight">\(0,5 \cdot 0 + 0,4 \cdot 2 + 0,1 \cdot 10 = 1,8\)</span>. Le rendement
+attendu est donc de 1,8<span class="math notranslate nohighlight">\(\times\)</span>.</p>
+<p>En général, l’<em>espérance</em> (ou la moyenne) de la variable aléatoire
+<span class="math notranslate nohighlight">\(X\)</span> est définie comme</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-11">
+<span class="eqno">(2.6.12)<a class="headerlink" href="#equation-chapter-preliminaries-probability-11" title="Permalink to this equation">¶</a></span>\[E[X] = E_{x \sim P}[x] = \sum_{x} x P(X = x).\]</div>
+<p>De même, pour les densités nous obtenons <span class="math notranslate nohighlight">\(E[X] = \int x \;dp(x)\)</span>.
+Parfois, nous sommes intéressés par la valeur attendue de certaines
+fonctions de <span class="math notranslate nohighlight">\(x\)</span>. Nous pouvons calculer ces espérances comme</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-12">
+<span class="eqno">(2.6.13)<a class="headerlink" href="#equation-chapter-preliminaries-probability-12" title="Permalink to this equation">¶</a></span>\[E_{x \sim P}[f(x)] = \sum_x f(x) P(x) \textrm{ et } E_{x \sim P}[f(x)] = \int f(x) p(x) \;dx\]</div>
+<p>respectivement pour les probabilités discrètes et les densités. En
+revenant à l’exemple d’investissement ci-dessus, <span class="math notranslate nohighlight">\(f\)</span> pourrait être
+l’<em>utilité</em> (le bonheur) associée au rendement. Les économistes
+comportementaux ont noté depuis longtemps que les gens associent une
+plus grande désutilité à la perte d’argent que l’utilité gagnée à gagner
+un dollar par rapport à leur niveau de base. De plus, la valeur de
+l’argent a tendance à être sous-linéaire. Posséder 100k dollars contre
+zéro dollar peut faire la différence entre payer le loyer, bien manger
+et bénéficier de soins de santé de qualité ou souffrir de l’itinérance.
+D’un autre côté, les gains dus à la possession de 200k contre 100k sont
+moins dramatiques. Un tel raisonnement motive le cliché selon lequel
+“l’utilité de l’argent est logarithmique”.</p>
+<p>Si l’utilité associée à une perte totale était de <span class="math notranslate nohighlight">\(-1\)</span>, et que les
+utilités associées à des rendements de <span class="math notranslate nohighlight">\(1\)</span>, <span class="math notranslate nohighlight">\(2\)</span> et
+<span class="math notranslate nohighlight">\(10\)</span> étaient respectivement de <span class="math notranslate nohighlight">\(1\)</span>, <span class="math notranslate nohighlight">\(2\)</span> et <span class="math notranslate nohighlight">\(4\)</span>,
+alors le bonheur attendu de l’investissement serait de
+<span class="math notranslate nohighlight">\(0,5 \cdot (-1) + 0,4 \cdot 2 + 0,1 \cdot 4 = 0,7\)</span> (une perte
+d’utilité attendue de 30 %). Si tel était effectivement votre fonction
+d’utilité, vous feriez peut-être mieux de garder l’argent à la banque.</p>
+<p>Pour les décisions financières, nous pourrions également vouloir mesurer
+à quel point un investissement est <em>risqué</em>. Ici, nous ne nous soucions
+pas seulement de la valeur attendue mais de la mesure dans laquelle les
+valeurs réelles ont tendance à <em>varier</em> par rapport à cette valeur.
+Notez que nous ne pouvons pas simplement prendre l’espérance de la
+différence entre les valeurs réelles et attendues. C’est parce que
+l’espérance d’une différence est la différence des espérances,
+c’est-à-dire <span class="math notranslate nohighlight">\(E[X - E[X]] = E[X] - E[E[X]] = 0\)</span>. Cependant, nous
+pouvons regarder l’espérance de n’importe quelle fonction non négative
+de cette différence. La <em>variance</em> d’une variable aléatoire est calculée
+en regardant la valeur attendue des différences au <em>carré</em> :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-13">
+<span class="eqno">(2.6.14)<a class="headerlink" href="#equation-chapter-preliminaries-probability-13" title="Permalink to this equation">¶</a></span>\[\textrm{Var}[X] = E\left[(X - E[X])^2\right] = E[X^2] - E[X]^2.\]</div>
+<p>Ici, l’égalité s’ensuit en développant
+<span class="math notranslate nohighlight">\((X - E[X])^2 = X^2 - 2 X E[X] + E[X]^2\)</span> et en prenant les
+espérances pour chaque terme. La racine carrée de la variance est une
+autre quantité utile appelée l’<em>écart-type</em>. Alors que celui-ci et la
+variance transmettent la même information (l’un peut être calculé à
+partir de l’autre), l’écart-type a la propriété intéressante d’être
+exprimé dans les mêmes unités que la quantité originale représentée par
+la variable aléatoire.</p>
+<p>Enfin, la variance d’une fonction d’une variable aléatoire est définie
+de manière analogue par</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-14">
+<span class="eqno">(2.6.15)<a class="headerlink" href="#equation-chapter-preliminaries-probability-14" title="Permalink to this equation">¶</a></span>\[\textrm{Var}_{x \sim P}[f(x)] = E_{x \sim P}[f^2(x)] - E_{x \sim P}[f(x)]^2.\]</div>
+<p>En revenant à notre exemple d’investissement, nous pouvons maintenant
+calculer la variance de l’investissement. Elle est donnée par
+<span class="math notranslate nohighlight">\(0,5 \cdot 0 + 0,4 \cdot 2^2 + 0,1 \cdot 10^2 - 1,8^2 = 8,36\)</span>. À
+toutes fins utiles, il s’agit d’un investissement risqué. Notez que par
+convention mathématique, la moyenne et la variance sont souvent
+désignées par <span class="math notranslate nohighlight">\(\mu\)</span> et <span class="math notranslate nohighlight">\(\sigma^2\)</span>. C’est particulièrement le
+cas chaque fois que nous les utilisons pour paramétrer une distribution
+gaussienne.</p>
+<p>De la même manière que nous avons introduit les espérances et la
+variance pour les variables aléatoires <em>scalaires</em>, nous pouvons le
+faire pour les variables à valeurs vectorielles. Les espérances sont
+faciles, car nous pouvons les appliquer élément par élément. Par
+exemple,
+<span class="math notranslate nohighlight">\(\boldsymbol{\mu} \stackrel{\textrm{def}}{=} E_{\mathbf{x} \sim P}[\mathbf{x}]\)</span>
+a pour coordonnées <span class="math notranslate nohighlight">\(\mu_i = E_{\mathbf{x} \sim P}[x_i]\)</span>. Les
+<em>covariances</em> sont plus compliquées. Nous les définissons en prenant les
+espérances du <em>produit extérieur</em> de la différence entre les variables
+aléatoires et leur moyenne :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-15">
+<span class="eqno">(2.6.16)<a class="headerlink" href="#equation-chapter-preliminaries-probability-15" title="Permalink to this equation">¶</a></span>\[\boldsymbol{\Sigma} \stackrel{\textrm{def}}{=} \textrm{Cov}_{\mathbf{x} \sim P}[\mathbf{x}] = E_{\mathbf{x} \sim P}\left[(\mathbf{x} - \boldsymbol{\mu}) (\mathbf{x} - \boldsymbol{\mu})^\top\right].\]</div>
+<p>Cette matrice <span class="math notranslate nohighlight">\(\boldsymbol{\Sigma}\)</span> est appelée la matrice de
+covariance. Un moyen simple de voir son effet est de considérer un
+vecteur <span class="math notranslate nohighlight">\(\mathbf{v}\)</span> de la même taille que <span class="math notranslate nohighlight">\(\mathbf{x}\)</span>. Il
+s’ensuit que</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-probability-16">
+<span class="eqno">(2.6.17)<a class="headerlink" href="#equation-chapter-preliminaries-probability-16" title="Permalink to this equation">¶</a></span>\[\mathbf{v}^\top \boldsymbol{\Sigma} \mathbf{v} = E_{\mathbf{x} \sim P}\left[\mathbf{v}^\top(\mathbf{x} - \boldsymbol{\mu}) (\mathbf{x} - \boldsymbol{\mu})^\top \mathbf{v}\right] = \textrm{Var}_{x \sim P}[\mathbf{v}^\top \mathbf{x}].\]</div>
+<p>En tant que tel, <span class="math notranslate nohighlight">\(\boldsymbol{\Sigma}\)</span> nous permet de calculer la
+variance pour toute fonction linéaire de <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> par une
+simple multiplication matricielle. Les éléments hors diagonale nous
+indiquent à quel point les coordonnées sont corrélées : une valeur de 0
+signifie aucune corrélation, tandis qu’une valeur positive plus élevée
+signifie qu’elles sont plus fortement corrélées.</p>
+</section>
+<section id="discussion">
+<h2><span class="section-number">2.6.7. </span>Discussion<a class="headerlink" href="#discussion" title="Permalink to this heading">¶</a></h2>
+<p>Dans l’apprentissage automatique, il y a beaucoup de choses sur
+lesquelles être incertain ! Nous pouvons être incertains de la valeur
+d’une étiquette étant donné une entrée. Nous pouvons être incertains de
+la valeur estimée d’un paramètre. Nous pouvons même être incertains de
+savoir si les données arrivant lors du déploiement proviennent même de
+la même distribution que les données d’entraînement.</p>
+<p>Par <em>incertitude aléatoire</em> (ou <em>aléatoire</em>), nous entendons une
+incertitude qui est intrinsèque au problème, et due à un véritable
+hasard non pris en compte par les variables observées. Par <em>incertitude
+épistémique</em>, nous entendons l’incertitude sur les paramètres d’un
+modèle, le genre d’incertitude que nous pouvons espérer réduire en
+collectant plus de données. Nous pourrions avoir une incertitude
+épistémique concernant la probabilité qu’une pièce donne face, mais même
+une fois que nous connaissons cette probabilité, il nous reste une
+incertitude aléatoire sur le résultat de tout lancer futur. Peu importe
+combien de temps nous regardons quelqu’un lancer une pièce équilibrée,
+nous ne serons jamais plus ou moins certains à 50 % que le prochain
+lancer donnera face. Ces termes proviennent de la modélisation
+mécanique, (voir par exemple <span id="id2"></span>
+pour une revue sur cet aspect de <a class="reference external" href="https://en.wikipedia.org/wiki/Uncertainty_quantification">la quantification de
+l’incertitude</a>).
+Il convient de noter, cependant, que ces termes constituent un léger
+abus de langage. Le terme <em>épistémique</em> fait référence à tout ce qui
+concerne la <em>connaissance</em> et donc, au sens philosophique, toute
+incertitude est épistémique.</p>
+<p>Nous avons vu que l’échantillonnage de données à partir d’une
+distribution de probabilité inconnue peut nous fournir des informations
+qui peuvent être utilisées pour estimer les paramètres de la
+distribution de génération de données. Cela dit, la vitesse à laquelle
+cela est possible peut être assez lente. Dans notre exemple de lancer de
+pièces (et bien d’autres), nous ne pouvons pas faire mieux que de
+concevoir des estimateurs qui convergent à un taux de
+<span class="math notranslate nohighlight">\(1/\sqrt{n}\)</span>, où <span class="math notranslate nohighlight">\(n\)</span> est la taille de l’échantillon (par
+exemple, le nombre de lancers). Cela signifie qu’en passant de 10 à 1
+000 observations (généralement une tâche très réalisable), nous voyons
+une réduction au décuple de l’incertitude, alors que les 1 000
+observations suivantes aident comparativement peu, n’offrant qu’une
+réduction de 1,41 fois. C’est une caractéristique persistante de
+l’apprentissage automatique : bien qu’il y ait souvent des gains
+faciles, il faut une très grande quantité de données, et souvent avec
+elle une quantité énorme de calcul, pour réaliser d’autres gains. Pour
+une revue empirique de ce fait pour les modèles de langage à grande
+échelle, voir <span id="id3"></span>.</p>
+<p>Nous avons également affiné notre langage et nos outils pour la
+modélisation statistique. Au cours de ce processus, nous avons appris
+les probabilités conditionnelles et l’une des équations les plus
+importantes en statistique — le théorème de Bayes. C’est un outil
+efficace pour découpler les informations transmises par les données via
+un terme de vraisemblance <span class="math notranslate nohighlight">\(P(B \mid A)\)</span> qui traite de la mesure
+dans laquelle les observations <span class="math notranslate nohighlight">\(B\)</span> correspondent à un choix de
+paramètres <span class="math notranslate nohighlight">\(A\)</span>, et une probabilité a priori <span class="math notranslate nohighlight">\(P(A)\)</span> qui régit
+la plausibilité d’un choix particulier de <span class="math notranslate nohighlight">\(A\)</span> au départ. En
+particulier, nous avons vu comment cette règle peut être appliquée pour
+attribuer des probabilités aux diagnostics, en fonction de l’efficacité
+du test <em>et</em> de la prévalence de la maladie elle-même (c’est-à-dire
+notre a priori).</p>
+<p>Enfin, nous avons introduit un premier ensemble de questions non
+triviales sur l’effet d’une distribution de probabilité spécifique, à
+savoir les espérances et les variances. Bien qu’il y ait bien plus que
+de simples espérances linéaires et quadratiques pour une distribution de
+probabilité, ces deux-là fournissent déjà une bonne dose de
+connaissances sur le comportement possible de la distribution. Par
+exemple, <a class="reference external" href="https://en.wikipedia.org/wiki/Chebyshev%27s_inequality">l’inégalité de
+Bienaymé-Tchebychev</a>
+stipule que <span class="math notranslate nohighlight">\(P(|X - \mu| \geq k \sigma) \leq 1/k^2\)</span>, où
+<span class="math notranslate nohighlight">\(\mu\)</span> est l’espérance, <span class="math notranslate nohighlight">\(\sigma^2\)</span> est la variance de la
+distribution, et <span class="math notranslate nohighlight">\(k &gt; 1\)</span> est un paramètre de confiance de notre
+choix. Elle nous dit que les tirages d’une distribution se situent avec
+au moins 50 % de probabilité dans un intervalle
+<span class="math notranslate nohighlight">\([-\sqrt{2} \sigma, \sqrt{2} \sigma]\)</span> centré sur l’espérance.</p>
+</section>
+<section id="exercices">
+<h2><span class="section-number">2.6.8. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Donnez un exemple où l’observation de plus de données peut réduire la
+quantité d’incertitude sur le résultat à un niveau arbitrairement
+bas.</p></li>
+<li><p>Donnez un exemple où l’observation de plus de données ne réduira la
+quantité d’incertitude que jusqu’à un certain point et pas au-delà.
+Expliquez pourquoi c’est le cas et où vous vous attendez à ce que ce
+point se produise.</p></li>
+<li><p>Nous avons démontré empiriquement la convergence vers la moyenne pour
+le lancer d’une pièce. Calculez la variance de l’estimation de la
+probabilité que nous voyions face après avoir tiré <span class="math notranslate nohighlight">\(n\)</span>
+échantillons.</p>
+<ol class="arabic simple">
+<li><p>Comment la variance évolue-t-elle avec le nombre d’observations ?</p></li>
+<li><p>Utilisez l’inégalité de Tchebychev pour borner l’écart par rapport
+à l’espérance.</p></li>
+<li><p>Quel est le lien avec le théorème central limite ?</p></li>
+</ol>
+</li>
+<li><p>Supposons que nous tirions <span class="math notranslate nohighlight">\(m\)</span> échantillons <span class="math notranslate nohighlight">\(x_i\)</span> d’une
+distribution de probabilité de moyenne nulle et de variance unitaire.
+Calculez les moyennes
+<span class="math notranslate nohighlight">\(z_m \stackrel{\textrm{def}}{=} m^{-1} \sum_{i=1}^m x_i\)</span>.
+Pouvons-nous appliquer l’inégalité de Tchebychev pour chaque
+<span class="math notranslate nohighlight">\(z_m\)</span> indépendamment ? Pourquoi pas ?</p></li>
+<li><p>Étant donné deux événements de probabilité <span class="math notranslate nohighlight">\(P(\mathcal{A})\)</span> et
+<span class="math notranslate nohighlight">\(P(\mathcal{B})\)</span>, calculez les bornes supérieure et inférieure
+de <span class="math notranslate nohighlight">\(P(\mathcal{A} \cup \mathcal{B})\)</span> et
+<span class="math notranslate nohighlight">\(P(\mathcal{A} \cap \mathcal{B})\)</span>. Astuce : représentez
+graphiquement la situation à l’aide d’un <a class="reference external" href="https://en.wikipedia.org/wiki/Venn_diagram">diagramme de
+Venn</a>.</p></li>
+<li><p>Supposons que nous ayons une suite de variables aléatoires, disons
+<span class="math notranslate nohighlight">\(A\)</span>, <span class="math notranslate nohighlight">\(B\)</span> et <span class="math notranslate nohighlight">\(C\)</span>, où <span class="math notranslate nohighlight">\(B\)</span> ne dépend que de
+<span class="math notranslate nohighlight">\(A\)</span>, et <span class="math notranslate nohighlight">\(C\)</span> ne dépend que de <span class="math notranslate nohighlight">\(B\)</span>, pouvez-vous
+simplifier la probabilité jointe <span class="math notranslate nohighlight">\(P(A, B, C)\)</span> ? Astuce : c’est
+une <a class="reference external" href="https://en.wikipedia.org/wiki/Markov_chain">chaîne de
+Markov</a>.</p></li>
+<li><p>Dans la <a class="reference internal" href="#subsec-probability-hiv-app"><span class="std std-numref">Section 2.6.5</span></a>, supposez que les
+résultats des deux tests ne sont pas indépendants. En particulier,
+supposez que chaque test à lui seul a un taux de faux positifs de 10
+% et un taux de faux négatifs de 1 %. C’est-à-dire, supposez que
+<span class="math notranslate nohighlight">\(P(D =1 \mid H=0) = 0,1\)</span> et que
+<span class="math notranslate nohighlight">\(P(D = 0 \mid H=1) = 0,01\)</span>. De plus, supposez que pour
+<span class="math notranslate nohighlight">\(H = 1\)</span> (infecté), les résultats des tests sont
+conditionnellement indépendants, c’est-à-dire que
+<span class="math notranslate nohighlight">\(P(D_1, D_2 \mid H=1) = P(D_1 \mid H=1) P(D_2 \mid H=1)\)</span> mais
+que pour les patients sains, les résultats sont couplés via
+<span class="math notranslate nohighlight">\(P(D_1 = D_2 = 1 \mid H=0) = 0,02\)</span>.</p>
+<ol class="arabic simple">
+<li><p>Établissez le tableau de probabilité jointe pour <span class="math notranslate nohighlight">\(D_1\)</span> et
+<span class="math notranslate nohighlight">\(D_2\)</span>, sachant <span class="math notranslate nohighlight">\(H=0\)</span> sur la base des informations dont
+vous disposez jusqu’à présent.</p></li>
+<li><p>Déduisez la probabilité que le patient soit malade (<span class="math notranslate nohighlight">\(H=1\)</span>)
+après qu’un test soit revenu positif. Vous pouvez supposer la même
+probabilité de base <span class="math notranslate nohighlight">\(P(H=1) = 0,0015\)</span> qu’auparavant.</p></li>
+<li><p>Déduisez la probabilité que le patient soit malade (<span class="math notranslate nohighlight">\(H=1\)</span>)
+après que les deux tests soient revenus positifs.</p></li>
+</ol>
+</li>
+<li><p>Supposez que vous êtes un gestionnaire d’actifs pour une banque
+d’investissement et que vous avez le choix entre des actions
+<span class="math notranslate nohighlight">\(s_i\)</span> dans lesquelles investir. Votre portefeuille doit
+totaliser <span class="math notranslate nohighlight">\(1\)</span> avec des poids <span class="math notranslate nohighlight">\(\alpha_i\)</span> pour chaque
+action. Les actions ont un rendement moyen
+<span class="math notranslate nohighlight">\(\boldsymbol{\mu} = E_{\mathbf{s} \sim P}[\mathbf{s}]\)</span> et une
+covariance
+<span class="math notranslate nohighlight">\(\boldsymbol{\Sigma} = \textrm{Cov}_{\mathbf{s} \sim P}[\mathbf{s}]\)</span>.</p>
+<ol class="arabic simple">
+<li><p>Calculez le rendement attendu pour un portefeuille donné
+<span class="math notranslate nohighlight">\(\boldsymbol{\alpha}\)</span>.</p></li>
+<li><p>Si vous vouliez maximiser le rendement du portefeuille, comment
+devriez-vous choisir votre investissement ?</p></li>
+<li><p>Calculez la <em>variance</em> du portefeuille.</p></li>
+<li><p>Formulez un problème d’optimisation consistant à maximiser le
+rendement tout en maintenant la variance contrainte à une borne
+supérieure. C’est le <a class="reference external" href="https://en.wikipedia.org/wiki/Markowitz_model">portefeuille de
+Markowitz</a>,
+lauréat du prix Nobel <span id="id4">()</span>. Pour le résoudre,
+vous aurez besoin d’un solveur de programmation quadratique,
+quelque chose qui dépasse largement le cadre de ce livre.</p></li>
+</ol>
+</li>
+</ol>
+<p><a class="reference external" href="https://discuss.d2l.ai/t/37">Discussions</a></p>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">2.6. Probabilités et statistiques</a><ul>
+<li><a class="reference internal" href="#un-exemple-simple-lancer-de-pieces">2.6.1. Un exemple simple : lancer de pièces</a></li>
+<li><a class="reference internal" href="#un-traitement-plus-formel">2.6.2. Un traitement plus formel</a></li>
+<li><a class="reference internal" href="#variables-aleatoires">2.6.3. Variables aléatoires</a></li>
+<li><a class="reference internal" href="#variables-aleatoires-multiples">2.6.4. Variables aléatoires multiples</a></li>
+<li><a class="reference internal" href="#un-exemple">2.6.5. Un exemple</a></li>
+<li><a class="reference internal" href="#esperances">2.6.6. Espérances</a></li>
+<li><a class="reference internal" href="#discussion">2.6.7. Discussion</a></li>
+<li><a class="reference internal" href="#exercices">2.6.8. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="autograd.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>2.5. Différentiation automatique</div>
+         </div>
+     </a>
+     <a id="button-next" href="lookup-api.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>2.7. Documentation</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

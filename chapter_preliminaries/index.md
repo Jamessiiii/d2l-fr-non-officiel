@@ -1,0 +1,36 @@
+# Préliminaires
+:label:`chap_preliminaries`
+
+Pour vous préparer à plonger dans l'apprentissage profond,
+vous aurez besoin de quelques compétences de survie :
+(i) des techniques pour stocker et manipuler des données ;
+(ii) des bibliothèques pour ingérer 
+et prétraiter des données provenant d'une variété de sources ;
+(iii) la connaissance des opérations de base de l'algèbre linéaire
+que nous appliquons aux éléments de données en haute dimension ;
+(iv) juste assez de calcul différentiel et intégral pour déterminer
+dans quelle direction ajuster chaque paramètre
+afin de diminuer la fonction de perte ;
+(v) la capacité de calculer automatiquement des dérivées
+pour que vous puissiez oublier une grande partie 
+du calcul que vous venez d'apprendre ;
+(vi) une certaine fluidité de base en probabilités,
+notre langage principal pour raisonner sous l'incertitude ;
+et (vii) une certaine aptitude à trouver des réponses 
+dans la documentation officielle lorsque vous êtes bloqué.
+
+En résumé, ce chapitre propose une introduction rapide 
+aux bases dont vous aurez besoin pour suivre 
+*la majeure partie* du contenu technique de ce livre.
+
+```toc
+:maxdepth: 2
+
+ndarray
+pandas
+linear-algebra
+calculus
+autograd
+probability
+lookup-api
+```

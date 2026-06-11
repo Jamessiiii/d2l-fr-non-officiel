@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>2.3. Algèbre linéaire &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2.4. Calcul" href="calculus.html" />
+    <link rel="prev" title="2.2. Prétraitement des données" href="pandas.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">2. </span>Préliminaires</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">2.3. </span>Algèbre linéaire</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_preliminaries/linear-algebra.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="algebre-lineaire">
+<span id="sec-linear-algebra"></span><h1><span class="section-number">2.3. </span>Algèbre linéaire<a class="headerlink" href="#algebre-lineaire" title="Permalink to this heading">¶</a></h1>
+<p>À ce stade, nous savons charger des jeux de données dans des tenseurs et
+manipuler ces tenseurs avec des opérations mathématiques de base. Pour
+commencer à construire des modèles sophistiqués, nous aurons également
+besoin de quelques outils de l’algèbre linéaire. Cette section propose
+une introduction douce aux concepts les plus essentiels, en partant de
+l’arithmétique scalaire jusqu’à la multiplication de matrices.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+</pre></div>
+</div>
+<section id="scalaires">
+<h2><span class="section-number">2.3.1. </span>Scalaires<a class="headerlink" href="#scalaires" title="Permalink to this heading">¶</a></h2>
+<p>La plupart des mathématiques quotidiennes consistent à manipuler des
+nombres un par un. Formellement, nous appelons ces valeurs des
+<em>scalaires</em>. Par exemple, la température à Palo Alto est de <span class="math notranslate nohighlight">\(72\)</span>
+degrés Fahrenheit. Si vous vouliez convertir la température en Celsius,
+vous évalueriez l’expression <span class="math notranslate nohighlight">\(c = \frac{5}{9}(f - 32)\)</span>, en fixant
+<span class="math notranslate nohighlight">\(f\)</span> à <span class="math notranslate nohighlight">\(72\)</span>. Dans cette équation, les valeurs <span class="math notranslate nohighlight">\(5\)</span>,
+<span class="math notranslate nohighlight">\(9\)</span> et <span class="math notranslate nohighlight">\(32\)</span> sont des scalaires constants. Les variables
+<span class="math notranslate nohighlight">\(c\)</span> et <span class="math notranslate nohighlight">\(f\)</span> représentent en général des scalaires inconnus.</p>
+<p>Nous désignons les scalaires par des lettres minuscules ordinaires (par
+exemple, <span class="math notranslate nohighlight">\(x\)</span>, <span class="math notranslate nohighlight">\(y\)</span> et <span class="math notranslate nohighlight">\(z\)</span>) et l’espace de tous les
+scalaires (continus) <em>à valeurs réelles</em> par <span class="math notranslate nohighlight">\(\mathbb{R}\)</span>. Par
+souci de concision, nous ferons l’impasse sur les définitions
+rigoureuses d’<em>espaces</em> : retenez simplement que l’expression
+<span class="math notranslate nohighlight">\(x \in \mathbb{R}\)</span> est une manière formelle de dire que <span class="math notranslate nohighlight">\(x\)</span>
+est un scalaire à valeur réelle. Le symbole <span class="math notranslate nohighlight">\(\in\)</span> (prononcé
+“appartient à”) désigne l’appartenance à un ensemble. Par exemple,
+<span class="math notranslate nohighlight">\(x, y \in \{0, 1\}\)</span> indique que <span class="math notranslate nohighlight">\(x\)</span> et <span class="math notranslate nohighlight">\(y\)</span> sont des
+variables qui ne peuvent prendre que les valeurs <span class="math notranslate nohighlight">\(0\)</span> ou <span class="math notranslate nohighlight">\(1\)</span>.</p>
+<p>Les scalaires sont implémentés comme des tenseurs qui ne contiennent
+qu’un seul élément. Ci-dessous, nous assignons deux scalaires et
+effectuons les opérations familières d’addition, de multiplication, de
+division et d’exponentiation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">/</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="o">**</span><span class="n">y</span>
+</pre></div>
+</div>
+</section>
+<section id="vecteurs">
+<h2><span class="section-number">2.3.2. </span>Vecteurs<a class="headerlink" href="#vecteurs" title="Permalink to this heading">¶</a></h2>
+<p>Pour les besoins actuels, vous pouvez considérer un vecteur comme un
+tableau de scalaires de longueur fixe. Comme pour leurs équivalents en
+code, nous appelons ces scalaires les <em>éléments</em> du vecteur (les
+synonymes incluent <em>entrées</em> et <em>composantes</em>). Lorsque les vecteurs
+représentent des exemples issus de jeux de données réels, leurs valeurs
+ont une signification concrète. Par exemple, si nous entraînions un
+modèle pour prédire le risque de défaut de paiement d’un prêt, nous
+pourrions associer chaque demandeur à un vecteur dont les composantes
+correspondent à des quantités telles que leur revenu, la durée de leur
+emploi, ou le nombre de défauts de paiement précédents. Si nous
+étudiions le risque de crise cardiaque, chaque vecteur pourrait
+représenter un patient et ses composantes pourraient correspondre à ses
+signes vitaux les plus récents, son taux de cholestérol, ses minutes
+d’exercice par jour, etc. Nous désignons les vecteurs par des lettres
+minuscules en gras, (par exemple, <span class="math notranslate nohighlight">\(\mathbf{x}\)</span>, <span class="math notranslate nohighlight">\(\mathbf{y}\)</span>
+et <span class="math notranslate nohighlight">\(\mathbf{z}\)</span>).</p>
+<p>Les vecteurs sont implémentés comme des tenseurs d’ordre <span class="math notranslate nohighlight">\(1\)</span>. En
+général, de tels tenseurs peuvent avoir des longueurs arbitraires, sous
+réserve des limitations de mémoire. Attention : en Python, comme dans la
+plupart des langages de programmation, les indices de vecteurs
+commencent à <span class="math notranslate nohighlight">\(0\)</span>, ce que l’on appelle également l’<em>indexation à
+partir de zéro</em>, alors qu’en algèbre linéaire, les indices commencent à
+<span class="math notranslate nohighlight">\(1\)</span> (indexation à partir de un).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">x</span>
+</pre></div>
+</div>
+<p>Nous pouvons nous référer à un élément d’un vecteur en utilisant un
+indice. Par exemple, <span class="math notranslate nohighlight">\(x_2\)</span> désigne le deuxième élément de
+<span class="math notranslate nohighlight">\(\mathbf{x}\)</span>. Comme <span class="math notranslate nohighlight">\(x_2\)</span> est un scalaire, nous ne le
+mettons pas en gras. Par défaut, nous visualisons les vecteurs en
+empilant leurs éléments verticalement :</p>
+<div class="math notranslate nohighlight" id="equation-eq-vec-def">
+<span class="eqno">(2.3.1)<a class="headerlink" href="#equation-eq-vec-def" title="Permalink to this equation">¶</a></span>\[\begin{split}\mathbf{x} =\begin{bmatrix}x_{1}  \\ \vdots  \\x_{n}\end{bmatrix}.\end{split}\]</div>
+<p>Ici <span class="math notranslate nohighlight">\(x_1, \ldots, x_n\)</span> sont les éléments du vecteur. Plus tard,
+nous distinguerons ces <em>vecteurs colonnes</em> des <em>vecteurs lignes</em> dont
+les éléments sont empilés horizontalement. Rappelez-vous que nous
+accédons aux éléments d’un tenseur via l’indexation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Pour indiquer qu’un vecteur contient <span class="math notranslate nohighlight">\(n\)</span> éléments, nous écrivons
+<span class="math notranslate nohighlight">\(\mathbf{x} \in \mathbb{R}^n\)</span>. Formellement, nous appelons
+<span class="math notranslate nohighlight">\(n\)</span> la <em>dimensionnalité</em> du vecteur. En code, cela correspond à la
+longueur du tenseur, accessible via la fonction intégrée <code class="docutils literal notranslate"><span class="pre">len</span></code> de
+Python.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Nous pouvons également accéder à la longueur via l’attribut <code class="docutils literal notranslate"><span class="pre">shape</span></code>.
+La forme (<em>shape</em>) est un tuple qui indique la longueur d’un tenseur le
+long de chaque axe. Les tenseurs avec un seul axe ont des formes avec un
+seul élément.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+<p>Souvent, le mot “dimension” est surchargé pour signifier à la fois le
+nombre d’axes et la longueur le long d’un axe particulier. Pour éviter
+cette confusion, nous utilisons <em>ordre</em> pour désigner le nombre d’axes
+et <em>dimensionnalité</em> exclusivement pour désigner le nombre de
+composantes.</p>
+</section>
+<section id="matrices">
+<h2><span class="section-number">2.3.3. </span>Matrices<a class="headerlink" href="#matrices" title="Permalink to this heading">¶</a></h2>
+<p>Tout comme les scalaires sont des tenseurs d’ordre <span class="math notranslate nohighlight">\(0\)</span> et les
+vecteurs sont des tenseurs d’ordre <span class="math notranslate nohighlight">\(1\)</span>, les matrices sont des
+tenseurs d’ordre <span class="math notranslate nohighlight">\(2\)</span>. Nous désignons les matrices par des lettres
+majuscules en gras (par exemple, <span class="math notranslate nohighlight">\(\mathbf{X}\)</span>, <span class="math notranslate nohighlight">\(\mathbf{Y}\)</span>
+et <span class="math notranslate nohighlight">\(\mathbf{Z}\)</span>), et nous les représentons en code par des
+tenseurs à deux axes. L’expression
+<span class="math notranslate nohighlight">\(\mathbf{A} \in \mathbb{R}^{m \times n}\)</span> indique qu’une matrice
+<span class="math notranslate nohighlight">\(\mathbf{A}\)</span> contient <span class="math notranslate nohighlight">\(m \times n\)</span> scalaires à valeurs
+réelles, disposés en <span class="math notranslate nohighlight">\(m\)</span> lignes et <span class="math notranslate nohighlight">\(n\)</span> colonnes. Lorsque
+<span class="math notranslate nohighlight">\(m = n\)</span>, nous disons qu’une matrice est <em>carrée</em>. Visuellement,
+nous pouvons illustrer n’importe quelle matrice sous forme de tableau.
+Pour désigner un élément individuel, nous mettons en indice les indices
+de ligne et de colonne, par exemple, <span class="math notranslate nohighlight">\(a_{ij}\)</span> est la valeur qui
+appartient à la <span class="math notranslate nohighlight">\(i^{\textrm{ème}}\)</span> ligne et à la
+<span class="math notranslate nohighlight">\(j^{\textrm{ème}}\)</span> colonne de <span class="math notranslate nohighlight">\(\mathbf{A}\)</span> :</p>
+<div class="math notranslate nohighlight" id="equation-eq-matrix-def">
+<span class="eqno">(2.3.2)<a class="headerlink" href="#equation-eq-matrix-def" title="Permalink to this equation">¶</a></span>\[\begin{split}\mathbf{A}=\begin{bmatrix} a_{11} &amp; a_{12} &amp; \cdots &amp; a_{1n} \\ a_{21} &amp; a_{22} &amp; \cdots &amp; a_{2n} \\ \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\ a_{m1} &amp; a_{m2} &amp; \cdots &amp; a_{mn} \\ \end{bmatrix}.\end{split}\]</div>
+<p>En code, nous représentons une matrice
+<span class="math notranslate nohighlight">\(\mathbf{A} \in \mathbb{R}^{m \times n}\)</span> par un tenseur d’ordre
+<span class="math notranslate nohighlight">\(2\)</span> avec la forme (<span class="math notranslate nohighlight">\(m\)</span>, <span class="math notranslate nohighlight">\(n\)</span>). Nous pouvons convertir
+n’importe quel tenseur de taille appropriée <span class="math notranslate nohighlight">\(m \times n\)</span> en une
+matrice <span class="math notranslate nohighlight">\(m \times n\)</span> en passant la forme souhaitée à <code class="docutils literal notranslate"><span class="pre">reshape</span></code> :</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">A</span>
+</pre></div>
+</div>
+<p>Parfois, nous voulons inverser les axes. Lorsque nous échangeons les
+lignes et les colonnes d’une matrice, le résultat est appelé sa
+<em>transposée</em>. Formellement, nous désignons la transposée d’une matrice
+<span class="math notranslate nohighlight">\(\mathbf{A}\)</span> par <span class="math notranslate nohighlight">\(\mathbf{A}^\top\)</span> et si
+<span class="math notranslate nohighlight">\(\mathbf{B} = \mathbf{A}^\top\)</span>, alors <span class="math notranslate nohighlight">\(b_{ij} = a_{ji}\)</span> pour
+tous <span class="math notranslate nohighlight">\(i\)</span> et <span class="math notranslate nohighlight">\(j\)</span>. Ainsi, la transposée d’une matrice
+<span class="math notranslate nohighlight">\(m \times n\)</span> est une matrice <span class="math notranslate nohighlight">\(n \times m\)</span> :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-0">
+<span class="eqno">(2.3.3)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-0" title="Permalink to this equation">¶</a></span>\[\begin{split}\mathbf{A}^\top =
+\begin{bmatrix}
+    a_{11} &amp; a_{21} &amp; \dots  &amp; a_{m1} \\
+    a_{12} &amp; a_{22} &amp; \dots  &amp; a_{m2} \\
+    \vdots &amp; \vdots &amp; \ddots  &amp; \vdots \\
+    a_{1n} &amp; a_{2n} &amp; \dots  &amp; a_{mn}
+\end{bmatrix}.\end{split}\]</div>
+<p>En code, nous pouvons accéder à la transposée de n’importe quelle
+matrice comme suit :</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+</div>
+<p>Les matrices symétriques sont le sous-ensemble des matrices carrées qui
+sont égales à leurs propres transposées :
+<span class="math notranslate nohighlight">\(\mathbf{A} = \mathbf{A}^\top\)</span>. La matrice suivante est symétrique
+:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]])</span>
+<span class="n">A</span> <span class="o">==</span> <span class="n">A</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+</div>
+<p>Les matrices sont utiles pour représenter des jeux de données.
+Généralement, les lignes correspondent à des enregistrements individuels
+et les colonnes correspondent à des attributs distincts.</p>
+</section>
+<section id="tenseurs">
+<h2><span class="section-number">2.3.4. </span>Tenseurs<a class="headerlink" href="#tenseurs" title="Permalink to this heading">¶</a></h2>
+<p>Bien que vous puissiez aller loin dans votre parcours d’apprentissage
+automatique avec seulement des scalaires, des vecteurs et des matrices,
+vous pourriez éventuellement avoir besoin de travailler avec des
+tenseurs d’ordre supérieur. Les tenseurs nous offrent une manière
+générique de décrire des extensions aux tableaux d’ordre <span class="math notranslate nohighlight">\(n\)</span>. Nous
+appelons les objets logiciels de la <em>classe tenseur</em> “tenseurs”
+précisément parce qu’ils peuvent également avoir un nombre arbitraire
+d’axes. Bien qu’il puisse être déroutant d’utiliser le mot <em>tenseur</em> à
+la fois pour l’objet mathématique et sa réalisation en code, notre sens
+devrait généralement être clair d’après le contexte. Nous désignons les
+tenseurs généraux par des lettres majuscules avec une police de
+caractères spéciale (par exemple, <span class="math notranslate nohighlight">\(\mathsf{X}\)</span>, <span class="math notranslate nohighlight">\(\mathsf{Y}\)</span>
+et <span class="math notranslate nohighlight">\(\mathsf{Z}\)</span>) et leur mécanisme d’indexation (par exemple,
+<span class="math notranslate nohighlight">\(x_{ijk}\)</span> et <span class="math notranslate nohighlight">\([\mathsf{X}]_{1, 2i-1, 3}\)</span>) découle
+naturellement de celui des matrices.</p>
+<p>Les tenseurs deviendront plus importants lorsque nous commencerons à
+travailler avec des images. Chaque image arrive comme un tenseur d’ordre
+<span class="math notranslate nohighlight">\(3\)</span> avec des axes correspondant à la hauteur, à la largeur et au
+<em>canal</em>. À chaque emplacement spatial, les intensités de chaque couleur
+(rouge, vert et bleu) sont empilées le long du canal. De plus, une
+collection d’images est représentée en code par un tenseur d’ordre
+<span class="math notranslate nohighlight">\(4\)</span>, où les images distinctes sont indexées le long du premier
+axe. Les tenseurs d’ordre supérieur sont construits, comme l’étaient les
+vecteurs et les matrices, en augmentant le nombre de composantes de la
+forme.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="proprietes-fondamentales-de-larithmetique-des-tenseurs">
+<h2><span class="section-number">2.3.5. </span>Propriétés fondamentales de l’arithmétique des tenseurs<a class="headerlink" href="#proprietes-fondamentales-de-larithmetique-des-tenseurs" title="Permalink to this heading">¶</a></h2>
+<p>Les scalaires, les vecteurs, les matrices et les tenseurs d’ordre
+supérieur ont tous des propriétés pratiques. Par exemple, les opérations
+élément par élément produisent des sorties qui ont la même forme que
+leurs opérandes.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>  <span class="c1"># Assign a copy of A to B by allocating new memory</span>
+<span class="n">A</span><span class="p">,</span> <span class="n">A</span> <span class="o">+</span> <span class="n">B</span>
+</pre></div>
+</div>
+<p>Le produit élément par élément de deux matrices est appelé leur <em>produit
+de Hadamard</em> (noté <span class="math notranslate nohighlight">\(\odot\)</span>). Nous pouvons détailler les entrées du
+produit de Hadamard de deux matrices
+<span class="math notranslate nohighlight">\(\mathbf{A}, \mathbf{B} \in \mathbb{R}^{m \times n}\)</span> :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-1">
+<span class="eqno">(2.3.4)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-1" title="Permalink to this equation">¶</a></span>\[\begin{split}\mathbf{A} \odot \mathbf{B} =
+\begin{bmatrix}
+    a_{11}  b_{11} &amp; a_{12}  b_{12} &amp; \dots  &amp; a_{1n}  b_{1n} \\
+    a_{21}  b_{21} &amp; a_{22}  b_{22} &amp; \dots  &amp; a_{2n}  b_{2n} \\
+    \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+    a_{m1}  b_{m1} &amp; a_{m2}  b_{m2} &amp; \dots  &amp; a_{mn}  b_{mn}
+\end{bmatrix}.\end{split}\]</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span> <span class="o">*</span> <span class="n">B</span>
+</pre></div>
+</div>
+<p>L’addition ou la multiplication d’un scalaire et d’un tenseur produit un
+résultat avec la même forme que le tenseur original. Ici, chaque élément
+du tenseur est ajouté au (ou multiplié par le) scalaire.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">a</span> <span class="o">+</span> <span class="n">X</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</section>
+<section id="reduction">
+<span id="subsec-lin-alg-reduction"></span><h2><span class="section-number">2.3.6. </span>Réduction<a class="headerlink" href="#reduction" title="Permalink to this heading">¶</a></h2>
+<p>Souvent, nous souhaitons calculer la somme des éléments d’un tenseur.
+Pour exprimer la somme des éléments d’un vecteur <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> de
+longueur <span class="math notranslate nohighlight">\(n\)</span>, nous écrivons <span class="math notranslate nohighlight">\(\sum_{i=1}^n x_i\)</span>. Il existe
+une fonction simple pour cela :</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Pour exprimer des sommes sur les éléments de tenseurs de forme
+arbitraire, nous faisons simplement la somme sur tous ses axes. Par
+exemple, la somme des éléments d’une matrice <span class="math notranslate nohighlight">\(m \times n\)</span>
+<span class="math notranslate nohighlight">\(\mathbf{A}\)</span> pourrait s’écrire
+<span class="math notranslate nohighlight">\(\sum_{i=1}^{m} \sum_{j=1}^{n} a_{ij}\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">A</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Par défaut, l’invocation de la fonction somme <em>réduit</em> un tenseur le
+long de tous ses axes, produisant finalement un scalaire. Nos
+bibliothèques nous permettent également de spécifier les axes le long
+desquels le tenseur doit être réduit. Pour faire la somme de tous les
+éléments le long des lignes (axe 0), nous spécifions <code class="docutils literal notranslate"><span class="pre">axis=0</span></code> dans
+<code class="docutils literal notranslate"><span class="pre">sum</span></code>. Comme la matrice d’entrée se réduit le long de l’axe 0 pour
+générer le vecteur de sortie, cet axe est absent de la forme de la
+sortie.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">A</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+<p>Spécifier <code class="docutils literal notranslate"><span class="pre">axis=1</span></code> réduira la dimension des colonnes (axe 1) en
+additionnant les éléments de toutes les colonnes.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">A</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+<p>Réduire une matrice à la fois selon les lignes et les colonnes via une
+sommation équivaut à additionner tous les éléments de la matrice.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="n">A</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>  <span class="c1"># Same as A.sum()</span>
+</pre></div>
+</div>
+<p>Une quantité liée est la <em>moyenne</em>. Nous calculons la moyenne en
+divisant la somme par le nombre total d’éléments. Parce que le calcul de
+la moyenne est si courant, il dispose d’une fonction de bibliothèque
+dédiée qui fonctionne de manière analogue à <code class="docutils literal notranslate"><span class="pre">sum</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">A</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">A</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>De même, la fonction permettant de calculer la moyenne peut également
+réduire un tenseur le long d’axes spécifiques.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">A</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="somme-sans-reduction">
+<span id="subsec-lin-alg-non-reduction"></span><h2><span class="section-number">2.3.7. </span>Somme sans réduction<a class="headerlink" href="#somme-sans-reduction" title="Permalink to this heading">¶</a></h2>
+<p>Parfois, il peut être utile de garder le nombre d’axes inchangé lors de
+l’invocation de la fonction pour calculer la somme ou la moyenne. Ceci
+est important lorsque nous voulons utiliser le mécanisme de diffusion
+(<em>broadcasting</em>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sum_A</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">sum_A</span><span class="p">,</span> <span class="n">sum_A</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+<p>Par exemple, puisque <code class="docutils literal notranslate"><span class="pre">sum_A</span></code> conserve ses deux axes après avoir sommé
+chaque ligne, nous pouvons diviser <code class="docutils literal notranslate"><span class="pre">A</span></code> par <code class="docutils literal notranslate"><span class="pre">sum_A</span></code> par diffusion
+pour créer une matrice où chaque ligne totalise <span class="math notranslate nohighlight">\(1\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span> <span class="o">/</span> <span class="n">sum_A</span>
+</pre></div>
+</div>
+<p>Si nous voulons calculer la somme cumulative des éléments de <code class="docutils literal notranslate"><span class="pre">A</span></code> le
+long d’un certain axe, disons <code class="docutils literal notranslate"><span class="pre">axis=0</span></code> (ligne par ligne), nous pouvons
+appeler la fonction <code class="docutils literal notranslate"><span class="pre">cumsum</span></code>. Par conception, cette fonction ne réduit
+pas le tenseur d’entrée le long d’aucun axe.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="produits-scalaires">
+<h2><span class="section-number">2.3.8. </span>Produits scalaires<a class="headerlink" href="#produits-scalaires" title="Permalink to this heading">¶</a></h2>
+<p>Jusqu’à présent, nous n’avons effectué que des opérations élément par
+élément, des sommes et des moyennes. Et si c’était tout ce que nous
+pouvions faire, l’algèbre linéaire ne mériterait pas sa propre section.
+Heureusement, c’est ici que les choses deviennent plus intéressantes.
+L’une des opérations les plus fondamentales est le produit scalaire.
+Étant donné deux vecteurs
+<span class="math notranslate nohighlight">\(\mathbf{x}, \mathbf{y} \in \mathbb{R}^d\)</span>, leur <em>produit scalaire</em>
+<span class="math notranslate nohighlight">\(\mathbf{x}^\top \mathbf{y}\)</span> (également connu sous le nom de
+<em>produit intérieur</em>, <span class="math notranslate nohighlight">\(\langle \mathbf{x}, \mathbf{y}  \rangle\)</span>)
+est une somme des produits des éléments à la même position :
+<span class="math notranslate nohighlight">\(\mathbf{x}^\top \mathbf{y} = \sum_{i=1}^{d} x_i y_i\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>De manière équivalente, nous pouvons calculer le produit scalaire de
+deux vecteurs en effectuant une multiplication élément par élément
+suivie d’une somme :</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Les produits scalaires sont utiles dans un large éventail de contextes.
+Par exemple, étant donné un certain ensemble de valeurs, noté par un
+vecteur <span class="math notranslate nohighlight">\(\mathbf{x}  \in \mathbb{R}^n\)</span>, et un ensemble de poids,
+noté par <span class="math notranslate nohighlight">\(\mathbf{w} \in \mathbb{R}^n\)</span>, la somme pondérée des
+valeurs de <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> selon les poids <span class="math notranslate nohighlight">\(\mathbf{w}\)</span>
+pourrait être exprimée par le produit scalaire
+<span class="math notranslate nohighlight">\(\mathbf{x}^\top \mathbf{w}\)</span>. Lorsque les poids sont non négatifs
+et que leur somme est égale à <span class="math notranslate nohighlight">\(1\)</span>, c’est-à-dire
+<span class="math notranslate nohighlight">\(\left(\sum_{i=1}^{n} {w_i} = 1\right)\)</span>, le produit scalaire
+exprime une <em>moyenne pondérée</em>. Après avoir normalisé deux vecteurs pour
+qu’ils aient une longueur unitaire, les produits scalaires expriment le
+cosinus de l’angle entre eux. Plus tard dans cette section, nous
+introduirons formellement cette notion de <em>longueur</em>.</p>
+</section>
+<section id="produits-matricevecteur">
+<h2><span class="section-number">2.3.9. </span>Produits matrice–vecteur<a class="headerlink" href="#produits-matricevecteur" title="Permalink to this heading">¶</a></h2>
+<p>Maintenant que nous savons calculer les produits scalaires, nous pouvons
+commencer à comprendre le <em>produit</em> entre une matrice <span class="math notranslate nohighlight">\(m \times n\)</span>
+<span class="math notranslate nohighlight">\(\mathbf{A}\)</span> et un vecteur de dimension <span class="math notranslate nohighlight">\(n\)</span>
+<span class="math notranslate nohighlight">\(\mathbf{x}\)</span>. Pour commencer, nous visualisons notre matrice en
+termes de ses vecteurs lignes</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-2">
+<span class="eqno">(2.3.5)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-2" title="Permalink to this equation">¶</a></span>\[\begin{split}\mathbf{A}=
+\begin{bmatrix}
+\mathbf{a}^\top_{1} \\
+\mathbf{a}^\top_{2} \\
+\vdots \\
+\mathbf{a}^\top_m \\
+\end{bmatrix},\end{split}\]</div>
+<p>où chaque <span class="math notranslate nohighlight">\(\mathbf{a}^\top_{i} \in \mathbb{R}^n\)</span> est un vecteur
+ligne représentant la <span class="math notranslate nohighlight">\(i^\textrm{ème}\)</span> ligne de la matrice
+<span class="math notranslate nohighlight">\(\mathbf{A}\)</span>.</p>
+<p>Le produit matrice–vecteur <span class="math notranslate nohighlight">\(\mathbf{A}\mathbf{x}\)</span> est simplement
+un vecteur colonne de longueur <span class="math notranslate nohighlight">\(m\)</span>, dont le <span class="math notranslate nohighlight">\(i^\textrm{ème}\)</span>
+élément est le produit scalaire <span class="math notranslate nohighlight">\(\mathbf{a}^\top_i \mathbf{x}\)</span> :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-3">
+<span class="eqno">(2.3.6)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-3" title="Permalink to this equation">¶</a></span>\[\begin{split}\mathbf{A}\mathbf{x}
+= \begin{bmatrix}
+\mathbf{a}^\top_{1} \\
+\mathbf{a}^\top_{2} \\
+\vdots \\
+\mathbf{a}^\top_m \\
+\end{bmatrix}\mathbf{x}
+= \begin{bmatrix}
+ \mathbf{a}^\top_{1} \mathbf{x}  \\
+ \mathbf{a}^\top_{2} \mathbf{x} \\
+\vdots\\
+ \mathbf{a}^\top_{m} \mathbf{x}\\
+\end{bmatrix}.\end{split}\]</div>
+<p>Nous pouvons considérer la multiplication par une matrice
+<span class="math notranslate nohighlight">\(\mathbf{A}\in \mathbb{R}^{m \times n}\)</span> comme une transformation
+qui projette des vecteurs de <span class="math notranslate nohighlight">\(\mathbb{R}^{n}\)</span> vers
+<span class="math notranslate nohighlight">\(\mathbb{R}^{m}\)</span>. Ces transformations sont remarquablement utiles.
+Par exemple, nous pouvons représenter les rotations comme des
+multiplications par certaines matrices carrées. Les produits
+matrice–vecteur décrivent également le calcul clé impliqué dans le
+calcul des sorties de chaque couche d’un réseau de neurones étant donné
+les sorties de la couche précédente.</p>
+<p>Pour exprimer un produit matrice–vecteur en code, nous utilisons la
+fonction <code class="docutils literal notranslate"><span class="pre">mv</span></code>. Notez que la dimension des colonnes de <code class="docutils literal notranslate"><span class="pre">A</span></code> (sa
+longueur le long de l’axe 1) doit être la même que la dimension de <code class="docutils literal notranslate"><span class="pre">x</span></code>
+(sa longueur). Python dispose d’un opérateur pratique <code class="docutils literal notranslate"><span class="pre">&#64;</span></code> qui peut
+exécuter à la fois des produits matrice–vecteur et matrice–matrice
+(selon ses arguments). Ainsi, nous pouvons écrire <code class="docutils literal notranslate"><span class="pre">A&#64;x</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">mv</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">A</span><span class="nd">@x</span>
+</pre></div>
+</div>
+</section>
+<section id="multiplication-matricematrice">
+<h2><span class="section-number">2.3.10. </span>Multiplication matrice–matrice<a class="headerlink" href="#multiplication-matricematrice" title="Permalink to this heading">¶</a></h2>
+<p>Une fois que vous avez compris les produits scalaires et les produits
+matrice–vecteur, alors la <em>multiplication matrice–matrice</em> devrait être
+simple.</p>
+<p>Supposons que nous ayons deux matrices
+<span class="math notranslate nohighlight">\(\mathbf{A} \in \mathbb{R}^{n \times k}\)</span> et
+<span class="math notranslate nohighlight">\(\mathbf{B} \in \mathbb{R}^{k \times m}\)</span> :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-4">
+<span class="eqno">(2.3.7)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-4" title="Permalink to this equation">¶</a></span>\[\begin{split}\mathbf{A}=\begin{bmatrix}
+ a_{11} &amp; a_{12} &amp; \cdots &amp; a_{1k} \\
+ a_{21} &amp; a_{22} &amp; \cdots &amp; a_{2k} \\
+\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+ a_{n1} &amp; a_{n2} &amp; \cdots &amp; a_{nk} \\
+\end{bmatrix},\quad
+\mathbf{B}=\begin{bmatrix}
+ b_{11} &amp; b_{12} &amp; \cdots &amp; b_{1m} \\
+ b_{21} &amp; b_{22} &amp; \cdots &amp; b_{2m} \\
+\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+ b_{k1} &amp; b_{k2} &amp; \cdots &amp; b_{km} \\
+\end{bmatrix}.\end{split}\]</div>
+<p>Soit <span class="math notranslate nohighlight">\(\mathbf{a}^\top_{i} \in \mathbb{R}^k\)</span> le vecteur ligne
+représentant la <span class="math notranslate nohighlight">\(i^\textrm{ème}\)</span> ligne de la matrice
+<span class="math notranslate nohighlight">\(\mathbf{A}\)</span> et soit <span class="math notranslate nohighlight">\(\mathbf{b}_{j} \in \mathbb{R}^k\)</span> le
+vecteur colonne de la <span class="math notranslate nohighlight">\(j^\textrm{ème}\)</span> colonne de la matrice
+<span class="math notranslate nohighlight">\(\mathbf{B}\)</span> :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-5">
+<span class="eqno">(2.3.8)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-5" title="Permalink to this equation">¶</a></span>\[\begin{split}\mathbf{A}=
+\begin{bmatrix}
+\mathbf{a}^\top_{1} \\
+\mathbf{a}^\top_{2} \\
+\vdots \\
+\mathbf{a}^\top_n \\
+\end{bmatrix},
+\quad \mathbf{B}=\begin{bmatrix}
+ \mathbf{b}_{1} &amp; \mathbf{b}_{2} &amp; \cdots &amp; \mathbf{b}_{m} \\
+\end{bmatrix}.\end{split}\]</div>
+<p>Pour former le produit matriciel
+<span class="math notranslate nohighlight">\(\mathbf{C} \in \mathbb{R}^{n \times m}\)</span>, nous calculons
+simplement chaque élément <span class="math notranslate nohighlight">\(c_{ij}\)</span> comme le produit scalaire entre
+la <span class="math notranslate nohighlight">\(i^{\textrm{ème}}\)</span> ligne de <span class="math notranslate nohighlight">\(\mathbf{A}\)</span> et la
+<span class="math notranslate nohighlight">\(j^{\textrm{ème}}\)</span> colonne de <span class="math notranslate nohighlight">\(\mathbf{B}\)</span>, c’est-à-dire
+<span class="math notranslate nohighlight">\(\mathbf{a}^\top_i \mathbf{b}_j\)</span> :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-6">
+<span class="eqno">(2.3.9)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-6" title="Permalink to this equation">¶</a></span>\[\begin{split}\mathbf{C} = \mathbf{AB} = \begin{bmatrix}
+\mathbf{a}^\top_{1} \\
+\mathbf{a}^\top_{2} \\
+\vdots \\
+\mathbf{a}^\top_n \\
+\end{bmatrix}
+\begin{bmatrix}
+ \mathbf{b}_{1} &amp; \mathbf{b}_{2} &amp; \cdots &amp; \mathbf{b}_{m} \\
+\end{bmatrix}
+= \begin{bmatrix}
+\mathbf{a}^\top_{1} \mathbf{b}_1 &amp; \mathbf{a}^\top_{1}\mathbf{b}_2&amp; \cdots &amp; \mathbf{a}^\top_{1} \mathbf{b}_m \\
+ \mathbf{a}^\top_{2}\mathbf{b}_1 &amp; \mathbf{a}^\top_{2} \mathbf{b}_2 &amp; \cdots &amp; \mathbf{a}^\top_{2} \mathbf{b}_m \\
+ \vdots &amp; \vdots &amp; \ddots &amp;\vdots\\
+\mathbf{a}^\top_{n} \mathbf{b}_1 &amp; \mathbf{a}^\top_{n}\mathbf{b}_2&amp; \cdots&amp; \mathbf{a}^\top_{n} \mathbf{b}_m
+\end{bmatrix}.\end{split}\]</div>
+<p>Nous pouvons considérer la multiplication matrice–matrice
+<span class="math notranslate nohighlight">\(\mathbf{AB}\)</span> comme l’exécution de <span class="math notranslate nohighlight">\(m\)</span> produits
+matrice–vecteur ou de <span class="math notranslate nohighlight">\(m \times n\)</span> produits scalaires et
+l’assemblage des résultats pour former une matrice <span class="math notranslate nohighlight">\(n \times m\)</span>.
+Dans l’extrait suivant, nous effectuons une multiplication matricielle
+sur <code class="docutils literal notranslate"><span class="pre">A</span></code> et <code class="docutils literal notranslate"><span class="pre">B</span></code>. Ici, <code class="docutils literal notranslate"><span class="pre">A</span></code> est une matrice avec deux lignes et trois
+colonnes, et <code class="docutils literal notranslate"><span class="pre">B</span></code> est une matrice avec trois lignes et quatre colonnes.
+Après multiplication, nous obtenons une matrice avec deux lignes et
+quatre colonnes.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">B</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">),</span> <span class="n">A</span><span class="nd">@B</span>
+</pre></div>
+</div>
+<p>Le terme <em>multiplication matrice–matrice</em> est souvent simplifié en
+<em>multiplication matricielle</em>, et ne doit pas être confondu avec le
+produit de Hadamard.</p>
+</section>
+<section id="normes">
+<span id="subsec-lin-algebra-norms"></span><h2><span class="section-number">2.3.11. </span>Normes<a class="headerlink" href="#normes" title="Permalink to this heading">¶</a></h2>
+<p>Certains des opérateurs les plus utiles en algèbre linéaire sont les
+<em>normes</em>. Informellement, la norme d’un vecteur nous dit à quel point il
+est <em>grand</em>. Par exemple, la norme <span class="math notranslate nohighlight">\(\ell_2\)</span> mesure la longueur
+(euclidienne) d’un vecteur. Ici, nous utilisons une notion de <em>taille</em>
+qui concerne l’ampleur des composantes d’un vecteur (et non sa
+dimensionnalité).</p>
+<p>Une norme est une fonction <span class="math notranslate nohighlight">\(\| \cdot \|\)</span> qui projette un vecteur
+vers un scalaire et satisfait les trois propriétés suivantes :</p>
+<ol class="arabic">
+<li><p>Étant donné n’importe quel vecteur <span class="math notranslate nohighlight">\(\mathbf{x}\)</span>, si nous
+redimensionnons (tous les éléments du) vecteur par un scalaire
+<span class="math notranslate nohighlight">\(\alpha \in \mathbb{R}\)</span>, sa norme change en conséquence :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-7">
+<span class="eqno">(2.3.10)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-7" title="Permalink to this equation">¶</a></span>\[\|\alpha \mathbf{x}\| = |\alpha| \|\mathbf{x}\|.\]</div>
+</li>
+<li><p>Pour n’importe quels vecteurs <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> et
+<span class="math notranslate nohighlight">\(\mathbf{y}\)</span> : les normes satisfont l’inégalité triangulaire :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-8">
+<span class="eqno">(2.3.11)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-8" title="Permalink to this equation">¶</a></span>\[\|\mathbf{x} + \mathbf{y}\| \leq \|\mathbf{x}\| + \|\mathbf{y}\|.\]</div>
+</li>
+<li><p>La norme d’un vecteur est non négative et elle ne s’annule que si le
+vecteur est nul :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-9">
+<span class="eqno">(2.3.12)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-9" title="Permalink to this equation">¶</a></span>\[\|\mathbf{x}\| &gt; 0 \textrm{ pour tout } \mathbf{x} \neq 0.\]</div>
+</li>
+</ol>
+<p>De nombreuses fonctions sont des normes valides et différentes normes
+encodent différentes notions de taille. La norme euclidienne que nous
+avons tous apprise en géométrie à l’école primaire lors du calcul de
+l’hypoténuse d’un triangle rectangle est la racine carrée de la somme
+des carrés des éléments d’un vecteur. Formellement, on l’appelle la
+<em>norme</em> <span class="math notranslate nohighlight">\(\ell_2\)</span> et elle s’exprime comme</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-10">
+<span class="eqno">(2.3.13)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-10" title="Permalink to this equation">¶</a></span>\[\|\mathbf{x}\|_2 = \sqrt{\sum_{i=1}^n x_i^2}.\]</div>
+<p>La méthode <code class="docutils literal notranslate"><span class="pre">norm</span></code> calcule la norme <span class="math notranslate nohighlight">\(\ell_2\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">u</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">3.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">4.0</span><span class="p">])</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>La norme <span class="math notranslate nohighlight">\(\ell_1\)</span> est également courante et la mesure associée est
+appelée distance de Manhattan. Par définition, la norme <span class="math notranslate nohighlight">\(\ell_1\)</span>
+additionne les valeurs absolues des éléments d’un vecteur :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-11">
+<span class="eqno">(2.3.14)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-11" title="Permalink to this equation">¶</a></span>\[\|\mathbf{x}\|_1 = \sum_{i=1}^n \left|x_i \right|.\]</div>
+<p>Par rapport à la norme <span class="math notranslate nohighlight">\(\ell_2\)</span>, elle est moins sensible aux
+valeurs aberrantes. Pour calculer la norme <span class="math notranslate nohighlight">\(\ell_1\)</span>, nous
+composons la valeur absolue avec l’opération de somme.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Les normes <span class="math notranslate nohighlight">\(\ell_2\)</span> et <span class="math notranslate nohighlight">\(\ell_1\)</span> sont toutes deux des cas
+particuliers des <em>normes</em> <span class="math notranslate nohighlight">\(\ell_p\)</span> plus générales :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-12">
+<span class="eqno">(2.3.15)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-12" title="Permalink to this equation">¶</a></span>\[\|\mathbf{x}\|_p = \left(\sum_{i=1}^n \left|x_i \right|^p \right)^{1/p}.\]</div>
+<p>Dans le cas des matrices, les choses sont plus compliquées. Après tout,
+les matrices peuvent être considérées à la fois comme des collections
+d’entrées individuelles <em>et</em> comme des objets qui agissent sur des
+vecteurs et les transforment en d’autres vecteurs. Par exemple, nous
+pouvons nous demander de combien plus long le produit matrice–vecteur
+<span class="math notranslate nohighlight">\(\mathbf{X} \mathbf{v}\)</span> pourrait être par rapport à
+<span class="math notranslate nohighlight">\(\mathbf{v}\)</span>. Cette ligne de pensée mène à ce qu’on appelle la
+norme <em>spectrale</em>. Pour l’instant, nous introduisons la <em>norme de
+Frobenius</em>, qui est beaucoup plus facile à calculer et définie comme la
+racine carrée de la somme des carrés des éléments d’une matrice :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-linear-algebra-13">
+<span class="eqno">(2.3.16)<a class="headerlink" href="#equation-chapter-preliminaries-linear-algebra-13" title="Permalink to this equation">¶</a></span>\[\|\mathbf{X}\|_\textrm{F} = \sqrt{\sum_{i=1}^m \sum_{j=1}^n x_{ij}^2}.\]</div>
+<p>La norme de Frobenius se comporte comme s’il s’agissait d’une norme
+<span class="math notranslate nohighlight">\(\ell_2\)</span> d’un vecteur ayant la forme d’une matrice. L’invocation
+de la fonction suivante calculera la norme de Frobenius d’une matrice.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p>Bien que nous ne voulions pas trop anticiper sur la suite, nous pouvons
+déjà donner une idée de la raison pour laquelle ces concepts sont
+utiles. En apprentissage profond, nous essayons souvent de résoudre des
+problèmes d’optimisation : <em>maximiser</em> la probabilité assignée aux
+données observées ; <em>maximiser</em> les revenus associés à un modèle de
+recommandation ; <em>minimiser</em> la distance entre les prédictions et les
+observations de vérité terrain ; <em>minimiser</em> la distance entre les
+représentations de photos de la même personne tout en <em>maximisant</em> la
+distance entre les représentations de photos de personnes différentes.
+Ces distances, qui constituent les objectifs des algorithmes
+d’apprentissage profond, sont souvent exprimées sous forme de normes.</p>
+</section>
+<section id="discussion">
+<h2><span class="section-number">2.3.12. </span>Discussion<a class="headerlink" href="#discussion" title="Permalink to this heading">¶</a></h2>
+<p>Dans cette section, nous avons passé en revue toute l’algèbre linéaire
+dont vous aurez besoin pour comprendre une part importante de
+l’apprentissage profond moderne. Il y a bien plus encore dans l’algèbre
+linéaire, cependant, et une grande partie est utile pour l’apprentissage
+automatique. Par exemple, les matrices peuvent être décomposées en
+facteurs, et ces décompositions peuvent révéler une structure de faible
+dimension dans des jeux de données réels. Il existe des sous-domaines
+entiers de l’apprentissage automatique qui se concentrent sur
+l’utilisation de décompositions matricielles et de leurs généralisations
+à des tenseurs d’ordre élevé pour découvrir une structure dans les jeux
+de données et résoudre des problèmes de prédiction. Mais ce livre se
+concentre sur l’apprentissage profond. Et nous pensons que vous serez
+plus enclin à apprendre davantage de mathématiques une fois que vous
+vous serez sali les mains en appliquant l’apprentissage automatique à de
+vrais jeux de données. Ainsi, bien que nous nous réservions le droit
+d’introduire plus de mathématiques plus tard, nous concluons cette
+section ici.</p>
+<p>Si vous avez hâte d’en apprendre davantage sur l’algèbre linéaire, il
+existe de nombreux livres et ressources en ligne excellents. Pour un
+cours accéléré plus avancé, envisagez de consulter
+<span id="id1"></span>, <span id="id2"></span> et
+<span id="id3"></span>.</p>
+<p>Pour récapituler :</p>
+<ul class="simple">
+<li><p>Les scalaires, les vecteurs, les matrices et les tenseurs sont les
+objets mathématiques de base utilisés en algèbre linéaire et possèdent
+respectivement zéro, un, deux et un nombre arbitraire d’axes.</p></li>
+<li><p>Les tenseurs peuvent être découpés ou réduits le long d’axes spécifiés
+via l’indexation, ou des opérations telles que <code class="docutils literal notranslate"><span class="pre">sum</span></code> et <code class="docutils literal notranslate"><span class="pre">mean</span></code>,
+respectivement.</p></li>
+<li><p>Les produits élément par élément sont appelés produits de Hadamard. En
+revanche, les produits scalaires, les produits matrice–vecteur et les
+produits matrice–matrice ne sont pas des opérations élément par
+élément et renvoient en général des objets ayant des formes
+différentes de celles des opérandes.</p></li>
+<li><p>Par rapport aux produits de Hadamard, les produits matrice–matrice
+prennent beaucoup plus de temps à calculer (temps cubique plutôt que
+quadratique).</p></li>
+<li><p>Les normes capturent diverses notions de l’ampleur d’un vecteur (ou
+d’une matrice), et sont couramment appliquées à la différence de deux
+vecteurs pour mesurer leur distance.</p></li>
+<li><p>Les normes de vecteur courantes incluent les normes <span class="math notranslate nohighlight">\(\ell_1\)</span> et
+<span class="math notranslate nohighlight">\(\ell_2\)</span>, et les normes de matrice courantes incluent les normes
+<em>spectrale</em> et de <em>Frobenius</em>.</p></li>
+</ul>
+</section>
+<section id="exercices">
+<h2><span class="section-number">2.3.13. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Prouvez que la transposée de la transposée d’une matrice est la
+matrice elle-même : <span class="math notranslate nohighlight">\((\mathbf{A}^\top)^\top = \mathbf{A}\)</span>.</p></li>
+<li><p>Étant donné deux matrices <span class="math notranslate nohighlight">\(\mathbf{A}\)</span> et <span class="math notranslate nohighlight">\(\mathbf{B}\)</span>,
+montrez que la somme et la transposition commutent :
+<span class="math notranslate nohighlight">\(\mathbf{A}^\top + \mathbf{B}^\top = (\mathbf{A} + \mathbf{B})^\top\)</span>.</p></li>
+<li><p>Étant donné n’importe quelle matrice carrée <span class="math notranslate nohighlight">\(\mathbf{A}\)</span>,
+est-ce que <span class="math notranslate nohighlight">\(\mathbf{A} + \mathbf{A}^\top\)</span> est toujours
+symétrique ? Pouvez-vous prouver le résultat en utilisant uniquement
+les résultats des deux exercices précédents ?</p></li>
+<li><p>Nous avons défini le tenseur <code class="docutils literal notranslate"><span class="pre">X</span></code> de forme (2, 3, 4) dans cette
+section. Quel est le résultat de <code class="docutils literal notranslate"><span class="pre">len(X)</span></code> ? Écrivez votre réponse
+sans implémenter de code, puis vérifiez votre réponse à l’aide de
+code.</p></li>
+<li><p>Pour un tenseur <code class="docutils literal notranslate"><span class="pre">X</span></code> de forme arbitraire, est-ce que <code class="docutils literal notranslate"><span class="pre">len(X)</span></code>
+correspond toujours à la longueur d’un certain axe de <code class="docutils literal notranslate"><span class="pre">X</span></code> ? Quel
+est cet axe ?</p></li>
+<li><p>Exécutez <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">/</span> <span class="pre">A.sum(axis=1)</span></code> et voyez ce qui se passe. Pouvez-vous
+analyser les résultats ?</p></li>
+<li><p>Lors d’un déplacement entre deux points du centre de Manhattan,
+quelle est la distance que vous devez parcourir en fonction des
+coordonnées, c’est-à-dire en fonction des avenues et des rues ?
+Pouvez-vous voyager en diagonale ?</p></li>
+<li><p>Considérons un tenseur de forme (2, 3, 4). Quelles sont les formes
+des sorties de sommation selon les axes 0, 1 et 2 ?</p></li>
+<li><p>Fournissez un tenseur avec trois axes ou plus à la fonction
+<code class="docutils literal notranslate"><span class="pre">linalg.norm</span></code> et observez sa sortie. Que calcule cette fonction
+pour des tenseurs de forme arbitraire ?</p></li>
+<li><p>Considérons trois grandes matrices, disons
+<span class="math notranslate nohighlight">\(\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}\)</span>,
+<span class="math notranslate nohighlight">\(\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}\)</span> et
+<span class="math notranslate nohighlight">\(\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{14}}\)</span>,
+initialisées avec des variables aléatoires gaussiennes. Vous
+souhaitez calculer le produit
+<span class="math notranslate nohighlight">\(\mathbf{A} \mathbf{B} \mathbf{C}\)</span>. Y a-t-il une différence en
+termes d’empreinte mémoire et de vitesse, selon que vous calculiez
+<span class="math notranslate nohighlight">\((\mathbf{A} \mathbf{B}) \mathbf{C}\)</span> ou
+<span class="math notranslate nohighlight">\(\mathbf{A} (\mathbf{B} \mathbf{C})\)</span> ? Pourquoi ?</p></li>
+<li><p>Considérons trois grandes matrices, disons
+<span class="math notranslate nohighlight">\(\mathbf{A} \in \mathbb{R}^{2^{10} \times 2^{16}}\)</span>,
+<span class="math notranslate nohighlight">\(\mathbf{B} \in \mathbb{R}^{2^{16} \times 2^{5}}\)</span> et
+<span class="math notranslate nohighlight">\(\mathbf{C} \in \mathbb{R}^{2^{5} \times 2^{16}}\)</span>. Y a-t-il
+une différence de vitesse selon que vous calculez
+<span class="math notranslate nohighlight">\(\mathbf{A} \mathbf{B}\)</span> ou <span class="math notranslate nohighlight">\(\mathbf{A} \mathbf{C}^\top\)</span>
+? Pourquoi ? Qu’est-ce qui change si vous initialisez
+<span class="math notranslate nohighlight">\(\mathbf{C} = \mathbf{B}^\top\)</span> sans cloner la mémoire ?
+Pourquoi ?</p></li>
+<li><p>Considérons trois matrices, disons
+<span class="math notranslate nohighlight">\(\mathbf{A}, \mathbf{B}, \mathbf{C} \in \mathbb{R}^{100 \times 200}\)</span>.
+Construisez un tenseur à trois axes en empilant
+<span class="math notranslate nohighlight">\([\mathbf{A}, \mathbf{B}, \mathbf{C}]\)</span>. Quelle est la
+dimensionnalité ? Extrayez la deuxième coordonnée du troisième axe
+pour récupérer <span class="math notranslate nohighlight">\(\mathbf{B}\)</span>. Vérifiez que votre réponse est
+correcte.</p></li>
+</ol>
+<p><a class="reference external" href="https://discuss.d2l.ai/t/31">Discussions</a></p>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">2.3. Algèbre linéaire</a><ul>
+<li><a class="reference internal" href="#scalaires">2.3.1. Scalaires</a></li>
+<li><a class="reference internal" href="#vecteurs">2.3.2. Vecteurs</a></li>
+<li><a class="reference internal" href="#matrices">2.3.3. Matrices</a></li>
+<li><a class="reference internal" href="#tenseurs">2.3.4. Tenseurs</a></li>
+<li><a class="reference internal" href="#proprietes-fondamentales-de-larithmetique-des-tenseurs">2.3.5. Propriétés fondamentales de l’arithmétique des tenseurs</a></li>
+<li><a class="reference internal" href="#reduction">2.3.6. Réduction</a></li>
+<li><a class="reference internal" href="#somme-sans-reduction">2.3.7. Somme sans réduction</a></li>
+<li><a class="reference internal" href="#produits-scalaires">2.3.8. Produits scalaires</a></li>
+<li><a class="reference internal" href="#produits-matricevecteur">2.3.9. Produits matrice–vecteur</a></li>
+<li><a class="reference internal" href="#multiplication-matricematrice">2.3.10. Multiplication matrice–matrice</a></li>
+<li><a class="reference internal" href="#normes">2.3.11. Normes</a></li>
+<li><a class="reference internal" href="#discussion">2.3.12. Discussion</a></li>
+<li><a class="reference internal" href="#exercices">2.3.13. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="pandas.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>2.2. Prétraitement des données</div>
+         </div>
+     </a>
+     <a id="button-next" href="calculus.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>2.4. Calcul</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

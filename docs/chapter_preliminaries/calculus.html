@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>2.4. Calcul &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2.5. Différentiation automatique" href="autograd.html" />
+    <link rel="prev" title="2.3. Algèbre linéaire" href="linear-algebra.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">2. </span>Préliminaires</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">2.4. </span>Calcul</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_preliminaries/calculus.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="calcul">
+<span id="sec-calculus"></span><h1><span class="section-number">2.4. </span>Calcul<a class="headerlink" href="#calcul" title="Permalink to this heading">¶</a></h1>
+<p>Pendant longtemps, la manière de calculer l’aire d’un cercle est restée
+un mystère. Puis, dans la Grèce antique, le mathématicien Archimède a eu
+l’idée ingénieuse d’inscrire une série de polygones avec un nombre
+croissant de sommets à l’intérieur d’un cercle
+(<a class="reference internal" href="#fig-circle-area"><span class="std std-numref">Fig. 2.4.1</span></a>). Pour un polygone à <span class="math notranslate nohighlight">\(n\)</span> sommets,
+nous obtenons <span class="math notranslate nohighlight">\(n\)</span> triangles. La hauteur de chaque triangle se
+rapproche du rayon <span class="math notranslate nohighlight">\(r\)</span> à mesure que nous divisons le cercle plus
+finement. En même temps, sa base se rapproche de <span class="math notranslate nohighlight">\(2 \pi r/n\)</span>, car
+le rapport entre l’arc et la sécante tend vers 1 pour un grand nombre de
+sommets. Ainsi, l’aire du polygone se rapproche de
+<span class="math notranslate nohighlight">\(n \cdot r \cdot \frac{1}{2} (2 \pi r/n) = \pi r^2\)</span>.</p>
+<figure class="align-default" id="id1">
+<span id="fig-circle-area"></span><img alt="../_images/polygon-circle.svg" src="../_images/polygon-circle.svg" /><figcaption>
+<p><span class="caption-number">Fig. 2.4.1 </span><span class="caption-text">Calcul de l’aire d’un cercle par une procédure de limite.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Cette procédure de limite est à la base du <em>calcul différentiel</em> et du
+<em>calcul intégral</em>. Le premier peut nous dire comment augmenter ou
+diminuer la valeur d’une fonction en manipulant ses arguments. Cela
+s’avère utile pour les <em>problèmes d’optimisation</em> que nous rencontrons
+en apprentissage profond (deep learning), où nous mettons à jour nos
+paramètres de manière répétée afin de réduire la fonction de perte.
+L’optimisation traite de la manière d’ajuster nos modèles aux données
+d’entraînement, et le calcul en est le prérequis indispensable.
+Cependant, n’oubliez pas que notre objectif ultime est d’obtenir de bons
+résultats sur des données <em>jamais vues auparavant</em>. Ce problème est
+appelé <em>généralisation</em> et sera l’un des thèmes centraux des autres
+chapitres.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib_inline</span><span class="w"> </span><span class="kn">import</span> <span class="n">backend_inline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">d2l</span><span class="w"> </span><span class="kn">import</span> <span class="n">torch</span> <span class="k">as</span> <span class="n">d2l</span>
+</pre></div>
+</div>
+<section id="derivees-et-differentiation">
+<h2><span class="section-number">2.4.1. </span>Dérivées et différentiation<a class="headerlink" href="#derivees-et-differentiation" title="Permalink to this heading">¶</a></h2>
+<p>Pour faire simple, une <em>dérivée</em> est le taux de variation d’une fonction
+par rapport aux variations de ses arguments. Les dérivées peuvent nous
+dire à quelle vitesse une fonction de perte augmenterait ou diminuerait
+si nous devions <em>augmenter</em> ou <em>diminuer</em> chaque paramètre d’une
+quantité infinitésimale. Formellement, pour les fonctions
+<span class="math notranslate nohighlight">\(f: \mathbb{R} \rightarrow \mathbb{R}\)</span>, qui transforment des
+scalaires en scalaires, la <em>dérivée</em> de <span class="math notranslate nohighlight">\(f\)</span> en un point <span class="math notranslate nohighlight">\(x\)</span>
+est définie comme</p>
+<div class="math notranslate nohighlight" id="equation-eq-derivative">
+<span class="eqno">(2.4.1)<a class="headerlink" href="#equation-eq-derivative" title="Permalink to this equation">¶</a></span>\[f'(x) = \lim_{h \rightarrow 0} \frac{f(x+h) - f(x)}{h}.\]</div>
+<p>Ce terme du côté droit est appelé une <em>limite</em> et il nous indique ce qui
+arrive à la valeur d’une expression lorsqu’une variable spécifiée se
+rapproche d’une valeur particulière. Cette limite nous indique vers quoi
+converge le rapport entre une perturbation <span class="math notranslate nohighlight">\(h\)</span> et la variation de
+la valeur de la fonction <span class="math notranslate nohighlight">\(f(x + h) - f(x)\)</span> à mesure que nous
+réduisons sa taille vers zéro.</p>
+<p>Lorsque <span class="math notranslate nohighlight">\(f'(x)\)</span> existe, on dit que <span class="math notranslate nohighlight">\(f\)</span> est <em>dérivable</em> en
+<span class="math notranslate nohighlight">\(x\)</span> ; et lorsque <span class="math notranslate nohighlight">\(f'(x)\)</span> existe pour tous les <span class="math notranslate nohighlight">\(x\)</span> d’un
+ensemble, par exemple l’intervalle <span class="math notranslate nohighlight">\([a,b]\)</span>, nous disons que
+<span class="math notranslate nohighlight">\(f\)</span> est dérivable sur cet ensemble. Toutes les fonctions ne sont
+pas dérivables, y compris beaucoup de celles que nous souhaitons
+optimiser, comme la précision (accuracy) et l’aire sous la courbe
+caractéristique d’efficacité du récepteur (AUC). Cependant, comme le
+calcul de la dérivée de la perte est une étape cruciale dans presque
+tous les algorithmes d’entraînement des réseaux de neurones profonds,
+nous optimisons souvent un <em>substitut</em> (surrogate) dérivable à la place.</p>
+<p>Nous pouvons interpréter la dérivée <span class="math notranslate nohighlight">\(f'(x)\)</span> comme le taux de
+variation <em>instantané</em> de <span class="math notranslate nohighlight">\(f(x)\)</span> par rapport à <span class="math notranslate nohighlight">\(x\)</span>.
+Développons un peu d’intuition avec un exemple. Définissons
+<span class="math notranslate nohighlight">\(u = f(x) = 3x^2-4x\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">x</span>
+</pre></div>
+</div>
+<p>En fixant <span class="math notranslate nohighlight">\(x=1\)</span>, nous voyons que <span class="math notranslate nohighlight">\(\frac{f(x+h) - f(x)}{h}\)</span>
+se rapproche de <span class="math notranslate nohighlight">\(2\)</span> à mesure que <span class="math notranslate nohighlight">\(h\)</span> se rapproche de
+<span class="math notranslate nohighlight">\(0\)</span>. Bien que cette expérience manque la rigueur d’une preuve
+mathématique, nous pouvons rapidement voir qu’en effet
+<span class="math notranslate nohighlight">\(f'(1) = 2\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="mf">10.0</span><span class="o">**</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;h=</span><span class="si">{</span><span class="n">h</span><span class="si">:</span><span class="s1">.5f</span><span class="si">}</span><span class="s1">, numerical limit=</span><span class="si">{</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="n">f</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="o">/</span><span class="n">h</span><span class="si">:</span><span class="s1">.5f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Il existe plusieurs conventions de notation équivalentes pour les
+dérivées. Étant donné <span class="math notranslate nohighlight">\(y = f(x)\)</span>, les expressions suivantes sont
+équivalentes :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-calculus-0">
+<span class="eqno">(2.4.2)<a class="headerlink" href="#equation-chapter-preliminaries-calculus-0" title="Permalink to this equation">¶</a></span>\[f'(x) = y' = \frac{dy}{dx} = \frac{df}{dx} = \frac{d}{dx} f(x) = Df(x) = D_x f(x),\]</div>
+<p>où les symboles <span class="math notranslate nohighlight">\(\frac{d}{dx}\)</span> et <span class="math notranslate nohighlight">\(D\)</span> sont des <em>opérateurs
+de différentiation</em>. Ci-dessous, nous présentons les dérivées de
+quelques fonctions courantes :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-calculus-1">
+<span class="eqno">(2.4.3)<a class="headerlink" href="#equation-chapter-preliminaries-calculus-1" title="Permalink to this equation">¶</a></span>\[\begin{split}\begin{aligned} \frac{d}{dx} C &amp; = 0 &amp;&amp; \textrm{pour toute constante $C$} \\ \frac{d}{dx} x^n &amp; = n x^{n-1} &amp;&amp; \textrm{pour } n \neq 0 \\ \frac{d}{dx} e^x &amp; = e^x \\ \frac{d}{dx} \ln x &amp; = x^{-1}. \end{aligned}\end{split}\]</div>
+<p>Les fonctions composées à partir de fonctions dérivables sont souvent
+elles-mêmes dérivables. Les règles suivantes sont utiles pour travailler
+avec des compositions de n’importe quelles fonctions dérivables
+<span class="math notranslate nohighlight">\(f\)</span> and <span class="math notranslate nohighlight">\(g\)</span>, et une constante <span class="math notranslate nohighlight">\(C\)</span>.</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-calculus-2">
+<span class="eqno">(2.4.4)<a class="headerlink" href="#equation-chapter-preliminaries-calculus-2" title="Permalink to this equation">¶</a></span>\[\begin{split}\begin{aligned} \frac{d}{dx} [C f(x)] &amp; = C \frac{d}{dx} f(x) &amp;&amp; \textrm{Règle du multiple constant} \\ \frac{d}{dx} [f(x) + g(x)] &amp; = \frac{d}{dx} f(x) + \frac{d}{dx} g(x) &amp;&amp; \textrm{Règle de la somme} \\ \frac{d}{dx} [f(x) g(x)] &amp; = f(x) \frac{d}{dx} g(x) + g(x) \frac{d}{dx} f(x) &amp;&amp; \textrm{Règle du produit} \\ \frac{d}{dx} \frac{f(x)}{g(x)} &amp; = \frac{g(x) \frac{d}{dx} f(x) - f(x) \frac{d}{dx} g(x)}{g^2(x)} &amp;&amp; \textrm{Règle du quotient} \end{aligned}\end{split}\]</div>
+<p>En utilisant cela, nous pouvons appliquer les règles pour trouver la
+dérivée de <span class="math notranslate nohighlight">\(3 x^2 - 4x\)</span> via</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-calculus-3">
+<span class="eqno">(2.4.5)<a class="headerlink" href="#equation-chapter-preliminaries-calculus-3" title="Permalink to this equation">¶</a></span>\[\frac{d}{dx} [3 x^2 - 4x] = 3 \frac{d}{dx} x^2 - 4 \frac{d}{dx} x = 6x - 4.\]</div>
+<p>En remplaçant <span class="math notranslate nohighlight">\(x = 1\)</span>, on voit qu’en effet, la dérivée est égale à
+<span class="math notranslate nohighlight">\(2\)</span> à cet endroit. Notez que les dérivées nous indiquent la
+<em>pente</em> d’une fonction à un endroit particulier.</p>
+</section>
+<section id="utilitaires-de-visualisation">
+<h2><span class="section-number">2.4.2. </span>Utilitaires de visualisation<a class="headerlink" href="#utilitaires-de-visualisation" title="Permalink to this heading">¶</a></h2>
+<p>Nous pouvons visualiser les pentes des fonctions à l’aide de la
+bibliothèque <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code>. Nous devons définir quelques fonctions.
+Comme son nom l’indique, <code class="docutils literal notranslate"><span class="pre">use_svg_display</span></code> indique à <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> de
+produire des graphiques au format SVG pour des images plus nettes. Le
+commentaire <code class="docutils literal notranslate"><span class="pre">#&#64;save</span></code> est un modificateur spécial qui nous permet de
+sauvegarder n’importe quelle fonction, classe ou autre bloc de code dans
+le package <code class="docutils literal notranslate"><span class="pre">d2l</span></code> afin que nous puissions l’invoquer plus tard sans
+répéter le code, par exemple via <code class="docutils literal notranslate"><span class="pre">d2l.use_svg_display()</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">use_svg_display</span><span class="p">():</span>  <span class="c1">#@save</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Use the svg format to display a plot in Jupyter.&quot;&quot;&quot;</span>
+    <span class="n">backend_inline</span><span class="o">.</span><span class="n">set_matplotlib_formats</span><span class="p">(</span><span class="s1">&#39;svg&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Pratiquement, nous pouvons définir les dimensions des figures avec
+<code class="docutils literal notranslate"><span class="pre">set_figsize</span></code>. Comme l’instruction d’importation
+<code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">matplotlib</span> <span class="pre">import</span> <span class="pre">pyplot</span> <span class="pre">as</span> <span class="pre">plt</span></code> a été marquée par <code class="docutils literal notranslate"><span class="pre">#&#64;save</span></code>
+dans le package <code class="docutils literal notranslate"><span class="pre">d2l</span></code>, nous pouvons appeler <code class="docutils literal notranslate"><span class="pre">d2l.plt</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">set_figsize</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)):</span>  <span class="c1">#@save</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the figure size for matplotlib.&quot;&quot;&quot;</span>
+    <span class="n">use_svg_display</span><span class="p">()</span>
+    <span class="n">d2l</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">figsize</span>
+</pre></div>
+</div>
+<p>La fonction <code class="docutils literal notranslate"><span class="pre">set_axes</span></code> permet d’associer des propriétés aux axes,
+notamment les étiquettes, les plages et les échelles.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#@save</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_axes</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">xlabel</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">,</span> <span class="n">xlim</span><span class="p">,</span> <span class="n">ylim</span><span class="p">,</span> <span class="n">xscale</span><span class="p">,</span> <span class="n">yscale</span><span class="p">,</span> <span class="n">legend</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the axes for matplotlib.&quot;&quot;&quot;</span>
+    <span class="n">axes</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">),</span> <span class="n">axes</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="p">)</span>
+    <span class="n">axes</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="n">xscale</span><span class="p">),</span> <span class="n">axes</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="n">yscale</span><span class="p">)</span>
+    <span class="n">axes</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xlim</span><span class="p">),</span>     <span class="n">axes</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ylim</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">legend</span><span class="p">:</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">legend</span><span class="p">)</span>
+    <span class="n">axes</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Avec ces trois fonctions, nous pouvons définir une fonction <code class="docutils literal notranslate"><span class="pre">plot</span></code>
+pour superposer plusieurs courbes. Une grande partie du code ici
+consiste simplement à s’assurer que les tailles et les formes des
+entrées correspondent.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#@save</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="p">[],</span> <span class="n">xlim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+         <span class="n">ylim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xscale</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">yscale</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+         <span class="n">fmts</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;m--&#39;</span><span class="p">,</span> <span class="s1">&#39;g-.&#39;</span><span class="p">,</span> <span class="s1">&#39;r:&#39;</span><span class="p">),</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot data points.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_one_axis</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>  <span class="c1"># True if X (tensor or list) has 1 axis</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;ndim&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;__len__&quot;</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">has_one_axis</span><span class="p">(</span><span class="n">X</span><span class="p">):</span> <span class="n">X</span> <span class="o">=</span> <span class="p">[</span><span class="n">X</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">Y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="p">[[]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">X</span>
+    <span class="k">elif</span> <span class="n">has_one_axis</span><span class="p">(</span><span class="n">Y</span><span class="p">):</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="p">[</span><span class="n">Y</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Y</span><span class="p">):</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">X</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+
+    <span class="n">set_figsize</span><span class="p">(</span><span class="n">figsize</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">axes</span> <span class="o">=</span> <span class="n">d2l</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+    <span class="n">axes</span><span class="o">.</span><span class="n">cla</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">fmt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">fmts</span><span class="p">):</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">fmt</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">fmt</span><span class="p">)</span>
+    <span class="n">set_axes</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">xlabel</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">,</span> <span class="n">xlim</span><span class="p">,</span> <span class="n">ylim</span><span class="p">,</span> <span class="n">xscale</span><span class="p">,</span> <span class="n">yscale</span><span class="p">,</span> <span class="n">legend</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Maintenant, nous pouvons tracer la fonction <span class="math notranslate nohighlight">\(u = f(x)\)</span> et sa ligne
+tangente <span class="math notranslate nohighlight">\(y = 2x - 3\)</span> en <span class="math notranslate nohighlight">\(x=1\)</span>, où le coefficient <span class="math notranslate nohighlight">\(2\)</span>
+est la pente de la ligne tangente.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">3</span><span class="p">],</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;f(x)&#39;</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;f(x)&#39;</span><span class="p">,</span> <span class="s1">&#39;Tangent line (x=1)&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="derivees-partielles-et-gradients">
+<span id="subsec-calculus-grad"></span><h2><span class="section-number">2.4.3. </span>Dérivées partielles et gradients<a class="headerlink" href="#derivees-partielles-et-gradients" title="Permalink to this heading">¶</a></h2>
+<p>Jusqu’à présent, nous avons différencié des fonctions d’une seule
+variable. En apprentissage profond, nous devons également travailler
+avec des fonctions de <em>plusieurs</em> variables. Nous introduisons
+brièvement les notions de dérivée qui s’appliquent à ces fonctions
+<em>multivariées</em>.</p>
+<p>Soit <span class="math notranslate nohighlight">\(y = f(x_1, x_2, \ldots, x_n)\)</span> une fonction à <span class="math notranslate nohighlight">\(n\)</span>
+variables. La <em>dérivée partielle</em> de <span class="math notranslate nohighlight">\(y\)</span> par rapport à son
+<span class="math notranslate nohighlight">\(i\)</span>-ième paramètre <span class="math notranslate nohighlight">\(x_i\)</span> est</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-calculus-4">
+<span class="eqno">(2.4.6)<a class="headerlink" href="#equation-chapter-preliminaries-calculus-4" title="Permalink to this equation">¶</a></span>\[\frac{\partial y}{\partial x_i} = \lim_{h \rightarrow 0} \frac{f(x_1, \ldots, x_{i-1}, x_i+h, x_{i+1}, \ldots, x_n) - f(x_1, \ldots, x_i, \ldots, x_n)}{h}.\]</div>
+<p>Pour calculer <span class="math notranslate nohighlight">\(\frac{\partial y}{\partial x_i}\)</span>, nous pouvons
+traiter <span class="math notranslate nohighlight">\(x_1, \ldots, x_{i-1}, x_{i+1}, \ldots, x_n\)</span> comme des
+constantes et calculer la dérivée de <span class="math notranslate nohighlight">\(y\)</span> par rapport à
+<span class="math notranslate nohighlight">\(x_i\)</span>. Les conventions de notation suivantes pour les dérivées
+partielles sont toutes courantes et signifient toutes la même chose :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-calculus-5">
+<span class="eqno">(2.4.7)<a class="headerlink" href="#equation-chapter-preliminaries-calculus-5" title="Permalink to this equation">¶</a></span>\[\frac{\partial y}{\partial x_i} = \frac{\partial f}{\partial x_i} = \partial_{x_i} f = \partial_i f = f_{x_i} = f_i = D_i f = D_{x_i} f.\]</div>
+<p>Nous pouvons concaténer les dérivées partielles d’une fonction
+multivariée par rapport à toutes ses variables pour obtenir un vecteur
+appelé le <em>gradient</em> de la fonction. Supposons que l’entrée de la
+fonction <span class="math notranslate nohighlight">\(f: \mathbb{R}^n \rightarrow \mathbb{R}\)</span> soit un vecteur
+à <span class="math notranslate nohighlight">\(n\)</span> dimensions <span class="math notranslate nohighlight">\(\mathbf{x} = [x_1, x_2, \ldots, x_n]^\top\)</span>
+et que la sortie soit un scalaire. Le gradient de la fonction <span class="math notranslate nohighlight">\(f\)</span>
+par rapport à <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> est un vecteur de <span class="math notranslate nohighlight">\(n\)</span> dérivées
+partielles :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-calculus-6">
+<span class="eqno">(2.4.8)<a class="headerlink" href="#equation-chapter-preliminaries-calculus-6" title="Permalink to this equation">¶</a></span>\[\nabla_{\mathbf{x}} f(\mathbf{x}) = \left[\partial_{x_1} f(\mathbf{x}), \partial_{x_2} f(\mathbf{x}), \ldots
+\partial_{x_n} f(\mathbf{x})\right]^\top.\]</div>
+<p>Lorsqu’il n’y a pas d’ambiguïté,
+<span class="math notranslate nohighlight">\(\nabla_{\mathbf{x}} f(\mathbf{x})\)</span> est généralement remplacé par
+<span class="math notranslate nohighlight">\(\nabla f(\mathbf{x})\)</span>. Les règles suivantes sont utiles pour
+différencier les fonctions multivariées :</p>
+<ul class="simple">
+<li><p>Pour tout <span class="math notranslate nohighlight">\(\mathbf{A} \in \mathbb{R}^{m \times n}\)</span> nous avons
+<span class="math notranslate nohighlight">\(\nabla_{\mathbf{x}} \mathbf{A} \mathbf{x} = \mathbf{A}^\top\)</span> et
+<span class="math notranslate nohighlight">\(\nabla_{\mathbf{x}} \mathbf{x}^\top \mathbf{A}  = \mathbf{A}\)</span>.</p></li>
+<li><p>Pour les matrices carrées
+<span class="math notranslate nohighlight">\(\mathbf{A} \in \mathbb{R}^{n \times n}\)</span> nous avons que
+<span class="math notranslate nohighlight">\(\nabla_{\mathbf{x}} \mathbf{x}^\top \mathbf{A} \mathbf{x}  = (\mathbf{A} + \mathbf{A}^\top)\mathbf{x}\)</span>
+et en particulier
+<span class="math notranslate nohighlight">\(\nabla_{\mathbf{x}} \|\mathbf{x} \|^2 = \nabla_{\mathbf{x}} \mathbf{x}^\top \mathbf{x} = 2\mathbf{x}\)</span>.</p></li>
+</ul>
+<p>De même, pour toute matrice <span class="math notranslate nohighlight">\(\mathbf{X}\)</span>, nous avons
+<span class="math notranslate nohighlight">\(\nabla_{\mathbf{X}} \|\mathbf{X} \|_\textrm{F}^2 = 2\mathbf{X}\)</span>.</p>
+</section>
+<section id="regle-de-la-chaine">
+<h2><span class="section-number">2.4.4. </span>Règle de la chaîne<a class="headerlink" href="#regle-de-la-chaine" title="Permalink to this heading">¶</a></h2>
+<p>En apprentissage profond, les gradients concernés sont souvent
+difficiles à calculer parce que nous travaillons avec des fonctions
+profondément imbriquées (de fonctions (de fonctions (de fonctions…))).
+Heureusement, la <em>règle de la chaîne</em> (ou théorème de composition) s’en
+occupe. Pour revenir aux fonctions d’une seule variable, supposons que
+<span class="math notranslate nohighlight">\(y = f(g(x))\)</span> et que les fonctions sous-jacentes <span class="math notranslate nohighlight">\(y=f(u)\)</span> et
+<span class="math notranslate nohighlight">\(u=g(x)\)</span> soient toutes deux dérivables. La règle de la chaîne
+stipule que</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-calculus-7">
+<span class="eqno">(2.4.9)<a class="headerlink" href="#equation-chapter-preliminaries-calculus-7" title="Permalink to this equation">¶</a></span>\[\frac{dy}{dx} = \frac{dy}{du} \frac{du}{dx}.\]</div>
+<p>Pour en revenir aux fonctions multivariées, supposons que
+<span class="math notranslate nohighlight">\(y = f(\mathbf{u})\)</span> ait pour variables
+<span class="math notranslate nohighlight">\(u_1, u_2, \ldots, u_m\)</span>, où chaque <span class="math notranslate nohighlight">\(u_i = g_i(\mathbf{x})\)</span> a
+pour variables <span class="math notranslate nohighlight">\(x_1, x_2, \ldots, x_n\)</span>, c’est-à-dire
+<span class="math notranslate nohighlight">\(\mathbf{u} = g(\mathbf{x})\)</span>. Alors la règle de la chaîne stipule
+que</p>
+<div class="math notranslate nohighlight" id="equation-chapter-preliminaries-calculus-8">
+<span class="eqno">(2.4.10)<a class="headerlink" href="#equation-chapter-preliminaries-calculus-8" title="Permalink to this equation">¶</a></span>\[\frac{\partial y}{\partial x_{i}} = \frac{\partial y}{\partial u_{1}} \frac{\partial u_{1}}{\partial x_{i}} + \frac{\partial y}{\partial u_{2}} \frac{\partial u_{2}}{\partial x_{i}} + \ldots + \frac{\partial y}{\partial u_{m}} \frac{\partial u_{m}}{\partial x_{i}} \ \textrm{ et donc } \ \nabla_{\mathbf{x}} y =  \mathbf{A} \nabla_{\mathbf{u}} y,\]</div>
+<p>où <span class="math notranslate nohighlight">\(\mathbf{A} \in \mathbb{R}^{n \times m}\)</span> est une <em>matrice</em> qui
+contient la dérivée du vecteur <span class="math notranslate nohighlight">\(\mathbf{u}\)</span> par rapport au vecteur
+<span class="math notranslate nohighlight">\(\mathbf{x}\)</span>. Ainsi, l’évaluation du gradient nécessite le calcul
+d’un produit vecteur-matrice. C’est l’une des raisons principales
+pourquoi l’algèbre linéaire est un élément constitutif si essentiel dans
+la construction de systèmes d’apprentissage profond.</p>
+</section>
+<section id="discussion">
+<h2><span class="section-number">2.4.5. </span>Discussion<a class="headerlink" href="#discussion" title="Permalink to this heading">¶</a></h2>
+<p>Bien que nous n’ayons fait qu’effleurer la surface d’un sujet profond,
+un certain nombre de concepts se précisent déjà : premièrement, les
+règles de composition pour la différentiation peuvent être appliquées de
+manière routinière, nous permettant de calculer les gradients
+<em>automatiquement</em>. Cette tâche ne requiert aucune créativité et nous
+pouvons donc concentrer nos facultés cognitives ailleurs. Deuxièmement,
+le calcul des dérivées de fonctions à valeurs vectorielles nous oblige à
+multiplier des matrices au fur et à mesure que nous suivons le graphe de
+dépendance des variables de la sortie vers l’entrée. En particulier, ce
+graphe est parcouru dans une direction <em>avant</em> (forward) lorsque nous
+évaluons une fonction et dans une direction <em>arrière</em> (backward) lorsque
+nous calculons les gradients. Les chapitres suivants introduiront
+formellement la rétropropagation (backpropagation), une procédure de
+calcul pour appliquer la règle de la chaîne.</p>
+<p>Du point de vue de l’optimisation, les gradients nous permettent de
+déterminer comment déplacer les paramètres d’un modèle afin de réduire
+la perte, et chaque étape des algorithmes d’optimisation utilisés tout
+au long de ce livre nécessitera le calcul du gradient.</p>
+</section>
+<section id="exercices">
+<h2><span class="section-number">2.4.6. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Jusqu’à présent, nous avons admis les règles des dérivées. En
+utilisant la définition et les limites, prouvez les propriétés pour
+(i) <span class="math notranslate nohighlight">\(f(x) = c\)</span>, (ii) <span class="math notranslate nohighlight">\(f(x) = x^n\)</span>, (iii)
+<span class="math notranslate nohighlight">\(f(x) = e^x\)</span> et (iv) <span class="math notranslate nohighlight">\(f(x) = \log x\)</span>.</p></li>
+<li><p>Dans le même esprit, prouvez les règles du produit, de la somme et
+du quotient à partir des principes de base.</p></li>
+<li><p>Prouvez que la règle du multiple constant découle d’un cas
+particulier de la règle du produit.</p></li>
+<li><p>Calculez la dérivée de <span class="math notranslate nohighlight">\(f(x) = x^x\)</span>.</p></li>
+<li><p>Que signifie <span class="math notranslate nohighlight">\(f'(x) = 0\)</span> pour un certain <span class="math notranslate nohighlight">\(x\)</span> ? Donnez un
+exemple de fonction <span class="math notranslate nohighlight">\(f\)</span> et d’un point <span class="math notranslate nohighlight">\(x\)</span> pour lequel
+cela pourrait être vrai.</p></li>
+<li><p>Tracez la fonction <span class="math notranslate nohighlight">\(y = f(x) = x^3 - \frac{1}{x}\)</span> et tracez sa
+ligne tangente en <span class="math notranslate nohighlight">\(x = 1\)</span>.</p></li>
+<li><p>Trouvez le gradient de la fonction
+<span class="math notranslate nohighlight">\(f(\mathbf{x}) = 3x_1^2 + 5e^{x_2}\)</span>.</p></li>
+<li><p>Quel est le gradient de la fonction
+<span class="math notranslate nohighlight">\(f(\mathbf{x}) = \|\mathbf{x}\|_2\)</span> ? Que se passe-t-il pour
+<span class="math notranslate nohighlight">\(\mathbf{x} = \mathbf{0}\)</span> ?</p></li>
+<li><p>Pouvez-vous écrire la règle de la chaîne pour le cas où
+<span class="math notranslate nohighlight">\(u = f(x, y, z)\)</span> avec <span class="math notranslate nohighlight">\(x = x(a, b)\)</span>, <span class="math notranslate nohighlight">\(y = y(a, b)\)</span>
+et <span class="math notranslate nohighlight">\(z = z(a, b)\)</span> ?</p></li>
+<li><p>Étant donné une fonction <span class="math notranslate nohighlight">\(f(x)\)</span> inversible, calculez la
+dérivée de son inverse <span class="math notranslate nohighlight">\(f^{-1}(x)\)</span>. Ici, nous avons
+<span class="math notranslate nohighlight">\(f^{-1}(f(x)) = x\)</span> et inversement <span class="math notranslate nohighlight">\(f(f^{-1}(y)) = y\)</span>.
+Indice : utilisez ces propriétés dans votre dérivation.</p></li>
+</ol>
+<p><a class="reference external" href="https://discuss.d2l.ai/t/33">Discussions</a></p>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">2.4. Calcul</a><ul>
+<li><a class="reference internal" href="#derivees-et-differentiation">2.4.1. Dérivées et différentiation</a></li>
+<li><a class="reference internal" href="#utilitaires-de-visualisation">2.4.2. Utilitaires de visualisation</a></li>
+<li><a class="reference internal" href="#derivees-partielles-et-gradients">2.4.3. Dérivées partielles et gradients</a></li>
+<li><a class="reference internal" href="#regle-de-la-chaine">2.4.4. Règle de la chaîne</a></li>
+<li><a class="reference internal" href="#discussion">2.4.5. Discussion</a></li>
+<li><a class="reference internal" href="#exercices">2.4.6. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="linear-algebra.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>2.3. Algèbre linéaire</div>
+         </div>
+     </a>
+     <a id="button-next" href="autograd.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>2.5. Différentiation automatique</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

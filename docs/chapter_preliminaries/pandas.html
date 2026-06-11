@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>2.2. Prétraitement des données &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2.3. Algèbre linéaire" href="linear-algebra.html" />
+    <link rel="prev" title="2.1. Manipulation de données" href="ndarray.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">2. </span>Préliminaires</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">2.2. </span>Prétraitement des données</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_preliminaries/pandas.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="pretraitement-des-donnees">
+<span id="sec-pandas"></span><h1><span class="section-number">2.2. </span>Prétraitement des données<a class="headerlink" href="#pretraitement-des-donnees" title="Permalink to this heading">¶</a></h1>
+<p>Jusqu’à présent, nous avons travaillé avec des données synthétiques qui
+arrivaient dans des tenseurs prêts à l’emploi. Cependant, pour appliquer
+l’apprentissage profond en conditions réelles, nous devons extraire des
+données désordonnées stockées dans des formats arbitraires et les
+prétraiter pour les adapter à nos besoins. Heureusement, la bibliothèque
+<em>pandas</em> <a class="reference external" href="https://pandas.pydata.org/">library</a> peut s’occuper d’une
+grande partie de ce travail fastidieux. Cette section, bien qu’elle ne
+remplace pas un véritable
+<a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/user_guide/10min.html">tutoriel</a>
+<em>pandas</em>, vous donnera un cours accéléré sur certaines des routines les
+plus courantes.</p>
+<section id="lecture-du-jeu-de-donnees">
+<h2><span class="section-number">2.2.1. </span>Lecture du jeu de données<a class="headerlink" href="#lecture-du-jeu-de-donnees" title="Permalink to this heading">¶</a></h2>
+<p>Les fichiers CSV (Comma-separated values) sont omniprésents pour le
+stockage de données tabulaires (semblables à des feuilles de calcul).
+Dans ceux-ci, chaque ligne correspond à un enregistrement et se compose
+de plusieurs champs (séparés par des virgules), par exemple, “Albert
+Einstein,March 14 1879,Ulm,Federal polytechnic school,field of
+gravitational physics”. Pour démontrer comment charger des fichiers CSV
+avec <code class="docutils literal notranslate"><span class="pre">pandas</span></code>, nous créons un fichier CSV ci-dessous
+<code class="docutils literal notranslate"><span class="pre">../data/house_tiny.csv</span></code>. Ce fichier représente un jeu de données de
+maisons, où chaque ligne correspond à une maison distincte et les
+colonnes correspondent au nombre de pièces (<code class="docutils literal notranslate"><span class="pre">NumRooms</span></code>), au type de
+toit (<code class="docutils literal notranslate"><span class="pre">RoofType</span></code>) et au prix (<code class="docutils literal notranslate"><span class="pre">Price</span></code>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;..&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">data_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;..&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;house_tiny.csv&#39;</span><span class="p">)</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">data_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;NumRooms,RoofType,Price</span>
+<span class="s1">NA,NA,127500</span>
+<span class="s1">2,NA,106000</span>
+<span class="s1">4,Slate,178100</span>
+<span class="s1">NA,NA,140000&#39;&#39;&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Maintenant, importons <code class="docutils literal notranslate"><span class="pre">pandas</span></code> et chargeons le jeu de données avec
+<code class="docutils literal notranslate"><span class="pre">read_csv</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">data_file</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="preparation-des-donnees">
+<h2><span class="section-number">2.2.2. </span>Préparation des données<a class="headerlink" href="#preparation-des-donnees" title="Permalink to this heading">¶</a></h2>
+<p>Dans l’apprentissage supervisé, nous entraînons des modèles pour prédire
+une valeur <em>cible</em> désignée, étant donné un ensemble de valeurs
+d’<em>entrée</em>. Notre première étape dans le traitement du jeu de données
+consiste à séparer les colonnes correspondant aux valeurs d’entrée de
+celles correspondant aux valeurs cibles. Nous pouvons sélectionner les
+colonnes soit par leur nom, soit via l’indexation basée sur la
+localisation entière (<code class="docutils literal notranslate"><span class="pre">iloc</span></code>).</p>
+<p>Vous avez peut-être remarqué que <code class="docutils literal notranslate"><span class="pre">pandas</span></code> a remplacé toutes les
+entrées CSV ayant la valeur <code class="docutils literal notranslate"><span class="pre">NA</span></code> par une valeur spéciale <code class="docutils literal notranslate"><span class="pre">NaN</span></code> (<em>not
+a number</em>). Cela peut également se produire chaque fois qu’une entrée
+est vide, par exemple, “3,,,270000”. Ce sont ce qu’on appelle des
+<em>valeurs manquantes</em> et elles sont les “punaises de lit” de la science
+des données, une menace persistante à laquelle vous serez confronté tout
+au long de votre carrière. Selon le contexte, les valeurs manquantes
+peuvent être traitées soit par <em>imputation</em>, soit par <em>suppression</em>.
+L’imputation remplace les valeurs manquantes par des estimations de
+leurs valeurs tandis que la suppression écarte simplement soit ces
+lignes, soit ces colonnes qui contiennent des valeurs manquantes.</p>
+<p>Voici quelques heuristiques d’imputation courantes. Pour les champs
+d’entrée catégoriels, nous pouvons traiter <code class="docutils literal notranslate"><span class="pre">NaN</span></code> comme une catégorie.
+Comme la colonne <code class="docutils literal notranslate"><span class="pre">RoofType</span></code> prend les valeurs <code class="docutils literal notranslate"><span class="pre">Slate</span></code> et <code class="docutils literal notranslate"><span class="pre">NaN</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pandas</span></code> peut convertir cette colonne en deux colonnes
+<code class="docutils literal notranslate"><span class="pre">RoofType_Slate</span></code> et <code class="docutils literal notranslate"><span class="pre">RoofType_nan</span></code>. Une ligne dont le type de toit
+est <code class="docutils literal notranslate"><span class="pre">Slate</span></code> fixera les valeurs de <code class="docutils literal notranslate"><span class="pre">RoofType_Slate</span></code> et
+<code class="docutils literal notranslate"><span class="pre">RoofType_nan</span></code> à 1 et 0, respectivement. L’inverse est vrai pour une
+ligne avec une valeur <code class="docutils literal notranslate"><span class="pre">RoofType</span></code> manquante.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="n">inputs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">get_dummies</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">dummy_na</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Pour les valeurs numériques manquantes, une heuristique courante
+consiste à remplacer les entrées <code class="docutils literal notranslate"><span class="pre">NaN</span></code> par la valeur moyenne de la
+colonne correspondante.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="conversion-au-format-tenseur">
+<h2><span class="section-number">2.2.3. </span>Conversion au format tenseur<a class="headerlink" href="#conversion-au-format-tenseur" title="Permalink to this heading">¶</a></h2>
+<p>Maintenant que toutes les entrées dans <code class="docutils literal notranslate"><span class="pre">inputs</span></code> et <code class="docutils literal notranslate"><span class="pre">targets</span></code> sont
+numériques, nous pouvons les charger dans un tenseur (rappelez-vous
+<a class="reference internal" href="ndarray.html#sec-ndarray"><span class="std std-numref">Section 2.1</span></a>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">targets</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">y</span>
+</pre></div>
+</div>
+</section>
+<section id="discussion">
+<h2><span class="section-number">2.2.4. </span>Discussion<a class="headerlink" href="#discussion" title="Permalink to this heading">¶</a></h2>
+<p>Vous savez maintenant comment partitionner les colonnes de données,
+imputer les variables manquantes et charger des données <code class="docutils literal notranslate"><span class="pre">pandas</span></code> dans
+des tenseurs. Dans <code class="xref std std-numref docutils literal notranslate"><span class="pre">sec_kaggle_house</span></code>, vous acquerrez d’autres
+compétences en traitement de données. Bien que ce cours accéléré soit
+resté simple, le traitement des données peut devenir complexe. Par
+exemple, plutôt que d’arriver dans un seul fichier CSV, notre jeu de
+données pourrait être réparti sur plusieurs fichiers extraits d’une base
+de données relationnelle. Par exemple, dans une application de commerce
+électronique, les adresses des clients peuvent résider dans une table et
+les données d’achat dans une autre. De plus, les praticiens sont
+confrontés à une multitude de types de données au-delà du catégoriel et
+du numérique, par exemple, des chaînes de texte, des images, des données
+audio et des nuages de points. Souvent, des outils avancés et des
+algorithmes efficaces sont nécessaires afin d’empêcher le traitement des
+données de devenir le plus grand goulot d’étranglement dans le pipeline
+d’apprentissage automatique. Ces problèmes surgissent lorsque nous
+aborderons la vision par ordinateur et le traitement du langage naturel.
+Enfin, nous devons prêter attention à la qualité des données. Les jeux
+de données du monde réel sont souvent truffés de valeurs aberrantes, de
+mesures défectueuses provenant de capteurs et d’erreurs
+d’enregistrement, qui doivent être traitées avant d’injecter les données
+dans n’importe quel modèle. Des outils de visualisation de données tels
+que <a class="reference external" href="https://seaborn.pydata.org/">seaborn</a>,
+<a class="reference external" href="https://docs.bokeh.org/">Bokeh</a> ou
+<a class="reference external" href="https://matplotlib.org/">matplotlib</a> peuvent vous aider à inspecter
+manuellement les données et à développer des intuitions sur le type de
+problèmes que vous pourriez avoir à traiter.</p>
+</section>
+<section id="exercices">
+<h2><span class="section-number">2.2.5. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Essayez de charger des jeux de données, par exemple, Abalone du <a class="reference external" href="https://archive.ics.uci.edu/ml/datasets">UCI
+Machine Learning
+Repository</a> et inspectez
+leurs propriétés. Quelle fraction d’entre eux présente des valeurs
+manquantes ? Quelle fraction des variables est numérique,
+catégorielle ou textuelle ?</p></li>
+<li><p>Essayez d’indexer et de sélectionner des colonnes de données par leur
+nom plutôt que par leur numéro de colonne. La documentation pandas
+sur
+l’<a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html">indexation</a>
+contient plus de détails sur la façon de procéder.</p></li>
+<li><p>Quelle taille de jeu de données pensez-vous pouvoir charger de cette
+manière ? Quelles pourraient être les limites ? Conseil : considérez
+le temps de lecture des données, la représentation, le traitement et
+l’empreinte mémoire. Essayez cela sur votre ordinateur portable. Que
+se passe-t-il si vous l’essayez sur un serveur ?</p></li>
+<li><p>Comment géreriez-vous des données qui ont un très grand nombre de
+catégories ? Et si les étiquettes de catégorie sont toutes uniques ?
+Devriez-vous inclure ces dernières ?</p></li>
+<li><p>Quelles alternatives à pandas pouvez-vous imaginer ? Que diriez-vous
+de <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.load.html">charger des tenseurs NumPy à partir d’un
+fichier</a>
+? Jetez un œil à <a class="reference external" href="https://python-pillow.org/">Pillow</a>, la
+bibliothèque d’imagerie Python.</p></li>
+</ol>
+<p><a class="reference external" href="https://discuss.d2l.ai/t/29">Discussions</a></p>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">2.2. Prétraitement des données</a><ul>
+<li><a class="reference internal" href="#lecture-du-jeu-de-donnees">2.2.1. Lecture du jeu de données</a></li>
+<li><a class="reference internal" href="#preparation-des-donnees">2.2.2. Préparation des données</a></li>
+<li><a class="reference internal" href="#conversion-au-format-tenseur">2.2.3. Conversion au format tenseur</a></li>
+<li><a class="reference internal" href="#discussion">2.2.4. Discussion</a></li>
+<li><a class="reference internal" href="#exercices">2.2.5. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="ndarray.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>2.1. Manipulation de données</div>
+         </div>
+     </a>
+     <a id="button-next" href="linear-algebra.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>2.3. Algèbre linéaire</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

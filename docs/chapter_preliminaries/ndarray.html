@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>2.1. Manipulation de données &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2.2. Prétraitement des données" href="pandas.html" />
+    <link rel="prev" title="2. Préliminaires" href="index.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">2. </span>Préliminaires</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">2.1. </span>Manipulation de données</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_preliminaries/ndarray.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">2. Préliminaires</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="manipulation-de-donnees">
+<span id="sec-ndarray"></span><h1><span class="section-number">2.1. </span>Manipulation de données<a class="headerlink" href="#manipulation-de-donnees" title="Permalink to this heading">¶</a></h1>
+<p>Pour pouvoir faire quoi que ce soit, nous avons besoin d’un moyen de
+stocker et de manipuler des données. En général, il y a deux choses
+importantes que nous devons faire avec les données : (i) les acquérir ;
+et (ii) les traiter une fois qu’elles sont dans l’ordinateur. Il est
+inutile d’acquérir des données sans avoir un moyen de les stocker, alors
+pour commencer, mettons les mains à la pâte avec les tableaux à
+<span class="math notranslate nohighlight">\(n\)</span> dimensions, que nous appelons aussi <em>tenseurs</em>. Si vous
+connaissez déjà le package de calcul scientifique NumPy, ce sera un jeu
+d’enfant. Pour tous les frameworks d’apprentissage profond modernes, la
+<em>classe de tenseur</em> (<code class="docutils literal notranslate"><span class="pre">ndarray</span></code> dans MXNet, <code class="docutils literal notranslate"><span class="pre">Tensor</span></code> dans PyTorch et
+TensorFlow) ressemble au <code class="docutils literal notranslate"><span class="pre">ndarray</span></code> de NumPy, avec quelques
+fonctionnalités redoutables en plus. Premièrement, la classe de tenseur
+prend en charge la différenciation automatique. Deuxièmement, elle tire
+parti des GPU pour accélérer le calcul numérique, alors que NumPy ne
+fonctionne que sur les CPU. Ces propriétés rendent les réseaux de
+neurones à la fois faciles à coder et rapides à exécuter.</p>
+<section id="premiers-pas">
+<h2><span class="section-number">2.1.1. </span>Premiers pas<a class="headerlink" href="#premiers-pas" title="Permalink to this heading">¶</a></h2>
+<p>Pour commencer, nous importons la bibliothèque PyTorch. Notez que le nom
+du package est <code class="docutils literal notranslate"><span class="pre">torch</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+</pre></div>
+</div>
+<p>Un tenseur représente un tableau (éventuellement multidimensionnel) de
+valeurs numériques. Dans le cas unidimensionnel, c’est-à-dire quand un
+seul axe est nécessaire pour les données, un tenseur est appelé un
+<em>vecteur</em>. Avec deux axes, un tenseur est appelé une <em>matrice</em>. Avec
+<span class="math notranslate nohighlight">\(k &gt; 2\)</span> axes, nous abandonnons les noms spécialisés et nous nous
+référons simplement à l’objet comme un <em>tenseur d’ordre</em> <span class="math notranslate nohighlight">\(k\)</span>.</p>
+<p>PyTorch fournit une variété de fonctions pour créer de nouveaux tenseurs
+pré-remplis de valeurs. Par exemple, en invoquant <code class="docutils literal notranslate"><span class="pre">arange(n)</span></code>, nous
+pouvons créer un vecteur de valeurs régulièrement espacées, commençant à
+0 (inclus) et se terminant à <code class="docutils literal notranslate"><span class="pre">n</span></code> (exclu). Par défaut, la taille de
+l’intervalle est de <span class="math notranslate nohighlight">\(1\)</span>. Sauf indication contraire, les nouveaux
+tenseurs sont stockés dans la mémoire principale et destinés au calcul
+basé sur le CPU.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">x</span>
+</pre></div>
+</div>
+<p>Chacune de ces valeurs est appelée un <em>élément</em> du tenseur. Le tenseur
+<code class="docutils literal notranslate"><span class="pre">x</span></code> contient 12 éléments. Nous pouvons inspecter le nombre total
+d’éléments dans un tenseur via sa méthode <code class="docutils literal notranslate"><span class="pre">numel</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Nous pouvons accéder à la <em>forme</em> (<em>shape</em>) d’un tenseur (la longueur le
+long de chaque axe) en inspectant son attribut <code class="docutils literal notranslate"><span class="pre">shape</span></code>. Comme nous
+traitons d’un vecteur ici, la <code class="docutils literal notranslate"><span class="pre">shape</span></code> ne contient qu’un seul élément
+et est identique à la taille.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+<p>Nous pouvons changer la forme d’un tenseur sans altérer sa taille ou ses
+valeurs, en invoquant <code class="docutils literal notranslate"><span class="pre">reshape</span></code>. Par exemple, nous pouvons transformer
+notre vecteur <code class="docutils literal notranslate"><span class="pre">x</span></code> dont la forme est (12,) en une matrice <code class="docutils literal notranslate"><span class="pre">X</span></code> de
+forme (3, 4). Ce nouveau tenseur conserve tous les éléments mais les
+reconfigure en une matrice. Notez que les éléments de notre vecteur sont
+disposés ligne par ligne et ainsi <code class="docutils literal notranslate"><span class="pre">x[3]</span> <span class="pre">==</span> <span class="pre">X[0,</span> <span class="pre">3]</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">X</span>
+</pre></div>
+</div>
+<p>Notez que spécifier chaque composant de la forme à <code class="docutils literal notranslate"><span class="pre">reshape</span></code> est
+redondant. Puisque nous connaissons déjà la taille de notre tenseur,
+nous pouvons déduire un composant de la forme à partir des autres. Par
+exemple, étant donné un tenseur de taille <span class="math notranslate nohighlight">\(n\)</span> et une forme cible
+(<span class="math notranslate nohighlight">\(h\)</span>, <span class="math notranslate nohighlight">\(w\)</span>), nous savons que <span class="math notranslate nohighlight">\(w = n/h\)</span>. Pour inférer
+automatiquement un composant de la forme, nous pouvons placer un <code class="docutils literal notranslate"><span class="pre">-1</span></code>
+pour le composant de la forme qui doit être inféré automatiquement. Dans
+notre cas, au lieu d’appeler <code class="docutils literal notranslate"><span class="pre">x.reshape(3,</span> <span class="pre">4)</span></code>, nous aurions pu
+appeler de manière équivalente <code class="docutils literal notranslate"><span class="pre">x.reshape(-1,</span> <span class="pre">4)</span></code> ou
+<code class="docutils literal notranslate"><span class="pre">x.reshape(3,</span> <span class="pre">-1)</span></code>.</p>
+<p>Les praticiens ont souvent besoin de travailler avec des tenseurs
+initialisés pour contenir uniquement des 0 ou des 1. Nous pouvons
+construire un tenseur avec tous les éléments fixés à 0 et une forme de
+(2, 3, 4) via la fonction <code class="docutils literal notranslate"><span class="pre">zeros</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>De même, nous pouvons créer un tenseur avec tous les 1 en invoquant
+<code class="docutils literal notranslate"><span class="pre">ones</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Nous souhaitons souvent échantillonner chaque élément de manière
+aléatoire (et indépendante) à partir d’une distribution de probabilité
+donnée. Par exemple, les paramètres des réseaux de neurones sont souvent
+initialisés de manière aléatoire. L’extrait suivant crée un tenseur avec
+des éléments tirés d’une distribution gaussienne (normale) standard avec
+une moyenne de 0 et un écart-type de 1.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Enfin, nous pouvons construire des tenseurs en fournissant les valeurs
+exactes de chaque élément par des listes Python (éventuellement
+imbriquées) contenant des littéraux numériques. Ici, nous construisons
+une matrice avec une liste de listes, où la liste la plus externe
+correspond à l’axe 0, et la liste interne correspond à l’axe 1.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+</pre></div>
+</div>
+</section>
+<section id="indexation-et-decoupage">
+<h2><span class="section-number">2.1.2. </span>Indexation et découpage<a class="headerlink" href="#indexation-et-decoupage" title="Permalink to this heading">¶</a></h2>
+<p>Comme avec les listes Python, nous pouvons accéder aux éléments d’un
+tenseur par indexation (en commençant par 0). Pour accéder à un élément
+en fonction de sa position par rapport à la fin de la liste, nous
+pouvons utiliser l’indexation négative. Enfin, nous pouvons accéder à
+des plages entières d’indices via le découpage (<em>slicing</em>, par exemple
+<code class="docutils literal notranslate"><span class="pre">X[start:stop]</span></code>), où la valeur retournée inclut le premier indice
+(<code class="docutils literal notranslate"><span class="pre">start</span></code>) <em>mais pas le dernier</em> (<code class="docutils literal notranslate"><span class="pre">stop</span></code>). Enfin, lorsqu’un seul
+indice (ou découpe) est spécifié pour un tenseur d’ordre <span class="math notranslate nohighlight">\(k\)</span>, il
+est appliqué le long de l’axe 0. Ainsi, dans le code suivant, <code class="docutils literal notranslate"><span class="pre">[-1]</span></code>
+sélectionne la dernière ligne et <code class="docutils literal notranslate"><span class="pre">[1:3]</span></code> sélectionne les deuxième et
+troisième lignes.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Au-delà de leur lecture, nous pouvons également <em>écrire</em> les éléments
+d’une matrice en spécifiant des indices.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">17</span>
+<span class="n">X</span>
+</pre></div>
+</div>
+<p>Si nous voulons affecter la même valeur à plusieurs éléments, nous
+appliquons l’indexation sur le côté gauche de l’opération d’affectation.
+Par exemple, <code class="docutils literal notranslate"><span class="pre">[:2,</span> <span class="pre">:]</span></code> accède aux première et deuxième lignes, où
+<code class="docutils literal notranslate"><span class="pre">:</span></code> prend tous les éléments le long de l’axe 1 (colonne). Bien que
+nous ayons discuté de l’indexation pour les matrices, cela fonctionne
+également pour les vecteurs et pour les tenseurs de plus de deux
+dimensions.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">[:</span><span class="mi">2</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">X</span>
+</pre></div>
+</div>
+</section>
+<section id="operations">
+<h2><span class="section-number">2.1.3. </span>Opérations<a class="headerlink" href="#operations" title="Permalink to this heading">¶</a></h2>
+<p>Maintenant que nous savons comment construire des tenseurs et comment
+lire et écrire dans leurs éléments, nous pouvons commencer à les
+manipuler avec diverses opérations mathématiques. Parmi les plus utiles
+de celles-ci figurent les opérations <em>élément par élément</em>
+(<em>elementwise</em>). Celles-ci appliquent une opération scalaire standard à
+chaque élément d’un tenseur. Pour les fonctions qui prennent deux
+tenseurs en entrée, les opérations élément par élément appliquent un
+opérateur binaire standard sur chaque paire d’éléments correspondants.
+Nous pouvons créer une fonction élément par élément à partir de
+n’importe quelle fonction qui fait correspondre un scalaire à un
+scalaire.</p>
+<p>En notation mathématique, nous désignons de tels opérateurs scalaires
+<em>unaires</em> (prenant une seule entrée) par la signature
+<span class="math notranslate nohighlight">\(f: \mathbb{R} \rightarrow \mathbb{R}\)</span>. Cela signifie simplement
+que la fonction fait correspondre n’importe quel nombre réel à un autre
+nombre réel. La plupart des opérateurs standards, y compris les
+opérateurs unaires comme <span class="math notranslate nohighlight">\(e^x\)</span>, peuvent être appliqués élément par
+élément.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>De même, nous désignons les opérateurs scalaires <em>binaires</em>, qui font
+correspondre des paires de nombres réels à un (seul) nombre réel via la
+signature <span class="math notranslate nohighlight">\(f: \mathbb{R}, \mathbb{R} \rightarrow \mathbb{R}\)</span>.
+Étant donné deux vecteurs <span class="math notranslate nohighlight">\(\mathbf{u}\)</span> et <span class="math notranslate nohighlight">\(\mathbf{v}\)</span> <em>de
+même forme</em>, et un opérateur binaire <span class="math notranslate nohighlight">\(f\)</span>, nous pouvons produire un
+vecteur <span class="math notranslate nohighlight">\(\mathbf{c} = F(\mathbf{u},\mathbf{v})\)</span> en fixant
+<span class="math notranslate nohighlight">\(c_i \gets f(u_i, v_i)\)</span> pour tout <span class="math notranslate nohighlight">\(i\)</span>, où <span class="math notranslate nohighlight">\(c_i, u_i\)</span>
+et <span class="math notranslate nohighlight">\(v_i\)</span> sont les <span class="math notranslate nohighlight">\(i\)</span>-èmes éléments des vecteurs
+<span class="math notranslate nohighlight">\(\mathbf{c}, \mathbf{u}\)</span> et <span class="math notranslate nohighlight">\(\mathbf{v}\)</span>. Ici, nous avons
+produit le vecteur
+<span class="math notranslate nohighlight">\(F: \mathbb{R}^d, \mathbb{R}^d \rightarrow \mathbb{R}^d\)</span> en
+<em>élevant</em> (<em>lifting</em>) la fonction scalaire à une opération de vecteur
+élément par élément. Les opérateurs arithmétiques standards communs pour
+l’addition (<code class="docutils literal notranslate"><span class="pre">+</span></code>), la soustraction (<code class="docutils literal notranslate"><span class="pre">-</span></code>), la multiplication (<code class="docutils literal notranslate"><span class="pre">*</span></code>),
+la division (<code class="docutils literal notranslate"><span class="pre">/</span></code>) et l’exponentiation (<code class="docutils literal notranslate"><span class="pre">**</span></code>) ont tous été élevés à
+des opérations élément par élément pour des tenseurs de forme identique
+de forme arbitraire.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">])</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">-</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">/</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">**</span> <span class="n">y</span>
+</pre></div>
+</div>
+<p>En plus des calculs élément par élément, nous pouvons également
+effectuer des opérations d’algèbre linéaire, telles que les produits
+scalaires et les multiplications de matrices. Nous détaillerons ces
+points dans <a class="reference internal" href="linear-algebra.html#sec-linear-algebra"><span class="std std-numref">Section 2.3</span></a>.</p>
+<p>Nous pouvons également <em>concaténer</em> plusieurs tenseurs, en les empilant
+bout à bout pour en former un plus grand. Il suffit de fournir une liste
+de tenseurs et de dire au système le long de quel axe concaténer.
+L’exemple ci-dessous montre ce qui se passe lorsque nous concaténons
+deux matrices le long des lignes (axe 0) au lieu des colonnes (axe 1).
+On peut voir que la longueur de l’axe 0 de la première sortie
+(<span class="math notranslate nohighlight">\(6\)</span>) est la somme des longueurs de l’axe 0 des deux tenseurs
+d’entrée (<span class="math notranslate nohighlight">\(3 + 3\)</span>) ; alors que la longueur de l’axe 1 de la
+deuxième sortie (<span class="math notranslate nohighlight">\(8\)</span>) est la somme des longueurs de l’axe 1 des
+deux tenseurs d’entrée (<span class="math notranslate nohighlight">\(4 + 4\)</span>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mf">2.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Parfois, nous voulons construire un tenseur binaire via des <em>énoncés
+logiques</em>. Prenons <code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">==</span> <span class="pre">Y</span></code> comme exemple. Pour chaque position
+<code class="docutils literal notranslate"><span class="pre">i,</span> <span class="pre">j</span></code>, si <code class="docutils literal notranslate"><span class="pre">X[i,</span> <span class="pre">j]</span></code> et <code class="docutils literal notranslate"><span class="pre">Y[i,</span> <span class="pre">j]</span></code> sont égaux, alors l’entrée
+correspondante dans le résultat prend la valeur <code class="docutils literal notranslate"><span class="pre">1</span></code>, sinon elle prend
+la valeur <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">==</span> <span class="n">Y</span>
+</pre></div>
+</div>
+<p>Faire la somme de tous les éléments du tenseur produit un tenseur avec
+un seul élément.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="diffusion-broadcasting">
+<span id="subsec-broadcasting"></span><h2><span class="section-number">2.1.4. </span>Diffusion (Broadcasting)<a class="headerlink" href="#diffusion-broadcasting" title="Permalink to this heading">¶</a></h2>
+<p>À présent, vous savez comment effectuer des opérations binaires élément
+par élément sur deux tenseurs de même forme. Sous certaines conditions,
+même lorsque les formes diffèrent, nous pouvons toujours effectuer des
+opérations binaires élément par élément en invoquant le <em>mécanisme de
+diffusion</em> (<em>broadcasting</em>). La diffusion fonctionne selon la procédure
+en deux étapes suivante : (i) étendre l’un des tableaux ou les deux en
+copiant les éléments le long des axes de longueur 1 de sorte qu’après
+cette transformation, les deux tenseurs aient la même forme ; (ii)
+effectuer une opération élément par élément sur les tableaux résultants.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+</pre></div>
+</div>
+<p>Comme <code class="docutils literal notranslate"><span class="pre">a</span></code> et <code class="docutils literal notranslate"><span class="pre">b</span></code> sont respectivement des matrices <span class="math notranslate nohighlight">\(3\times1\)</span>
+et <span class="math notranslate nohighlight">\(1\times2\)</span>, leurs formes ne correspondent pas. La diffusion
+produit une matrice plus grande <span class="math notranslate nohighlight">\(3\times2\)</span> en répliquant la
+matrice <code class="docutils literal notranslate"><span class="pre">a</span></code> le long des colonnes et la matrice <code class="docutils literal notranslate"><span class="pre">b</span></code> le long des
+lignes avant de les additionner élément par élément.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</pre></div>
+</div>
+</section>
+<section id="economiser-de-la-memoire">
+<h2><span class="section-number">2.1.5. </span>Économiser de la mémoire<a class="headerlink" href="#economiser-de-la-memoire" title="Permalink to this heading">¶</a></h2>
+<p>L’exécution d’opérations peut entraîner l’allocation d’une nouvelle
+mémoire pour héberger les résultats. Par exemple, si nous écrivons
+<code class="docutils literal notranslate"><span class="pre">Y</span> <span class="pre">=</span> <span class="pre">X</span> <span class="pre">+</span> <span class="pre">Y</span></code>, nous déréférençons le tenseur vers lequel <code class="docutils literal notranslate"><span class="pre">Y</span></code> pointait
+auparavant et pointons plutôt <code class="docutils literal notranslate"><span class="pre">Y</span></code> vers la mémoire nouvellement
+allouée. Nous pouvons démontrer ce problème avec la fonction <code class="docutils literal notranslate"><span class="pre">id()</span></code> de
+Python, qui nous donne l’adresse exacte de l’objet référencé en mémoire.
+Notez qu’après avoir exécuté <code class="docutils literal notranslate"><span class="pre">Y</span> <span class="pre">=</span> <span class="pre">Y</span> <span class="pre">+</span> <span class="pre">X</span></code>, <code class="docutils literal notranslate"><span class="pre">id(Y)</span></code> pointe vers un
+emplacement différent. C’est parce que Python évalue d’abord <code class="docutils literal notranslate"><span class="pre">Y</span> <span class="pre">+</span> <span class="pre">X</span></code>,
+allouant de la nouvelle mémoire pour le résultat puis pointe <code class="docutils literal notranslate"><span class="pre">Y</span></code> vers
+ce nouvel emplacement en mémoire.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">before</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">+</span> <span class="n">X</span>
+<span class="nb">id</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="o">==</span> <span class="n">before</span>
+</pre></div>
+</div>
+<p>Cela peut être indésirable pour deux raisons. Premièrement, nous ne
+voulons pas passer notre temps à allouer de la mémoire inutilement tout
+le temps. En apprentissage automatique, nous avons souvent des centaines
+de mégaoctets de paramètres et nous les mettons tous à jour plusieurs
+fois par seconde. Autant que possible, nous voulons effectuer ces mises
+à jour <em>sur place</em> (<em>in place</em>). Deuxièmement, nous pourrions pointer
+vers les mêmes paramètres à partir de plusieurs variables. Si nous ne
+mettons pas à jour sur place, nous devons faire attention à mettre à
+jour toutes ces références, de peur de provoquer une fuite de mémoire ou
+de se référer par inadvertance à des paramètres obsolètes.</p>
+<p>Heureusement, effectuer des opérations sur place est facile. Nous
+pouvons affecter le résultat d’une opération à un tableau <code class="docutils literal notranslate"><span class="pre">Y</span></code>
+précédemment alloué en utilisant la notation de découpage :
+<code class="docutils literal notranslate"><span class="pre">Y[:]</span> <span class="pre">=</span> <span class="pre">&lt;expression&gt;</span></code>. Pour illustrer ce concept, nous écrasons les
+valeurs du tenseur <code class="docutils literal notranslate"><span class="pre">Z</span></code>, après l’avoir initialisé à l’aide de
+<code class="docutils literal notranslate"><span class="pre">zeros_like</span></code>, pour avoir la même forme que <code class="docutils literal notranslate"><span class="pre">Y</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Z</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;id(Z):&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="n">Z</span><span class="p">))</span>
+<span class="n">Z</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;id(Z):&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="n">Z</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Si la valeur de <code class="docutils literal notranslate"><span class="pre">X</span></code> n’est pas réutilisée dans les calculs ultérieurs,
+nous pouvons également utiliser <code class="docutils literal notranslate"><span class="pre">X[:]</span> <span class="pre">=</span> <span class="pre">X</span> <span class="pre">+</span> <span class="pre">Y</span></code> ou <code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">+=</span> <span class="pre">Y</span></code> pour
+réduire la charge mémoire de l’opération.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">before</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">+=</span> <span class="n">Y</span>
+<span class="nb">id</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">==</span> <span class="n">before</span>
+</pre></div>
+</div>
+</section>
+<section id="conversion-vers-dautres-objets-python">
+<h2><span class="section-number">2.1.6. </span>Conversion vers d’autres objets Python<a class="headerlink" href="#conversion-vers-dautres-objets-python" title="Permalink to this heading">¶</a></h2>
+<p>La conversion en tenseur NumPy (<code class="docutils literal notranslate"><span class="pre">ndarray</span></code>), ou vice versa, est facile.
+Le tenseur Torch et le tableau NumPy partageront leur mémoire
+sous-jacente, et la modification de l’un via une opération sur place
+modifiera également l’autre.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">A</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="nb">type</span><span class="p">(</span><span class="n">A</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Pour convertir un tenseur de taille 1 en scalaire Python, nous pouvons
+invoquer la fonction <code class="docutils literal notranslate"><span class="pre">item</span></code> ou les fonctions intégrées de Python.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">3.5</span><span class="p">])</span>
+<span class="n">a</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="resume">
+<h2><span class="section-number">2.1.7. </span>Résumé<a class="headerlink" href="#resume" title="Permalink to this heading">¶</a></h2>
+<p>La classe de tenseur est l’interface principale pour stocker et
+manipuler des données dans les bibliothèques d’apprentissage profond.
+Les tenseurs offrent une variété de fonctionnalités, notamment des
+routines de construction, l’indexation et le découpage, des opérations
+mathématiques de base, la diffusion, l’affectation économe en mémoire et
+la conversion vers et depuis d’autres objets Python.</p>
+</section>
+<section id="exercices">
+<h2><span class="section-number">2.1.8. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Exécutez le code de cette section. Remplacez l’énoncé conditionnel
+<code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">==</span> <span class="pre">Y</span></code> par <code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">&lt;</span> <span class="pre">Y</span></code> ou <code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">&gt;</span> <span class="pre">Y</span></code>, puis voyez quel type de
+tenseur vous obtenez.</p></li>
+<li><p>Remplacez les deux tenseurs qui opèrent par élément dans le mécanisme
+de diffusion par d’autres formes, par exemple des tenseurs à 3
+dimensions. Le résultat est-il le même que celui attendu ?</p></li>
+</ol>
+<p><a class="reference external" href="https://discuss.d2l.ai/t/27">Discussions</a></p>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">2.1. Manipulation de données</a><ul>
+<li><a class="reference internal" href="#premiers-pas">2.1.1. Premiers pas</a></li>
+<li><a class="reference internal" href="#indexation-et-decoupage">2.1.2. Indexation et découpage</a></li>
+<li><a class="reference internal" href="#operations">2.1.3. Opérations</a></li>
+<li><a class="reference internal" href="#diffusion-broadcasting">2.1.4. Diffusion (Broadcasting)</a></li>
+<li><a class="reference internal" href="#economiser-de-la-memoire">2.1.5. Économiser de la mémoire</a></li>
+<li><a class="reference internal" href="#conversion-vers-dautres-objets-python">2.1.6. Conversion vers d’autres objets Python</a></li>
+<li><a class="reference internal" href="#resume">2.1.7. Résumé</a></li>
+<li><a class="reference internal" href="#exercices">2.1.8. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="index.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>2. Préliminaires</div>
+         </div>
+     </a>
+     <a id="button-next" href="pandas.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>2.2. Prétraitement des données</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>
