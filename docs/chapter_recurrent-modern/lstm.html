@@ -1,0 +1,510 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Long Short-Term Memory (LSTM) - Dive into Deep Learning FR</title><link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid #d8dee4;padding:24px 18px;background:#f6f8fa;position:sticky;top:0;height:100vh;overflow:auto}.sidebar h1{font-size:16px;margin:0 0 16px}.sidebar ol{padding-left:22px;line-height:1.55}.sidebar a,.navlinks a{color:#245a9c;text-decoration:none}.sidebar .current>a{font-weight:700}.content{max-width:980px;padding:32px 44px 56px}.navlinks{display:flex;justify-content:space-between;gap:20px;margin:28px 0}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}img{max-width:100%;height:auto}@media(max-width:760px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid #d8dee4}.content{padding:24px 18px 42px}}</style><link rel="stylesheet" href="../_static/d2l-fr-theme.css" type="text/css" /><script src="../_static/d2l-fr-theme.js"></script></head><body><div class="layout"><nav class="sidebar"><h1><a href="../index.html">D2L français</a></h1><ol><li><a href="index.html">Réseaux de neurones récurrents modernes</a></li>
+<li class="current"><a href="lstm.html">Long Short-Term Memory (LSTM)</a></li>
+<li><a href="gru.html">Unités récurrentes à porte (GRU)</a></li>
+<li><a href="deep-rnn.html">Réseaux de neurones récurrents profonds</a></li>
+<li><a href="bi-rnn.html">Réseaux de neurones récurrents bidirectionnels</a></li>
+<li><a href="machine-translation-and-dataset.html">Traduction automatique et jeu de données</a></li>
+<li><a href="encoder-decoder.html">L&#x27;architecture encodeur-décodeur</a></li>
+<li><a href="seq2seq.html">Apprentissage séquence à séquence pour la traduction automatique</a></li>
+<li><a href="beam-search.html">Recherche en faisceau</a></li></ol></nav><main class="content"><div class="navlinks"><a class="prev" href="index.html">&larr; Réseaux de neurones récurrents modernes</a><a class="next" href="gru.html">Unités récurrentes à porte (GRU) &rarr;</a></div><h1 id="long-short-term-memory-lstm">Long Short-Term Memory (LSTM)</h1>
+<p><a id="sec_lstm"></a> Peu de temps après que les premiers RNN de type
+Elman aient été entraînés par rétropropagation [elman1990finding], les
+problèmes d’apprentissage des dépendances à long terme (dus à la
+disparition et à l’explosion du gradient) sont devenus marquants, Bengio
+et Hochreiter discutant du problème
+[bengio1994learning,Hochreiter.Bengio.Frasconi.ea.2001]. Hochreiter
+avait articulé ce problème dès 1991 dans sa thèse de maîtrise, bien que
+les résultats n’aient pas été largement connus car la thèse était écrite
+en allemand. Alors que l’écrêtage du gradient aide à résoudre
+l’explosion du gradient, la gestion de la disparition du gradient semble
+nécessiter une solution plus élaborée. L’une des premières et des plus
+réussies techniques pour traiter la disparition du gradient est apparue
+sous la forme du modèle de mémoire à long et court terme (LSTM) grâce à
+[Hochreiter.Schmidhuber.1997]. Les LSTM ressemblent aux réseaux de
+neurones récurrents standard, mais ici chaque nœud récurrent ordinaire
+est remplacé par une <em>cellule de mémoire</em>. Chaque cellule de
+mémoire contient un <em>état interne</em>, c’est-à-dire un nœud avec une
+arête récurrente auto-connectée de poids fixe 1, garantissant que le
+gradient peut traverser de nombreux pas de temps sans disparaître ni
+exploser.</p>
+<p>Le terme « long short-term memory » vient de l’intuition suivante.
+Les réseaux de neurones récurrents simples ont une <em>mémoire à long
+terme</em> sous la forme de poids. Les poids changent lentement pendant
+l’entraînement, encodant des connaissances générales sur les données.
+Ils ont également une <em>mémoire à court terme</em> sous la forme
+d’activations éphémères, qui passent de chaque nœud aux nœuds
+successifs. Le modèle LSTM introduit un type de stockage intermédiaire
+via la cellule de mémoire. Une cellule de mémoire est une unité
+composite, construite à partir de nœuds plus simples selon un motif de
+connectivité spécifique, avec l’inclusion nouvelle de nœuds
+multiplicatifs.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> np, npx</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet.gluon <span class="im">import</span> rnn</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flax <span class="im">import</span> linen <span class="im">as</span> nn</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span></code></pre></div>
+<h2 id="cellule-de-mémoire-à-portes">Cellule de mémoire à portes</h2>
+<p>Chaque cellule de mémoire est équipée d’un <em>état interne</em> et
+d’un certain nombre de portes multiplicatives qui déterminent si (i) une
+entrée donnée doit impacter l’état interne (la <em>porte d’entrée</em>),
+(ii) l’état interne doit être vidé à <span
+class="math inline">\(0\)</span> (la <em>porte d’oubli</em>), et (iii)
+l’état interne d’un neurone donné doit être autorisé à impacter la
+sortie de la cellule (la <em>porte de sortie</em>).</p>
+<h3 id="état-caché-à-portes">État caché à portes</h3>
+<p>La distinction clé entre les RNN classiques et les LSTM est que ces
+derniers prennent en charge la gestion par portes de l’état caché. Cela
+signifie que nous avons des mécanismes dédiés pour déterminer quand un
+état caché doit être <em>mis à jour</em> et aussi quand il doit être
+<em>réinitialisé</em>. Ces mécanismes sont appris et ils répondent aux
+préoccupations énumérées ci-dessus. Par exemple, si le premier jeton est
+d’une grande importance, nous apprendrons à ne pas mettre à jour l’état
+caché après la première observation. De même, nous apprendrons à sauter
+les observations temporaires non pertinentes. Enfin, nous apprendrons à
+réinitialiser l’état latent chaque fois que nécessaire. Nous en
+discutons en détail ci-dessous.</p>
+<h3 id="porte-dentrée-porte-doubli-et-porte-de-sortie">Porte d’entrée,
+porte d’oubli et porte de sortie</h3>
+<p>Les données alimentant les portes LSTM sont l’entrée au pas de temps
+actuel et l’état caché du pas de temps précédent, comme illustré dans la
+fig_lstm_0. Trois couches entièrement connectées avec des fonctions
+d’activation sigmoïde calculent les valeurs des portes d’entrée, d’oubli
+et de sortie. En raison de l’activation sigmoïde, toutes les valeurs des
+trois portes sont comprises dans l’intervalle <span
+class="math inline">\((0, 1)\)</span>. De plus, nous avons besoin d’un
+<em>nœud d’entrée</em>, généralement calculé avec une fonction
+d’activation <em>tanh</em>. Intérieurement, la <em>porte d’entrée</em>
+détermine quelle part de la valeur du nœud d’entrée doit être ajoutée à
+l’état interne actuel de la cellule de mémoire. La <em>porte
+d’oubli</em> détermine s’il faut conserver la valeur actuelle de la
+mémoire ou la vider. Et la <em>porte de sortie</em> détermine si la
+cellule de mémoire doit influencer la sortie au pas de temps actuel.</p>
+<p><img src="img/lstm-0.svg"
+alt="Calcul de la porte d’entrée, de la porte d’oubli et de la porte de sortie dans un modèle LSTM." />
+<a id="fig_lstm_0"></a> Mathématiquement, supposons qu’il y ait <span
+class="math inline">\(h\)</span> unités cachées, la taille du lot est
+<span class="math inline">\(n\)</span> et le nombre d’entrées est <span
+class="math inline">\(d\)</span>. Ainsi, l’entrée est <span
+class="math inline">\(\mathbf{X}_t \in \mathbb{R}^{n \times d}\)</span>
+et l’état caché du pas de temps précédent est <span
+class="math inline">\(\mathbf{H}_{t-1} \in \mathbb{R}^{n \times
+h}\)</span>. En correspondance, les portes au pas de temps <span
+class="math inline">\(t\)</span> sont définies comme suit : la porte
+d’entrée est <span class="math inline">\(\mathbf{I}_t \in \mathbb{R}^{n
+\times h}\)</span>, la porte d’oubli est <span
+class="math inline">\(\mathbf{F}_t \in \mathbb{R}^{n \times h}\)</span>
+et la porte de sortie est <span class="math inline">\(\mathbf{O}_t \in
+\mathbb{R}^{n \times h}\)</span>. Elles sont calculées comme suit :</p>
+<p><span class="math display">\[
+\begin{aligned}
+\mathbf{I}_t &amp;= \sigma(\mathbf{X}_t \mathbf{W}_{\textrm{xi}} +
+\mathbf{H}_{t-1} \mathbf{W}_{\textrm{hi}} + \mathbf{b}_\textrm{i}),\\
+\mathbf{F}_t &amp;= \sigma(\mathbf{X}_t \mathbf{W}_{\textrm{xf}} +
+\mathbf{H}_{t-1} \mathbf{W}_{\textrm{hf}} + \mathbf{b}_\textrm{f}),\\
+\mathbf{O}_t &amp;= \sigma(\mathbf{X}_t \mathbf{W}_{\textrm{xo}} +
+\mathbf{H}_{t-1} \mathbf{W}_{\textrm{ho}} + \mathbf{b}_\textrm{o}),
+\end{aligned}
+\]</span></p>
+<p>où <span class="math inline">\(\mathbf{W}_{\textrm{xi}},
+\mathbf{W}_{\textrm{xf}}, \mathbf{W}_{\textrm{xo}} \in \mathbb{R}^{d
+\times h}\)</span> et <span
+class="math inline">\(\mathbf{W}_{\textrm{hi}},
+\mathbf{W}_{\textrm{hf}}, \mathbf{W}_{\textrm{ho}} \in \mathbb{R}^{h
+\times h}\)</span> sont des paramètres de poids et <span
+class="math inline">\(\mathbf{b}_\textrm{i}, \mathbf{b}_\textrm{f},
+\mathbf{b}_\textrm{o} \in \mathbb{R}^{1 \times h}\)</span> sont des
+paramètres de biais. Notez que la diffusion (broadcasting, voir la
+subsec_broadcasting) est déclenchée lors de la sommation. Nous utilisons
+des fonctions sigmoïdes (telles qu’introduites dans la sec_mlp) pour
+projeter les valeurs d’entrée dans l’intervalle <span
+class="math inline">\((0, 1)\)</span>.</p>
+<h3 id="nœud-dentrée">Nœud d’entrée</h3>
+<p>Ensuite, nous concevons la cellule de mémoire. Comme nous n’avons pas
+encore spécifié l’action des diverses portes, nous introduisons d’abord
+le <em>nœud d’entrée</em> <span
+class="math inline">\(\tilde{\mathbf{C}}_t \in \mathbb{R}^{n \times
+h}\)</span>. Son calcul est similaire à celui des trois portes décrites
+ci-dessus, mais il utilise une fonction <span
+class="math inline">\(\tanh\)</span> avec une plage de valeurs de <span
+class="math inline">\((-1, 1)\)</span> comme fonction d’activation. Cela
+conduit à l’équation suivante au pas de temps <span
+class="math inline">\(t\)</span> :</p>
+<p><span class="math display">\[\tilde{\mathbf{C}}_t =
+\textrm{tanh}(\mathbf{X}_t \mathbf{W}_{\textrm{xc}} + \mathbf{H}_{t-1}
+\mathbf{W}_{\textrm{hc}} + \mathbf{b}_\textrm{c}),\]</span></p>
+<p>où <span class="math inline">\(\mathbf{W}_{\textrm{xc}} \in
+\mathbb{R}^{d \times h}\)</span> et <span
+class="math inline">\(\mathbf{W}_{\textrm{hc}} \in \mathbb{R}^{h \times
+h}\)</span> sont des paramètres de poids et <span
+class="math inline">\(\mathbf{b}_\textrm{c} \in \mathbb{R}^{1 \times
+h}\)</span> est un paramètre de biais.</p>
+<p>Une illustration rapide du nœud d’entrée est présentée dans la
+fig_lstm_1.</p>
+<p><img src="img/lstm-1.svg"
+alt="Calcul du nœud d’entrée dans un modèle LSTM." />
+<a id="fig_lstm_1"></a> ### État interne de la cellule de mémoire</p>
+<p>Dans les LSTM, la porte d’entrée <span
+class="math inline">\(\mathbf{I}_t\)</span> régit la part des nouvelles
+données prises en compte via <span
+class="math inline">\(\tilde{\mathbf{C}}_t\)</span> et la porte d’oubli
+<span class="math inline">\(\mathbf{F}_t\)</span> traite la part de
+l’ancien état interne de la cellule <span
+class="math inline">\(\mathbf{C}_{t-1} \in \mathbb{R}^{n \times
+h}\)</span> conservée. En utilisant l’opérateur de produit de Hadamard
+(élément par élément) <span class="math inline">\(\odot\)</span>, nous
+arrivons à l’équation de mise à jour suivante :</p>
+<p><span class="math display">\[\mathbf{C}_t = \mathbf{F}_t \odot
+\mathbf{C}_{t-1} + \mathbf{I}_t \odot \tilde{\mathbf{C}}_t.\]</span></p>
+<p>Si la porte d’oubli est toujours à 1 et la porte d’entrée toujours à
+0, l’état interne de la cellule de mémoire <span
+class="math inline">\(\mathbf{C}_{t-1}\)</span> restera constant
+éternellement, passant inchangé à chaque pas de temps suivant.
+Cependant, les portes d’entrée et d’oubli donnent au modèle la
+flexibilité de pouvoir apprendre quand garder cette valeur inchangée et
+quand la perturber en réponse aux entrées ultérieures. En pratique,
+cette conception atténue le problème de la disparition du gradient, ce
+qui donne des modèles beaucoup plus faciles à entraîner, en particulier
+face à des jeux de données avec de grandes longueurs de séquence.</p>
+<p>Nous arrivons ainsi au diagramme de flux de la fig_lstm_2.</p>
+<figure>
+<img src="img/lstm-2.svg"
+alt="Calcul de l’état interne de la cellule de mémoire dans un modèle LSTM." />
+<figcaption aria-hidden="true">Calcul de l’état interne de la cellule de
+mémoire dans un modèle LSTM.</figcaption>
+</figure>
+<p><a id="fig_lstm_2"></a> ### État caché</p>
+<p>Enfin, nous devons définir comment calculer la sortie de la cellule
+de mémoire, c’est-à-dire l’état caché <span
+class="math inline">\(\mathbf{H}_t \in \mathbb{R}^{n \times h}\)</span>,
+tel qu’il est vu par les autres couches. C’est là que la porte de sortie
+entre en jeu. Dans les LSTM, nous appliquons d’abord <span
+class="math inline">\(\tanh\)</span> à l’état interne de la cellule de
+mémoire et puis nous appliquons une autre multiplication point à point,
+cette fois avec la porte de sortie. Cela garantit que les valeurs de
+<span class="math inline">\(\mathbf{H}_t\)</span> sont toujours dans
+l’intervalle <span class="math inline">\((-1, 1)\)</span> :</p>
+<p><span class="math display">\[\mathbf{H}_t = \mathbf{O}_t \odot
+\tanh(\mathbf{C}_t).\]</span></p>
+<p>Chaque fois que la porte de sortie est proche de 1, nous permettons à
+l’état interne de la cellule de mémoire d’impacter les couches suivantes
+sans inhibition, tandis que pour les valeurs de la porte de sortie
+proches de 0, nous empêchons la mémoire actuelle d’impacter les autres
+couches du réseau au pas de temps actuel. Notez qu’une cellule de
+mémoire peut accumuler des informations sur de nombreux pas de temps
+sans impacter le reste du réseau (tant que la porte de sortie prend des
+valeurs proches de 0), et puis impacter soudainement le réseau à un pas
+de temps ultérieur dès que la porte de sortie passe de valeurs proches
+de 0 à des valeurs proches de 1. La fig_lstm_3 présente une illustration
+graphique du flux de données.</p>
+<p><img src="img/lstm-3.svg"
+alt="Calcul de l’état caché dans un modèle LSTM." />
+<a id="fig_lstm_3"></a> ## Implémentation à partir de zéro</p>
+<p>Implémentons maintenant un LSTM à partir de zéro. Comme pour les
+expériences de la sec_rnn-scratch, nous chargeons d’abord le jeu de
+données <em>The Time Machine</em>.</p>
+<h3 id="initialisation-des-paramètres-du-modèle"><strong>Initialisation
+des paramètres du modèle</strong></h3>
+<p>Ensuite, nous devons définir et initialiser les paramètres du modèle.
+Comme précédemment, l’hyperparamètre <code>num_hiddens</code> dicte le
+nombre d’unités cachées. Nous initialisons les poids suivant une
+distribution gaussienne avec un écart-type de 0,01, et nous fixons les
+biais à 0.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LSTMScratch(d2l.Module):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_inputs, num_hiddens, sigma<span class="op">=</span><span class="fl">0.01</span>):</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>            init_weight <span class="op">=</span> <span class="kw">lambda</span> <span class="op">*</span>shape: d2l.randn(<span class="op">*</span>shape) <span class="op">*</span> sigma</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>            triple <span class="op">=</span> <span class="kw">lambda</span>: (init_weight(num_inputs, num_hiddens),</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                              init_weight(num_hiddens, num_hiddens),</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                              d2l.zeros(num_hiddens))</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            init_weight <span class="op">=</span> <span class="kw">lambda</span> <span class="op">*</span>shape: nn.Parameter(d2l.randn(<span class="op">*</span>shape) <span class="op">*</span> sigma)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            triple <span class="op">=</span> <span class="kw">lambda</span>: (init_weight(num_inputs, num_hiddens),</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                              init_weight(num_hiddens, num_hiddens),</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>                              nn.Parameter(d2l.zeros(num_hiddens)))</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>            init_weight <span class="op">=</span> <span class="kw">lambda</span> <span class="op">*</span>shape: tf.Variable(d2l.normal(shape) <span class="op">*</span> sigma)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>            triple <span class="op">=</span> <span class="kw">lambda</span>: (init_weight(num_inputs, num_hiddens),</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>                              init_weight(num_hiddens, num_hiddens),</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>                              tf.Variable(d2l.zeros(num_hiddens)))</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W_xi, <span class="va">self</span>.W_hi, <span class="va">self</span>.b_i <span class="op">=</span> triple()  <span class="co"># Input gate</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W_xf, <span class="va">self</span>.W_hf, <span class="va">self</span>.b_f <span class="op">=</span> triple()  <span class="co"># Forget gate</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W_xo, <span class="va">self</span>.W_ho, <span class="va">self</span>.b_o <span class="op">=</span> triple()  <span class="co"># Output gate</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W_xc, <span class="va">self</span>.W_hc, <span class="va">self</span>.b_c <span class="op">=</span> triple()  <span class="co"># Input node</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LSTMScratch(d2l.Module):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    num_inputs: <span class="bu">int</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    num_hiddens: <span class="bu">int</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    sigma: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.01</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> setup(<span class="va">self</span>):</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        init_weight <span class="op">=</span> <span class="kw">lambda</span> name, shape: <span class="va">self</span>.param(name,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>                                                     nn.initializers.normal(<span class="va">self</span>.sigma),</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>                                                     shape)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        triple <span class="op">=</span> <span class="kw">lambda</span> name : (</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>            init_weight(<span class="ss">f&#39;W_x</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">&#39;</span>, (<span class="va">self</span>.num_inputs, <span class="va">self</span>.num_hiddens)),</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>            init_weight(<span class="ss">f&#39;W_h</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">&#39;</span>, (<span class="va">self</span>.num_hiddens, <span class="va">self</span>.num_hiddens)),</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.param(<span class="ss">f&#39;b_</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">&#39;</span>, nn.initializers.zeros, (<span class="va">self</span>.num_hiddens)))</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W_xi, <span class="va">self</span>.W_hi, <span class="va">self</span>.b_i <span class="op">=</span> triple(<span class="st">&#39;i&#39;</span>)  <span class="co"># Input gate</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W_xf, <span class="va">self</span>.W_hf, <span class="va">self</span>.b_f <span class="op">=</span> triple(<span class="st">&#39;f&#39;</span>)  <span class="co"># Forget gate</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W_xo, <span class="va">self</span>.W_ho, <span class="va">self</span>.b_o <span class="op">=</span> triple(<span class="st">&#39;o&#39;</span>)  <span class="co"># Output gate</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W_xc, <span class="va">self</span>.W_hc, <span class="va">self</span>.b_c <span class="op">=</span> triple(<span class="st">&#39;c&#39;</span>)  <span class="co"># Input node</span></span></code></pre></div>
+<p>:begin_tab:<code>pytorch, mxnet, tensorflow</code> <strong>Le modèle
+réel</strong> est défini comme décrit ci-dessus, consistant en trois
+portes et un nœud d’entrée. Notez que seul l’état caché est passé à la
+couche de sortie. :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <strong>Le modèle réel</strong> est
+défini comme décrit ci-dessus, consistant en trois portes et un nœud
+d’entrée. Notez que seul l’état caché est passé à la couche de sortie.
+Une longue boucle for dans la méthode <code>forward</code> entraînera un
+temps de compilation JIT extrêmement long pour la première exécution.
+Pour remédier à cela, au lieu d’utiliser une boucle for pour mettre à
+jour l’état à chaque pas de temps, JAX dispose de la transformation
+utilitaire <code>jax.lax.scan</code> pour obtenir le même comportement.
+Elle prend un état initial appelé <code>carry</code> et un tableau
+<code>inputs</code> qui est balayé sur son axe principal. La
+transformation <code>scan</code> renvoie finalement l’état final et les
+sorties empilées comme prévu. :end_tab:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch, mxnet, tensorflow</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(LSTMScratch)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> forward(<span class="va">self</span>, inputs, H_C<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> H_C <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Initial state with shape: (batch_size, num_hiddens)</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>):</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            H <span class="op">=</span> d2l.zeros((inputs.shape[<span class="dv">1</span>], <span class="va">self</span>.num_hiddens),</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>                          ctx<span class="op">=</span>inputs.ctx)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>            C <span class="op">=</span> d2l.zeros((inputs.shape[<span class="dv">1</span>], <span class="va">self</span>.num_hiddens),</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>                          ctx<span class="op">=</span>inputs.ctx)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>            H <span class="op">=</span> d2l.zeros((inputs.shape[<span class="dv">1</span>], <span class="va">self</span>.num_hiddens),</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>                          device<span class="op">=</span>inputs.device)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>            C <span class="op">=</span> d2l.zeros((inputs.shape[<span class="dv">1</span>], <span class="va">self</span>.num_hiddens),</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>                          device<span class="op">=</span>inputs.device)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>            H <span class="op">=</span> d2l.zeros((inputs.shape[<span class="dv">1</span>], <span class="va">self</span>.num_hiddens))</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>            C <span class="op">=</span> d2l.zeros((inputs.shape[<span class="dv">1</span>], <span class="va">self</span>.num_hiddens))</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>        H, C <span class="op">=</span> H_C</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    outputs <span class="op">=</span> []</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> X <span class="kw">in</span> inputs:</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>        I <span class="op">=</span> d2l.sigmoid(d2l.matmul(X, <span class="va">self</span>.W_xi) <span class="op">+</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>                        d2l.matmul(H, <span class="va">self</span>.W_hi) <span class="op">+</span> <span class="va">self</span>.b_i)</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>        F <span class="op">=</span> d2l.sigmoid(d2l.matmul(X, <span class="va">self</span>.W_xf) <span class="op">+</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>                        d2l.matmul(H, <span class="va">self</span>.W_hf) <span class="op">+</span> <span class="va">self</span>.b_f)</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        O <span class="op">=</span> d2l.sigmoid(d2l.matmul(X, <span class="va">self</span>.W_xo) <span class="op">+</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>                        d2l.matmul(H, <span class="va">self</span>.W_ho) <span class="op">+</span> <span class="va">self</span>.b_o)</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>        C_tilde <span class="op">=</span> d2l.tanh(d2l.matmul(X, <span class="va">self</span>.W_xc) <span class="op">+</span></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>                           d2l.matmul(H, <span class="va">self</span>.W_hc) <span class="op">+</span> <span class="va">self</span>.b_c)</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>        C <span class="op">=</span> F <span class="op">*</span> C <span class="op">+</span> I <span class="op">*</span> C_tilde</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>        H <span class="op">=</span> O <span class="op">*</span> d2l.tanh(C)</span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>        outputs.append(H)</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> outputs, (H, C)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(LSTMScratch)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> forward(<span class="va">self</span>, inputs, H_C<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Use lax.scan primitive instead of looping over the</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># inputs, since scan saves time in jit compilation.</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> scan_fn(carry, X):</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        H, C <span class="op">=</span> carry</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>        I <span class="op">=</span> d2l.sigmoid(d2l.matmul(X, <span class="va">self</span>.W_xi) <span class="op">+</span> (</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>            d2l.matmul(H, <span class="va">self</span>.W_hi)) <span class="op">+</span> <span class="va">self</span>.b_i)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        F <span class="op">=</span> d2l.sigmoid(d2l.matmul(X, <span class="va">self</span>.W_xf) <span class="op">+</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>                        d2l.matmul(H, <span class="va">self</span>.W_hf) <span class="op">+</span> <span class="va">self</span>.b_f)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        O <span class="op">=</span> d2l.sigmoid(d2l.matmul(X, <span class="va">self</span>.W_xo) <span class="op">+</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>                        d2l.matmul(H, <span class="va">self</span>.W_ho) <span class="op">+</span> <span class="va">self</span>.b_o)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        C_tilde <span class="op">=</span> d2l.tanh(d2l.matmul(X, <span class="va">self</span>.W_xc) <span class="op">+</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>                           d2l.matmul(H, <span class="va">self</span>.W_hc) <span class="op">+</span> <span class="va">self</span>.b_c)</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>        C <span class="op">=</span> F <span class="op">*</span> C <span class="op">+</span> I <span class="op">*</span> C_tilde</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>        H <span class="op">=</span> O <span class="op">*</span> d2l.tanh(C)</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (H, C), H  <span class="co"># return carry, y</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> H_C <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>        batch_size <span class="op">=</span> inputs.shape[<span class="dv">1</span>]</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>        carry <span class="op">=</span> jnp.zeros((batch_size, <span class="va">self</span>.num_hiddens)), <span class="op">\</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>                jnp.zeros((batch_size, <span class="va">self</span>.num_hiddens))</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        carry <span class="op">=</span> H_C</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># scan takes the scan_fn, initial carry state, xs with leading axis to be scanned</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    carry, outputs <span class="op">=</span> jax.lax.scan(scan_fn, carry, inputs)</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> outputs, carry</span></code></pre></div>
+<h3 id="entraînement-et-prédiction"><strong>Entraînement</strong> et
+prédiction</h3>
+<p>Entraînons un modèle LSTM en instanciant la classe
+<code>RNNLMScratch</code> de la sec_rnn-scratch.</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.TimeMachine(batch_size<span class="op">=</span><span class="dv">1024</span>, num_steps<span class="op">=</span><span class="dv">32</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;jax&#39;</span>):</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    lstm <span class="op">=</span> LSTMScratch(num_inputs<span class="op">=</span><span class="bu">len</span>(data.vocab), num_hiddens<span class="op">=</span><span class="dv">32</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    model <span class="op">=</span> d2l.RNNLMScratch(lstm, vocab_size<span class="op">=</span><span class="bu">len</span>(data.vocab), lr<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">50</span>, gradient_clip_val<span class="op">=</span><span class="dv">1</span>, num_gpus<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> d2l.try_gpu():</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        lstm <span class="op">=</span> LSTMScratch(num_inputs<span class="op">=</span><span class="bu">len</span>(data.vocab), num_hiddens<span class="op">=</span><span class="dv">32</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>        model <span class="op">=</span> d2l.RNNLMScratch(lstm, vocab_size<span class="op">=</span><span class="bu">len</span>(data.vocab), lr<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">50</span>, gradient_clip_val<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>trainer.fit(model, data)</span></code></pre></div>
+<h2 id="implémentation-concise"><strong>Implémentation
+concise</strong></h2>
+<p>À l’aide d’API de haut niveau, nous pouvons instancier directement un
+modèle LSTM. Cela encapsule tous les détails de configuration que nous
+avons explicités ci-dessus. Le code est nettement plus rapide car il
+utilise des opérateurs compilés plutôt que Python pour de nombreux
+détails que nous avons détaillés auparavant.</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LSTM(d2l.RNN):</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_hiddens):</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        d2l.Module.<span class="fu">__init__</span>(<span class="va">self</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.rnn <span class="op">=</span> rnn.LSTM(num_hiddens)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, inputs, H_C<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> H_C <span class="kw">is</span> <span class="va">None</span>: H_C <span class="op">=</span> <span class="va">self</span>.rnn.begin_state(</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>            inputs.shape[<span class="dv">1</span>], ctx<span class="op">=</span>inputs.ctx)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.rnn(inputs, H_C)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LSTM(d2l.RNN):</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_inputs, num_hiddens):</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        d2l.Module.<span class="fu">__init__</span>(<span class="va">self</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.rnn <span class="op">=</span> nn.LSTM(num_inputs, num_hiddens)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, inputs, H_C<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.rnn(inputs, H_C)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LSTM(d2l.RNN):</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_hiddens):</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>        d2l.Module.<span class="fu">__init__</span>(<span class="va">self</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.rnn <span class="op">=</span> tf.keras.layers.LSTM(</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>                num_hiddens, return_sequences<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                return_state<span class="op">=</span><span class="va">True</span>, time_major<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, inputs, H_C<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        outputs, <span class="op">*</span>H_C <span class="op">=</span> <span class="va">self</span>.rnn(inputs, H_C)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> outputs, H_C</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LSTM(d2l.RNN):</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    num_hiddens: <span class="bu">int</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">@nn.compact</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, inputs, H_C<span class="op">=</span><span class="va">None</span>, training<span class="op">=</span><span class="va">False</span>):</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> H_C <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>            batch_size <span class="op">=</span> inputs.shape[<span class="dv">1</span>]</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>            H_C <span class="op">=</span> nn.OptimizedLSTMCell.initialize_carry(jax.random.PRNGKey(<span class="dv">0</span>),</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>                                                        (batch_size,),</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>                                                        <span class="va">self</span>.num_hiddens)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>        LSTM <span class="op">=</span> nn.scan(nn.OptimizedLSTMCell, variable_broadcast<span class="op">=</span><span class="st">&quot;params&quot;</span>,</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>                       in_axes<span class="op">=</span><span class="dv">0</span>, out_axes<span class="op">=</span><span class="dv">0</span>, split_rngs<span class="op">=</span>{<span class="st">&quot;params&quot;</span>: <span class="va">False</span>})</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>        H_C, outputs <span class="op">=</span> LSTM()(H_C, inputs)</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> outputs, H_C</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>):</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    lstm <span class="op">=</span> LSTM(num_inputs<span class="op">=</span><span class="bu">len</span>(data.vocab), num_hiddens<span class="op">=</span><span class="dv">32</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>):</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    lstm <span class="op">=</span> LSTM(num_hiddens<span class="op">=</span><span class="dv">32</span>)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;jax&#39;</span>):</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    model <span class="op">=</span> d2l.RNNLM(lstm, vocab_size<span class="op">=</span><span class="bu">len</span>(data.vocab), lr<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> d2l.try_gpu():</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        model <span class="op">=</span> d2l.RNNLM(lstm, vocab_size<span class="op">=</span><span class="bu">len</span>(data.vocab), lr<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>trainer.fit(model, data)</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>model.predict(<span class="st">&#39;it has&#39;</span>, <span class="dv">20</span>, data.vocab, d2l.try_gpu())</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>model.predict(<span class="st">&#39;it has&#39;</span>, <span class="dv">20</span>, data.vocab)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>model.predict(<span class="st">&#39;it has&#39;</span>, <span class="dv">20</span>, data.vocab, trainer.state.params)</span></code></pre></div>
+<p>Les LSTM sont le modèle autorégressif à variables latentes
+prototypique avec un contrôle d’état non trivial. De nombreuses
+variantes de celui-ci ont été proposées au fil des ans, par exemple,
+plusieurs couches, des connexions résiduelles, différents types de
+régularisation. Cependant, l’entraînement des LSTM et d’autres modèles
+de séquence (tels que les GRU) est assez coûteux en raison de la
+dépendance à longue portée de la séquence. Plus tard, nous rencontrerons
+des modèles alternatifs tels que les Transformers qui peuvent être
+utilisés dans certains cas.</p>
+<h2 id="résumé">Résumé</h2>
+<p>Bien que les LSTM aient été publiés en 1997, ils ont acquis une
+grande importance avec certaines victoires dans des compétitions de
+prédiction au milieu des années 2000, et sont devenus les modèles
+dominants pour l’apprentissage de séquences de 2011 jusqu’à l’essor des
+modèles Transformer, à partir de 2017. Même les Transformers doivent
+certaines de leurs idées clés aux innovations de conception
+d’architecture introduites par le LSTM.</p>
+<p>Les LSTM ont trois types de portes : les portes d’entrée, d’oubli et
+de sortie qui contrôlent le flux d’informations. La sortie de la couche
+cachée du LSTM comprend l’état caché et l’état interne de la cellule de
+mémoire. Seul l’état caché est passé dans la couche de sortie tandis que
+l’état interne de la cellule de mémoire reste entièrement interne. Les
+LSTM peuvent atténuer la disparition et l’explosion du gradient.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Ajustez les hyperparamètres et analysez leur influence sur le temps
+d’exécution, la perplexité et la séquence de sortie.</li>
+<li>Comment devriez-vous modifier le modèle pour générer des mots
+entiers plutôt que de simples séquences de caractères ?</li>
+<li>Comparez le coût de calcul des GRU, des LSTM et des RNN classiques
+pour une dimension cachée donnée. Portez une attention particulière au
+coût d’entraînement et d’inférence.</li>
+<li>Étant donné que la cellule de mémoire candidate garantit que la
+plage de valeurs est comprise entre <span
+class="math inline">\(-1\)</span> et <span
+class="math inline">\(1\)</span> en utilisant la fonction <span
+class="math inline">\(\tanh\)</span>, pourquoi l’état caché doit-il
+utiliser à nouveau la fonction <span
+class="math inline">\(\tanh\)</span> pour garantir que la plage de
+valeurs de sortie est comprise entre <span
+class="math inline">\(-1\)</span> et <span
+class="math inline">\(1\)</span> ?</li>
+<li>Implémentez un modèle LSTM pour la prédiction de séries temporelles
+plutôt que pour la prédiction de séquences de caractères.</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/343">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/1057">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/3861">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/18016">Discussions</a> :end_tab:</p>
+<div class="navlinks"><a class="prev" href="index.html">&larr; Réseaux de neurones récurrents modernes</a><a class="next" href="gru.html">Unités récurrentes à porte (GRU) &rarr;</a></div></main></div></body></html>

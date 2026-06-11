@@ -30,4 +30,5 @@ chapter_builders-guide/index
 chapter_convolutional-neural-networks/index
 chapter_convolutional-modern/index
 chapter_recurrent-neural-networks/index
+chapter_recurrent-modern/index
 ```

@@ -23,6 +23,7 @@ Traduit en français :
 - Réseaux de neurones convolutifs (`chapter_convolutional-neural-networks/*.md`)
 - Réseaux de neurones convolutifs modernes (`chapter_convolutional-modern/*.md`)
 - Réseaux de neurones récurrents (`chapter_recurrent-neural-networks/*.md`)
+- Réseaux de neurones récurrents modernes (`chapter_recurrent-modern/*.md`)
 
 La traduction complète reste à poursuivre chapitre par chapitre avec des agents Gemini, en conservant le code, les équations, les labels, les références internes et la structure D2L-Book.
 

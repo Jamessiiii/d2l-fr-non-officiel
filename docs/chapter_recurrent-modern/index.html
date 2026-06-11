@@ -1,0 +1,57 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Réseaux de neurones récurrents modernes - Dive into Deep Learning FR</title><link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid #d8dee4;padding:24px 18px;background:#f6f8fa;position:sticky;top:0;height:100vh;overflow:auto}.sidebar h1{font-size:16px;margin:0 0 16px}.sidebar ol{padding-left:22px;line-height:1.55}.sidebar a,.navlinks a{color:#245a9c;text-decoration:none}.sidebar .current>a{font-weight:700}.content{max-width:980px;padding:32px 44px 56px}.navlinks{display:flex;justify-content:space-between;gap:20px;margin:28px 0}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}img{max-width:100%;height:auto}@media(max-width:760px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid #d8dee4}.content{padding:24px 18px 42px}}</style><link rel="stylesheet" href="../_static/d2l-fr-theme.css" type="text/css" /><script src="../_static/d2l-fr-theme.js"></script></head><body><div class="layout"><nav class="sidebar"><h1><a href="../index.html">D2L français</a></h1><ol><li class="current"><a href="index.html">Réseaux de neurones récurrents modernes</a></li>
+<li><a href="lstm.html">Long Short-Term Memory (LSTM)</a></li>
+<li><a href="gru.html">Unités récurrentes à porte (GRU)</a></li>
+<li><a href="deep-rnn.html">Réseaux de neurones récurrents profonds</a></li>
+<li><a href="bi-rnn.html">Réseaux de neurones récurrents bidirectionnels</a></li>
+<li><a href="machine-translation-and-dataset.html">Traduction automatique et jeu de données</a></li>
+<li><a href="encoder-decoder.html">L&#x27;architecture encodeur-décodeur</a></li>
+<li><a href="seq2seq.html">Apprentissage séquence à séquence pour la traduction automatique</a></li>
+<li><a href="beam-search.html">Recherche en faisceau</a></li></ol></nav><main class="content"><div class="navlinks"><a class="next" href="lstm.html">Long Short-Term Memory (LSTM) &rarr;</a></div><h1 id="réseaux-de-neurones-récurrents-modernes">Réseaux de neurones
+récurrents modernes</h1>
+<p><a id="chap_modern_rnn"></a> Le chapitre précédent a introduit les
+idées clés des réseaux de neurones récurrents (RNN). Cependant, tout
+comme pour les réseaux de neurones convolutifs, il y a eu énormément
+d’innovations dans les architectures de RNN, aboutissant à plusieurs
+conceptions complexes qui ont fait leurs preuves en pratique. En
+particulier, les conceptions les plus populaires comportent des
+mécanismes pour atténuer la fameuse instabilité numérique à laquelle
+sont confrontés les RNN, typifiée par l’évanescence et l’explosion du
+gradient. Rappelons que dans le chap_rnn, nous avons traité l’explosion
+du gradient en appliquant une heuristique brute d’écrêtage du gradient.
+Malgré l’efficacité de ce “hack”, cela laisse entier le problème de
+l’évanescence du gradient.</p>
+<p>Dans ce chapitre, nous introduisons les idées clés derrière les
+architectures de RNN les plus réussies pour les séquences, issues de
+deux articles. Le premier, <em>Long Short-Term Memory</em>
+[Hochreiter.Schmidhuber.1997], introduit la <em>cellule mémoire</em>,
+une unité de calcul qui remplace les nœuds traditionnels dans la couche
+cachée d’un réseau. Grâce à ces cellules mémoire, les réseaux sont
+capables de surmonter les difficultés d’entraînement rencontrées par les
+réseaux récurrents antérieurs. Intuitivement, la cellule mémoire évite
+le problème de l’évanescence du gradient en conservant les valeurs de
+l’état interne de chaque cellule mémoire en cascade le long d’une arête
+récurrente de poids 1 sur de nombreux pas de temps successifs. Un
+ensemble de portes multiplicatives aide le réseau à déterminer non
+seulement les entrées à autoriser dans l’état mémoire, mais aussi quand
+le contenu de l’état mémoire doit influencer la sortie du modèle.</p>
+<p>Le deuxième article, <em>Bidirectional Recurrent Neural Networks</em>
+[Schuster.Paliwal.1997], introduit une architecture dans laquelle
+l’information provenant à la fois du futur (pas de temps suivants) et du
+passé (pas de temps précédents) est utilisée pour déterminer la sortie à
+n’importe quel point de la séquence. Cela contraste avec les réseaux
+précédents, dans lesquels seule l’entrée passée peut affecter la sortie.
+Les RNN bidirectionnels sont devenus un pilier pour les tâches
+d’étiquetage de séquences dans le traitement du langage naturel, parmi
+une myriade d’autres tâches. Heureusement, les deux innovations ne
+s’excluent pas mutuellement et ont été combinées avec succès pour la
+classification des phonèmes [Graves.Schmidhuber.2005] et la
+reconnaissance de l’écriture manuscrite [graves2008novel].</p>
+<p>Les premières sections de ce chapitre expliqueront l’architecture
+LSTM, une version plus légère appelée l’unité récurrente à portes (GRU),
+les idées clés derrière les RNN bidirectionnels et une brève explication
+de la manière dont les couches de RNN sont empilées pour former des RNN
+profonds. Par la suite, nous explorerons l’application des RNN dans les
+tâches de séquence à séquence, en introduisant la traduction automatique
+ainsi que des idées clés telles que les architectures
+<em>encodeur–décodeur</em> et la <em>recherche en faisceau</em>.</p>
+<div class="navlinks"><a class="next" href="lstm.html">Long Short-Term Memory (LSTM) &rarr;</a></div></main></div></body></html>

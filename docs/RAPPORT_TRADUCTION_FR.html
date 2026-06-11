@@ -1,6 +1,4 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rapport de traduction française D2L</title><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;max-width:980px;margin:32px auto;padding:0 20px;line-height:1.55;color:#20242a}pre{overflow:auto;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px;padding:12px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}a{color:#245a9c}</style>    <link rel="stylesheet" href="_static/d2l-fr-theme.css" type="text/css" />
-      <script src="_static/d2l-fr-theme.js"></script>
-  </head><body><h1 id="rapport-de-traduction-française-d2l">Rapport de traduction
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rapport de traduction française D2L</title><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script><style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.content{max-width:980px;padding:32px 44px 56px;margin:0 auto}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}a{color:#245a9c}img{max-width:100%;height:auto}@media(max-width:760px){.content{padding:24px 18px 42px}}</style><link rel="stylesheet" href="_static/d2l-fr-theme.css" type="text/css" /><script src="_static/d2l-fr-theme.js"></script></head><body><main class="content"><h1 id="rapport-de-traduction-française-d2l">Rapport de traduction
 française D2L</h1>
 <p>Date : 2026-06-11</p>
 <h2 id="artefacts-produits">Artefacts produits</h2>
@@ -43,6 +41,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <li><code>docs/chapter_convolutional-neural-networks/index.html</code></li>
 <li><code>docs/chapter_convolutional-modern/index.html</code></li>
 <li><code>docs/chapter_recurrent-neural-networks/index.html</code></li>
+<li><code>docs/chapter_recurrent-modern/index.html</code></li>
 </ul>
 <p>Vérifications locales effectuées sur
 <code>http://localhost:4173</code> :</p>
@@ -210,6 +209,25 @@ traduit en français par <code>rnn_rnn_scratch.txt</code>.</li>
 traduit en français par <code>rnn_rnn_concise.txt</code>.</li>
 <li><code>chapter_recurrent-neural-networks/bptt.md</code> : traduit en
 français par <code>rnn_bptt.txt</code>.</li>
+<li><code>chapter_recurrent-modern/index.md</code> : traduit en français
+par <code>rnn_modern_index.txt</code>.</li>
+<li><code>chapter_recurrent-modern/lstm.md</code> : traduit en français
+par <code>rnn_modern_lstm.txt</code>.</li>
+<li><code>chapter_recurrent-modern/gru.md</code> : traduit en français
+par <code>rnn_modern_gru.txt</code>.</li>
+<li><code>chapter_recurrent-modern/deep-rnn.md</code> : traduit en
+français par <code>rnn_modern_deep_rnn.txt</code>.</li>
+<li><code>chapter_recurrent-modern/bi-rnn.md</code> : traduit en
+français par <code>rnn_modern_bi_rnn.txt</code>.</li>
+<li><code>chapter_recurrent-modern/machine-translation-and-dataset.md</code>
+: traduit en français par
+<code>rnn_modern_machine_translation_and_dataset.txt</code>.</li>
+<li><code>chapter_recurrent-modern/encoder-decoder.md</code> : traduit
+en français par <code>rnn_modern_encoder_decoder.txt</code>.</li>
+<li><code>chapter_recurrent-modern/seq2seq.md</code> : traduit en
+français par <code>rnn_modern_seq2seq.txt</code>.</li>
+<li><code>chapter_recurrent-modern/beam-search.md</code> : traduit en
+français par <code>rnn_modern_beam_search.txt</code>.</li>
 </ul>
 <p>Ajouts manuels de structure française :</p>
 <ul>
@@ -264,6 +282,15 @@ figures utilisées par
 <code>img/truncated-bptt.svg</code>, <code>img/unfolded-rnn.svg</code> :
 figures utilisées par
 <code>chapter_recurrent-neural-networks</code>.</li>
+<li><code>img/beam-search.svg</code>, <code>img/birnn.svg</code>,
+<code>img/deep-rnn.svg</code>, <code>img/encoder-decoder.svg</code>,
+<code>img/gru-1.svg</code>, <code>img/gru-2.svg</code>,
+<code>img/gru-3.svg</code>, <code>img/lstm-0.svg</code>,
+<code>img/lstm-1.svg</code>, <code>img/lstm-2.svg</code>,
+<code>img/lstm-3.svg</code>, <code>img/s2s-prob1.svg</code>,
+<code>img/s2s-prob2.svg</code>, <code>img/seq2seq-details.svg</code>,
+<code>img/seq2seq-predict.svg</code>, <code>img/seq2seq.svg</code> :
+figures utilisées par <code>chapter_recurrent-modern</code>.</li>
 </ul>
 <h2 id="non-traduit-restant-à-faire">Non traduit / restant à faire</h2>
 <p>Les chapitres copiés dans cette version partielle ont été traduits.
@@ -371,6 +398,16 @@ post-écriture ou de capacité après avoir produit le fichier traduit; les
 fichiers ont ensuite été validés localement. Les blocs de code fenced
 ont été restaurés depuis les sources officielles brutes avant génération
 des notebooks et pages HTML publiques.</p>
+<p>Pour <code>chapter_recurrent-modern</code>, les sections ont été
+traduites avec Gemini depuis le dossier parent contenant
+<code>d2l-fr</code> et <code>d2l-en</code>. La première passe parallèle
+s’est bloquée sur certains agents; les fichiers restants ont ensuite été
+relancés un par un avec arrêt borné. <code>seq2seq</code> a affiché
+<code>MODEL_CAPACITY_EXHAUSTED</code> après avoir produit le fichier
+traduit; le fichier a ensuite été validé localement. Les blocs de code
+fenced ont été restaurés depuis les sources officielles brutes avant
+génération des notebooks et pages HTML publiques. Le thème sombre ajouté
+au site est injecté dans les nouvelles pages HTML.</p>
 <h2 id="limites-du-build-partiel">Limites du build partiel</h2>
 <p>Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un
 build complet précédent du même état avait listé 88 avertissements
@@ -411,4 +448,4 @@ GitHub Pages est configuré pour servir le site depuis <code>main</code>
 <p>Le site public doit être revérifié après chaque nouveau push : page
 d’accueil, navigation, équations MathJax, figures, liens internes et
 attribution.</p>
-</body></html>
+</main></body></html>
