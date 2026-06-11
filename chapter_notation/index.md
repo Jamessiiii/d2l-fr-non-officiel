@@ -1,100 +1,100 @@
 # Notation
 :label:`chap_notation`
 
-Throughout this book, we adhere 
-to the following notational conventions.
-Note that some of these symbols are placeholders,
-while others refer to specific objects.
-As a general rule of thumb, 
-the indefinite article "a" often indicates
-that the symbol is a placeholder
-and that similarly formatted symbols
-can denote other objects of the same type.
-For example, "$x$: a scalar" means 
-that lowercased letters generally
-represent scalar values,
-but "$\mathbb{Z}$: the set of integers"
-refers specifically to the symbol $\mathbb{Z}$.
+Tout au long de ce livre, nous adhérons 
+aux conventions de notation suivantes.
+Notez que certains de ces symboles sont des espaces réservés,
+tandis que d'autres font référence à des objets spécifiques.
+En règle générale, 
+l'article indéfini « un » indique souvent
+que le symbole est un espace réservé
+et que des symboles formatés de manière similaire
+peuvent désigner d'autres objets du même type.
+Par exemple, « $x$ : un scalaire » signifie 
+que les lettres minuscules représentent généralement
+des valeurs scalaires,
+mais « $\mathbb{Z}$ : l'ensemble des entiers »
+fait spécifiquement référence au symbole $\mathbb{Z}$.
 
 
 
-## Numerical Objects
+## Objets numériques
 
-* $x$: a scalar
-* $\mathbf{x}$: a vector
-* $\mathbf{X}$: a matrix
-* $\mathsf{X}$: a general tensor
-* $\mathbf{I}$: the identity matrix (of some given dimension), i.e., a square matrix with $1$ on all diagonal entries and $0$ on all off-diagonals
-* $x_i$, $[\mathbf{x}]_i$: the $i^\textrm{th}$ element of vector $\mathbf{x}$
-* $x_{ij}$, $x_{i,j}$,$[\mathbf{X}]_{ij}$, $[\mathbf{X}]_{i,j}$: the element of matrix $\mathbf{X}$ at row $i$ and column $j$.
-
-
-
-## Set Theory
-
-
-* $\mathcal{X}$: a set
-* $\mathbb{Z}$: the set of integers
-* $\mathbb{Z}^+$: the set of positive integers
-* $\mathbb{R}$: the set of real numbers
-* $\mathbb{R}^n$: the set of $n$-dimensional vectors of real numbers
-* $\mathbb{R}^{a\times b}$: The set of matrices of real numbers with $a$ rows and $b$ columns
-* $|\mathcal{X}|$: cardinality (number of elements) of set $\mathcal{X}$
-* $\mathcal{A}\cup\mathcal{B}$: union of sets $\mathcal{A}$ and $\mathcal{B}$
-* $\mathcal{A}\cap\mathcal{B}$: intersection of sets $\mathcal{A}$ and $\mathcal{B}$
-* $\mathcal{A}\setminus\mathcal{B}$: set subtraction of $\mathcal{B}$ from $\mathcal{A}$ (contains only those elements of $\mathcal{A}$ that do not belong to $\mathcal{B}$)
+* $x$ : un scalaire
+* $\mathbf{x}$ : un vecteur
+* $\mathbf{X}$ : une matrice
+* $\mathsf{X}$ : un tenseur général
+* $\mathbf{I}$ : la matrice identité (d'une dimension donnée), c'est-à-dire une matrice carrée avec des $1$ sur toutes les entrées de la diagonale et des $0$ partout ailleurs
+* $x_i$, $[\mathbf{x}]_i$ : le $i$-ème élément du vecteur $\mathbf{x}$
+* $x_{ij}$, $x_{i,j}$, $[\mathbf{X}]_{ij}$, $[\mathbf{X}]_{i,j}$ : l'élément de la matrice $\mathbf{X}$ à la ligne $i$ et à la colonne $j$.
 
 
 
-## Functions and Operators
+## Théorie des ensembles
 
 
-* $f(\cdot)$: a function
-* $\log(\cdot)$: the natural logarithm (base $e$)
-* $\log_2(\cdot)$: logarithm to base $2$
-* $\exp(\cdot)$: the exponential function
-* $\mathbf{1}(\cdot)$: the indicator function; evaluates to $1$ if the boolean argument is true, and $0$ otherwise
-* $\mathbf{1}_{\mathcal{X}}(z)$: the set-membership indicator function; evaluates to $1$ if the element $z$ belongs to the set $\mathcal{X}$ and $0$ otherwise
-* $\mathbf{(\cdot)}^\top$: transpose of a vector or a matrix
-* $\mathbf{X}^{-1}$: inverse of matrix $\mathbf{X}$
-* $\odot$: Hadamard (elementwise) product
-* $[\cdot, \cdot]$: concatenation
-* $\|\cdot\|_p$: $\ell_p$ norm
-* $\|\cdot\|$: $\ell_2$ norm
-* $\langle \mathbf{x}, \mathbf{y} \rangle$: inner (dot) product of vectors $\mathbf{x}$ and $\mathbf{y}$
-* $\sum$: summation over a collection of elements
-* $\prod$: product over a collection of elements
-* $\stackrel{\textrm{def}}{=}$: an equality asserted as a definition of the symbol on the left-hand side
+* $\mathcal{X}$ : un ensemble
+* $\mathbb{Z}$ : l'ensemble des entiers
+* $\mathbb{Z}^+$ : l'ensemble des entiers positifs
+* $\mathbb{R}$ : l'ensemble des nombres réels
+* $\mathbb{R}^n$ : l'ensemble des vecteurs de nombres réels de dimension $n$
+* $\mathbb{R}^{a\times b}$ : l'ensemble des matrices de nombres réels avec $a$ lignes et $b$ colonnes
+* $|\mathcal{X}|$ : cardinalité (nombre d'éléments) de l'ensemble $\mathcal{X}$
+* $\mathcal{A}\cup\mathcal{B}$ : union des ensembles $\mathcal{A}$ et $\mathcal{B}$
+* $\mathcal{A}\cap\mathcal{B}$ : intersection des ensembles $\mathcal{A}$ et $\mathcal{B}$
+* $\mathcal{A}\setminus\mathcal{B}$ : soustraction d'ensembles de $\mathcal{B}$ de $\mathcal{A}$ (contient uniquement les éléments de $\mathcal{A}$ qui n'appartiennent pas à $\mathcal{B}$)
 
 
 
-## Calculus
-
-* $\frac{dy}{dx}$: derivative of $y$ with respect to $x$
-* $\frac{\partial y}{\partial x}$: partial derivative of $y$ with respect to $x$
-* $\nabla_{\mathbf{x}} y$: gradient of $y$ with respect to $\mathbf{x}$
-* $\int_a^b f(x) \;dx$: definite integral of $f$ from $a$ to $b$ with respect to $x$
-* $\int f(x) \;dx$: indefinite integral of $f$ with respect to $x$
+## Fonctions et opérateurs
 
 
+* $f(\cdot)$ : une fonction
+* $\log(\cdot)$ : le logarithme naturel (base $e$)
+* $\log_2(\cdot)$ : logarithme en base $2$
+* $\exp(\cdot)$ : la fonction exponentielle
+* $\mathbf{1}(\cdot)$ : la fonction indicatrice ; vaut $1$ si l'argument booléen est vrai, et $0$ sinon
+* $\mathbf{1}_{\mathcal{X}}(z)$ : la fonction indicatrice d'appartenance à un ensemble ; vaut $1$ si l'élément $z$ appartient à l'ensemble $\mathcal{X}$ et $0$ sinon
+* $\mathbf{(\cdot)}^\top$ : transposée d'un vecteur ou d'une matrice
+* $\mathbf{X}^{-1}$ : inverse de la matrice $\mathbf{X}$
+* $\odot$ : produit de Hadamard (élément par élément)
+* $[\cdot, \cdot]$ : concaténation
+* $\|\cdot\|_p$ : norme $\ell_p$
+* $\|\cdot\|$ : norme $\ell_2$
+* $\langle \mathbf{x}, \mathbf{y} \rangle$ : produit scalaire des vecteurs $\mathbf{x}$ et $\mathbf{y}$
+* $\sum$ : sommation sur une collection d'éléments
+* $\prod$ : produit sur une collection d'éléments
+* $\stackrel{\textrm{def}}{=}$ : une égalité affirmée comme une définition du symbole sur le côté gauche
 
-## Probability and Information Theory
 
-* $X$: a random variable
-* $P$: a probability distribution
-* $X \sim P$: the random variable $X$ follows distribution $P$
-* $P(X=x)$: the probability assigned to the event where random variable $X$ takes value $x$
-* $P(X \mid Y)$: the conditional probability distribution of $X$ given $Y$
-* $p(\cdot)$: a probability density function (PDF) associated with distribution $P$
-* ${E}[X]$: expectation of a random variable $X$
-* $X \perp Y$: random variables $X$ and $Y$ are independent
-* $X \perp Y \mid Z$: random variables  $X$  and  $Y$ are conditionally independent given $Z$
-* $\sigma_X$: standard deviation of random variable $X$
-* $\textrm{Var}(X)$: variance of random variable $X$, equal to $\sigma^2_X$
-* $\textrm{Cov}(X, Y)$: covariance of random variables $X$ and $Y$
-* $\rho(X, Y)$: the Pearson correlation coefficient between $X$ and $Y$, equals $\frac{\textrm{Cov}(X, Y)}{\sigma_X \sigma_Y}$
-* $H(X)$: entropy of random variable $X$
-* $D_{\textrm{KL}}(P\|Q)$: the KL-divergence (or relative entropy) from distribution $Q$ to distribution $P$
+
+## Analyse
+
+* $\frac{dy}{dx}$ : dérivée de $y$ par rapport à $x$
+* $\frac{\partial y}{\partial x}$ : dérivée partielle de $y$ par rapport à $x$
+* $\nabla_{\mathbf{x}} y$ : gradient de $y$ par rapport à $\mathbf{x}$
+* $\int_a^b f(x) \;dx$ : intégrale définie de $f$ de $a$ à $b$ par rapport à $x$
+* $\int f(x) \;dx$ : intégrale indéfinie de $f$ par rapport à $x$
+
+
+
+## Probabilités et théorie de l'information
+
+* $X$ : une variable aléatoire
+* $P$ : une distribution de probabilité
+* $X \sim P$ : la variable aléatoire $X$ suit la distribution $P$
+* $P(X=x)$ : la probabilité assignée à l'événement où la variable aléatoire $X$ prend la valeur $x$
+* $P(X \mid Y)$ : la distribution de probabilité conditionnelle de $X$ sachant $Y$
+* $p(\cdot)$ : une fonction de densité de probabilité (PDF) associée à la distribution $P$
+* ${E}[X]$ : espérance d'une variable aléatoire $X$
+* $X \perp Y$ : les variables aléatoires $X$ et $Y$ sont indépendantes
+* $X \perp Y \mid Z$ : les variables aléatoires $X$ et $Y$ sont conditionnellement indépendantes sachant $Z$
+* $\sigma_X$ : écart-type de la variable aléatoire $X$
+* $\textrm{Var}(X)$ : variance de la variable aléatoire $X$, égale à $\sigma^2_X$
+* $\textrm{Cov}(X, Y)$ : covariance des variables aléatoires $X$ et $Y$
+* $\rho(X, Y)$ : le coefficient de corrélation de Pearson entre $X$ and $Y$, égal à $\frac{\textrm{Cov}(X, Y)}{\sigma_X \sigma_Y}$
+* $H(X)$ : entropie de la variable aléatoire $X$
+* $D_{\textrm{KL}}(P\|Q)$ : la divergence de Kullback-Leibler (KL) (ou entropie relative) de la distribution $Q$ vers la distribution $P$
 
 
 

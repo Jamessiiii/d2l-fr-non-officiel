@@ -179,124 +179,127 @@ Show Source
         
   <section id="notation">
 <span id="chap-notation"></span><h1>Notation<a class="headerlink" href="#notation" title="Permalink to this heading">¶</a></h1>
-<p>Throughout this book, we adhere to the following notational conventions.
-Note that some of these symbols are placeholders, while others refer to
-specific objects. As a general rule of thumb, the indefinite article “a”
-often indicates that the symbol is a placeholder and that similarly
-formatted symbols can denote other objects of the same type. For
-example, “<span class="math notranslate nohighlight">\(x\)</span>: a scalar” means that lowercased letters generally
-represent scalar values, but “<span class="math notranslate nohighlight">\(\mathbb{Z}\)</span>: the set of integers”
-refers specifically to the symbol <span class="math notranslate nohighlight">\(\mathbb{Z}\)</span>.</p>
-<section id="numerical-objects">
-<h2>Numerical Objects<a class="headerlink" href="#numerical-objects" title="Permalink to this heading">¶</a></h2>
+<p>Tout au long de ce livre, nous adhérons aux conventions de notation
+suivantes. Notez que certains de ces symboles sont des espaces réservés,
+tandis que d’autres font référence à des objets spécifiques. En règle
+générale, l’article indéfini « un » indique souvent que le symbole est
+un espace réservé et que des symboles formatés de manière similaire
+peuvent désigner d’autres objets du même type. Par exemple, « <span class="math notranslate nohighlight">\(x\)</span>
+: un scalaire » signifie que les lettres minuscules représentent
+généralement des valeurs scalaires, mais « <span class="math notranslate nohighlight">\(\mathbb{Z}\)</span> :
+l’ensemble des entiers » fait spécifiquement référence au symbole
+<span class="math notranslate nohighlight">\(\mathbb{Z}\)</span>.</p>
+<section id="objets-numeriques">
+<h2>Objets numériques<a class="headerlink" href="#objets-numeriques" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><span class="math notranslate nohighlight">\(x\)</span>: a scalar</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbf{x}\)</span>: a vector</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbf{X}\)</span>: a matrix</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathsf{X}\)</span>: a general tensor</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbf{I}\)</span>: the identity matrix (of some given dimension),
-i.e., a square matrix with <span class="math notranslate nohighlight">\(1\)</span> on all diagonal entries and
-<span class="math notranslate nohighlight">\(0\)</span> on all off-diagonals</p></li>
-<li><p><span class="math notranslate nohighlight">\(x_i\)</span>, <span class="math notranslate nohighlight">\([\mathbf{x}]_i\)</span>: the <span class="math notranslate nohighlight">\(i^\textrm{th}\)</span> element
-of vector <span class="math notranslate nohighlight">\(\mathbf{x}\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(x_{ij}\)</span>, <span class="math notranslate nohighlight">\(x_{i,j}\)</span>,<span class="math notranslate nohighlight">\([\mathbf{X}]_{ij}\)</span>,
-<span class="math notranslate nohighlight">\([\mathbf{X}]_{i,j}\)</span>: the element of matrix <span class="math notranslate nohighlight">\(\mathbf{X}\)</span>
-at row <span class="math notranslate nohighlight">\(i\)</span> and column <span class="math notranslate nohighlight">\(j\)</span>.</p></li>
+<li><p><span class="math notranslate nohighlight">\(x\)</span> : un scalaire</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{x}\)</span> : un vecteur</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{X}\)</span> : une matrice</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathsf{X}\)</span> : un tenseur général</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{I}\)</span> : la matrice identité (d’une dimension donnée),
+c’est-à-dire une matrice carrée avec des <span class="math notranslate nohighlight">\(1\)</span> sur toutes les
+entrées de la diagonale et des <span class="math notranslate nohighlight">\(0\)</span> partout ailleurs</p></li>
+<li><p><span class="math notranslate nohighlight">\(x_i\)</span>, <span class="math notranslate nohighlight">\([\mathbf{x}]_i\)</span> : le <span class="math notranslate nohighlight">\(i\)</span>-ème élément du
+vecteur <span class="math notranslate nohighlight">\(\mathbf{x}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(x_{ij}\)</span>, <span class="math notranslate nohighlight">\(x_{i,j}\)</span>, <span class="math notranslate nohighlight">\([\mathbf{X}]_{ij}\)</span>,
+<span class="math notranslate nohighlight">\([\mathbf{X}]_{i,j}\)</span> : l’élément de la matrice
+<span class="math notranslate nohighlight">\(\mathbf{X}\)</span> à la ligne <span class="math notranslate nohighlight">\(i\)</span> et à la colonne <span class="math notranslate nohighlight">\(j\)</span>.</p></li>
 </ul>
 </section>
-<section id="set-theory">
-<h2>Set Theory<a class="headerlink" href="#set-theory" title="Permalink to this heading">¶</a></h2>
+<section id="theorie-des-ensembles">
+<h2>Théorie des ensembles<a class="headerlink" href="#theorie-des-ensembles" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><span class="math notranslate nohighlight">\(\mathcal{X}\)</span>: a set</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbb{Z}\)</span>: the set of integers</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbb{Z}^+\)</span>: the set of positive integers</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbb{R}\)</span>: the set of real numbers</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbb{R}^n\)</span>: the set of <span class="math notranslate nohighlight">\(n\)</span>-dimensional vectors of real
-numbers</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbb{R}^{a\times b}\)</span>: The set of matrices of real numbers
-with <span class="math notranslate nohighlight">\(a\)</span> rows and <span class="math notranslate nohighlight">\(b\)</span> columns</p></li>
-<li><p><span class="math notranslate nohighlight">\(|\mathcal{X}|\)</span>: cardinality (number of elements) of set
+<li><p><span class="math notranslate nohighlight">\(\mathcal{X}\)</span> : un ensemble</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbb{Z}\)</span> : l’ensemble des entiers</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbb{Z}^+\)</span> : l’ensemble des entiers positifs</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbb{R}\)</span> : l’ensemble des nombres réels</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbb{R}^n\)</span> : l’ensemble des vecteurs de nombres réels de
+dimension <span class="math notranslate nohighlight">\(n\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbb{R}^{a\times b}\)</span> : l’ensemble des matrices de nombres
+réels avec <span class="math notranslate nohighlight">\(a\)</span> lignes et <span class="math notranslate nohighlight">\(b\)</span> colonnes</p></li>
+<li><p><span class="math notranslate nohighlight">\(|\mathcal{X}|\)</span> : cardinalité (nombre d’éléments) de l’ensemble
 <span class="math notranslate nohighlight">\(\mathcal{X}\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathcal{A}\cup\mathcal{B}\)</span>: union of sets <span class="math notranslate nohighlight">\(\mathcal{A}\)</span>
-and <span class="math notranslate nohighlight">\(\mathcal{B}\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathcal{A}\cap\mathcal{B}\)</span>: intersection of sets
-<span class="math notranslate nohighlight">\(\mathcal{A}\)</span> and <span class="math notranslate nohighlight">\(\mathcal{B}\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathcal{A}\setminus\mathcal{B}\)</span>: set subtraction of
-<span class="math notranslate nohighlight">\(\mathcal{B}\)</span> from <span class="math notranslate nohighlight">\(\mathcal{A}\)</span> (contains only those
-elements of <span class="math notranslate nohighlight">\(\mathcal{A}\)</span> that do not belong to
+<li><p><span class="math notranslate nohighlight">\(\mathcal{A}\cup\mathcal{B}\)</span> : union des ensembles
+<span class="math notranslate nohighlight">\(\mathcal{A}\)</span> et <span class="math notranslate nohighlight">\(\mathcal{B}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathcal{A}\cap\mathcal{B}\)</span> : intersection des ensembles
+<span class="math notranslate nohighlight">\(\mathcal{A}\)</span> et <span class="math notranslate nohighlight">\(\mathcal{B}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathcal{A}\setminus\mathcal{B}\)</span> : soustraction d’ensembles de
+<span class="math notranslate nohighlight">\(\mathcal{B}\)</span> de <span class="math notranslate nohighlight">\(\mathcal{A}\)</span> (contient uniquement les
+éléments de <span class="math notranslate nohighlight">\(\mathcal{A}\)</span> qui n’appartiennent pas à
 <span class="math notranslate nohighlight">\(\mathcal{B}\)</span>)</p></li>
 </ul>
 </section>
-<section id="functions-and-operators">
-<h2>Functions and Operators<a class="headerlink" href="#functions-and-operators" title="Permalink to this heading">¶</a></h2>
+<section id="fonctions-et-operateurs">
+<h2>Fonctions et opérateurs<a class="headerlink" href="#fonctions-et-operateurs" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><span class="math notranslate nohighlight">\(f(\cdot)\)</span>: a function</p></li>
-<li><p><span class="math notranslate nohighlight">\(\log(\cdot)\)</span>: the natural logarithm (base <span class="math notranslate nohighlight">\(e\)</span>)</p></li>
-<li><p><span class="math notranslate nohighlight">\(\log_2(\cdot)\)</span>: logarithm to base <span class="math notranslate nohighlight">\(2\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\exp(\cdot)\)</span>: the exponential function</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbf{1}(\cdot)\)</span>: the indicator function; evaluates to
-<span class="math notranslate nohighlight">\(1\)</span> if the boolean argument is true, and <span class="math notranslate nohighlight">\(0\)</span> otherwise</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbf{1}_{\mathcal{X}}(z)\)</span>: the set-membership indicator
-function; evaluates to <span class="math notranslate nohighlight">\(1\)</span> if the element <span class="math notranslate nohighlight">\(z\)</span> belongs to
-the set <span class="math notranslate nohighlight">\(\mathcal{X}\)</span> and <span class="math notranslate nohighlight">\(0\)</span> otherwise</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbf{(\cdot)}^\top\)</span>: transpose of a vector or a matrix</p></li>
-<li><p><span class="math notranslate nohighlight">\(\mathbf{X}^{-1}\)</span>: inverse of matrix <span class="math notranslate nohighlight">\(\mathbf{X}\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\odot\)</span>: Hadamard (elementwise) product</p></li>
-<li><p><span class="math notranslate nohighlight">\([\cdot, \cdot]\)</span>: concatenation</p></li>
-<li><p><span class="math notranslate nohighlight">\(\|\cdot\|_p\)</span>: <span class="math notranslate nohighlight">\(\ell_p\)</span> norm</p></li>
-<li><p><span class="math notranslate nohighlight">\(\|\cdot\|\)</span>: <span class="math notranslate nohighlight">\(\ell_2\)</span> norm</p></li>
-<li><p><span class="math notranslate nohighlight">\(\langle \mathbf{x}, \mathbf{y} \rangle\)</span>: inner (dot) product of
-vectors <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{y}\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\sum\)</span>: summation over a collection of elements</p></li>
-<li><p><span class="math notranslate nohighlight">\(\prod\)</span>: product over a collection of elements</p></li>
-<li><p><span class="math notranslate nohighlight">\(\stackrel{\textrm{def}}{=}\)</span>: an equality asserted as a
-definition of the symbol on the left-hand side</p></li>
+<li><p><span class="math notranslate nohighlight">\(f(\cdot)\)</span> : une fonction</p></li>
+<li><p><span class="math notranslate nohighlight">\(\log(\cdot)\)</span> : le logarithme naturel (base <span class="math notranslate nohighlight">\(e\)</span>)</p></li>
+<li><p><span class="math notranslate nohighlight">\(\log_2(\cdot)\)</span> : logarithme en base <span class="math notranslate nohighlight">\(2\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\exp(\cdot)\)</span> : la fonction exponentielle</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{1}(\cdot)\)</span> : la fonction indicatrice ; vaut <span class="math notranslate nohighlight">\(1\)</span>
+si l’argument booléen est vrai, et <span class="math notranslate nohighlight">\(0\)</span> sinon</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{1}_{\mathcal{X}}(z)\)</span> : la fonction indicatrice
+d’appartenance à un ensemble ; vaut <span class="math notranslate nohighlight">\(1\)</span> si l’élément <span class="math notranslate nohighlight">\(z\)</span>
+appartient à l’ensemble <span class="math notranslate nohighlight">\(\mathcal{X}\)</span> et <span class="math notranslate nohighlight">\(0\)</span> sinon</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{(\cdot)}^\top\)</span> : transposée d’un vecteur ou d’une
+matrice</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{X}^{-1}\)</span> : inverse de la matrice <span class="math notranslate nohighlight">\(\mathbf{X}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\odot\)</span> : produit de Hadamard (élément par élément)</p></li>
+<li><p><span class="math notranslate nohighlight">\([\cdot, \cdot]\)</span> : concaténation</p></li>
+<li><p><span class="math notranslate nohighlight">\(\|\cdot\|_p\)</span> : norme <span class="math notranslate nohighlight">\(\ell_p\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\|\cdot\|\)</span> : norme <span class="math notranslate nohighlight">\(\ell_2\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\langle \mathbf{x}, \mathbf{y} \rangle\)</span> : produit scalaire des
+vecteurs <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> et <span class="math notranslate nohighlight">\(\mathbf{y}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\sum\)</span> : sommation sur une collection d’éléments</p></li>
+<li><p><span class="math notranslate nohighlight">\(\prod\)</span> : produit sur une collection d’éléments</p></li>
+<li><p><span class="math notranslate nohighlight">\(\stackrel{\textrm{def}}{=}\)</span> : une égalité affirmée comme une
+définition du symbole sur le côté gauche</p></li>
 </ul>
 </section>
-<section id="calculus">
-<h2>Calculus<a class="headerlink" href="#calculus" title="Permalink to this heading">¶</a></h2>
+<section id="analyse">
+<h2>Analyse<a class="headerlink" href="#analyse" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><span class="math notranslate nohighlight">\(\frac{dy}{dx}\)</span>: derivative of <span class="math notranslate nohighlight">\(y\)</span> with respect to
-<span class="math notranslate nohighlight">\(x\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\frac{\partial y}{\partial x}\)</span>: partial derivative of <span class="math notranslate nohighlight">\(y\)</span>
-with respect to <span class="math notranslate nohighlight">\(x\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\nabla_{\mathbf{x}} y\)</span>: gradient of <span class="math notranslate nohighlight">\(y\)</span> with respect to
+<li><p><span class="math notranslate nohighlight">\(\frac{dy}{dx}\)</span> : dérivée de <span class="math notranslate nohighlight">\(y\)</span> par rapport à <span class="math notranslate nohighlight">\(x\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\frac{\partial y}{\partial x}\)</span> : dérivée partielle de <span class="math notranslate nohighlight">\(y\)</span>
+par rapport à <span class="math notranslate nohighlight">\(x\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\nabla_{\mathbf{x}} y\)</span> : gradient de <span class="math notranslate nohighlight">\(y\)</span> par rapport à
 <span class="math notranslate nohighlight">\(\mathbf{x}\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\int_a^b f(x) \;dx\)</span>: definite integral of <span class="math notranslate nohighlight">\(f\)</span> from
-<span class="math notranslate nohighlight">\(a\)</span> to <span class="math notranslate nohighlight">\(b\)</span> with respect to <span class="math notranslate nohighlight">\(x\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\int f(x) \;dx\)</span>: indefinite integral of <span class="math notranslate nohighlight">\(f\)</span> with respect
-to <span class="math notranslate nohighlight">\(x\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\int_a^b f(x) \;dx\)</span> : intégrale définie de <span class="math notranslate nohighlight">\(f\)</span> de
+<span class="math notranslate nohighlight">\(a\)</span> à <span class="math notranslate nohighlight">\(b\)</span> par rapport à <span class="math notranslate nohighlight">\(x\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\int f(x) \;dx\)</span> : intégrale indéfinie de <span class="math notranslate nohighlight">\(f\)</span> par rapport
+à <span class="math notranslate nohighlight">\(x\)</span></p></li>
 </ul>
 </section>
-<section id="probability-and-information-theory">
-<h2>Probability and Information Theory<a class="headerlink" href="#probability-and-information-theory" title="Permalink to this heading">¶</a></h2>
+<section id="probabilites-et-theorie-de-linformation">
+<h2>Probabilités et théorie de l’information<a class="headerlink" href="#probabilites-et-theorie-de-linformation" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><span class="math notranslate nohighlight">\(X\)</span>: a random variable</p></li>
-<li><p><span class="math notranslate nohighlight">\(P\)</span>: a probability distribution</p></li>
-<li><p><span class="math notranslate nohighlight">\(X \sim P\)</span>: the random variable <span class="math notranslate nohighlight">\(X\)</span> follows distribution
-<span class="math notranslate nohighlight">\(P\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(P(X=x)\)</span>: the probability assigned to the event where random
-variable <span class="math notranslate nohighlight">\(X\)</span> takes value <span class="math notranslate nohighlight">\(x\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(P(X \mid Y)\)</span>: the conditional probability distribution of
-<span class="math notranslate nohighlight">\(X\)</span> given <span class="math notranslate nohighlight">\(Y\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(p(\cdot)\)</span>: a probability density function (PDF) associated with
+<li><p><span class="math notranslate nohighlight">\(X\)</span> : une variable aléatoire</p></li>
+<li><p><span class="math notranslate nohighlight">\(P\)</span> : une distribution de probabilité</p></li>
+<li><p><span class="math notranslate nohighlight">\(X \sim P\)</span> : la variable aléatoire <span class="math notranslate nohighlight">\(X\)</span> suit la
 distribution <span class="math notranslate nohighlight">\(P\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\({E}[X]\)</span>: expectation of a random variable <span class="math notranslate nohighlight">\(X\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(X \perp Y\)</span>: random variables <span class="math notranslate nohighlight">\(X\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> are
-independent</p></li>
-<li><p><span class="math notranslate nohighlight">\(X \perp Y \mid Z\)</span>: random variables <span class="math notranslate nohighlight">\(X\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> are
-conditionally independent given <span class="math notranslate nohighlight">\(Z\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\sigma_X\)</span>: standard deviation of random variable <span class="math notranslate nohighlight">\(X\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\textrm{Var}(X)\)</span>: variance of random variable <span class="math notranslate nohighlight">\(X\)</span>, equal
-to <span class="math notranslate nohighlight">\(\sigma^2_X\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\textrm{Cov}(X, Y)\)</span>: covariance of random variables <span class="math notranslate nohighlight">\(X\)</span>
-and <span class="math notranslate nohighlight">\(Y\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(\rho(X, Y)\)</span>: the Pearson correlation coefficient between
-<span class="math notranslate nohighlight">\(X\)</span> and <span class="math notranslate nohighlight">\(Y\)</span>, equals
+<li><p><span class="math notranslate nohighlight">\(P(X=x)\)</span> : la probabilité assignée à l’événement où la variable
+aléatoire <span class="math notranslate nohighlight">\(X\)</span> prend la valeur <span class="math notranslate nohighlight">\(x\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(P(X \mid Y)\)</span> : la distribution de probabilité conditionnelle de
+<span class="math notranslate nohighlight">\(X\)</span> sachant <span class="math notranslate nohighlight">\(Y\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(p(\cdot)\)</span> : une fonction de densité de probabilité (PDF)
+associée à la distribution <span class="math notranslate nohighlight">\(P\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\({E}[X]\)</span> : espérance d’une variable aléatoire <span class="math notranslate nohighlight">\(X\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(X \perp Y\)</span> : les variables aléatoires <span class="math notranslate nohighlight">\(X\)</span> et <span class="math notranslate nohighlight">\(Y\)</span>
+sont indépendantes</p></li>
+<li><p><span class="math notranslate nohighlight">\(X \perp Y \mid Z\)</span> : les variables aléatoires <span class="math notranslate nohighlight">\(X\)</span> et
+<span class="math notranslate nohighlight">\(Y\)</span> sont conditionnellement indépendantes sachant <span class="math notranslate nohighlight">\(Z\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\sigma_X\)</span> : écart-type de la variable aléatoire <span class="math notranslate nohighlight">\(X\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\textrm{Var}(X)\)</span> : variance de la variable aléatoire <span class="math notranslate nohighlight">\(X\)</span>,
+égale à <span class="math notranslate nohighlight">\(\sigma^2_X\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\textrm{Cov}(X, Y)\)</span> : covariance des variables aléatoires
+<span class="math notranslate nohighlight">\(X\)</span> et <span class="math notranslate nohighlight">\(Y\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\rho(X, Y)\)</span> : le coefficient de corrélation de Pearson entre
+<span class="math notranslate nohighlight">\(X\)</span> and <span class="math notranslate nohighlight">\(Y\)</span>, égal à
 <span class="math notranslate nohighlight">\(\frac{\textrm{Cov}(X, Y)}{\sigma_X \sigma_Y}\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(H(X)\)</span>: entropy of random variable <span class="math notranslate nohighlight">\(X\)</span></p></li>
-<li><p><span class="math notranslate nohighlight">\(D_{\textrm{KL}}(P\|Q)\)</span>: the KL-divergence (or relative entropy)
-from distribution <span class="math notranslate nohighlight">\(Q\)</span> to distribution <span class="math notranslate nohighlight">\(P\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(H(X)\)</span> : entropie de la variable aléatoire <span class="math notranslate nohighlight">\(X\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(D_{\textrm{KL}}(P\|Q)\)</span> : la divergence de Kullback-Leibler (KL)
+(ou entropie relative) de la distribution <span class="math notranslate nohighlight">\(Q\)</span> vers la
+distribution <span class="math notranslate nohighlight">\(P\)</span></p></li>
 </ul>
 <p><a class="reference external" href="https://discuss.d2l.ai/t/25">Discussions</a></p>
 </section>
@@ -312,11 +315,11 @@ from distribution <span class="math notranslate nohighlight">\(Q\)</span> to dis
     </p>
     <ul>
 <li><a class="reference internal" href="#">Notation</a><ul>
-<li><a class="reference internal" href="#numerical-objects">Numerical Objects</a></li>
-<li><a class="reference internal" href="#set-theory">Set Theory</a></li>
-<li><a class="reference internal" href="#functions-and-operators">Functions and Operators</a></li>
-<li><a class="reference internal" href="#calculus">Calculus</a></li>
-<li><a class="reference internal" href="#probability-and-information-theory">Probability and Information Theory</a></li>
+<li><a class="reference internal" href="#objets-numeriques">Objets numériques</a></li>
+<li><a class="reference internal" href="#theorie-des-ensembles">Théorie des ensembles</a></li>
+<li><a class="reference internal" href="#fonctions-et-operateurs">Fonctions et opérateurs</a></li>
+<li><a class="reference internal" href="#analyse">Analyse</a></li>
+<li><a class="reference internal" href="#probabilites-et-theorie-de-linformation">Probabilités et théorie de l’information</a></li>
 </ul>
 </li>
 </ul>

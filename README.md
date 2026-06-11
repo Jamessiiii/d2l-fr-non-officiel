@@ -12,12 +12,9 @@ Traduit en français :
 
 - Préface (`chapter_preface/index.md`)
 - Page d'attribution (`chapter_preface/translation-attribution.md`)
-
-Présent mais encore majoritairement en anglais :
-
-- Introduction
-- Installation
-- Notation
+- Introduction (`chapter_introduction/index.md`)
+- Installation (`chapter_installation/index.md`)
+- Notation (`chapter_notation/index.md`)
 
 La traduction complète reste à poursuivre chapitre par chapitre avec des agents Gemini, en conservant le code, les équations, les labels, les références internes et la structure D2L-Book.
 
@@ -30,7 +27,7 @@ Pour reconstruire localement :
 
 ```bash
 cd "/Users/janslou/Desktop/livre IA/d2l-fr"
-. "/Users/janslou/Desktop/livre IA/d2l-en/.venv-d2l/bin/activate"
+. .venv-build/bin/activate
 d2lbook build eval --tab all
 d2lbook build rst --tab all
 install -m 0644 frontpage.html _build/rst_all/frontpage.html

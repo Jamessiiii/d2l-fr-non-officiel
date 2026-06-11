@@ -51,6 +51,9 @@ Vérifications locales effectuées sur `http://localhost:4173` :
 Traduction réalisée par agent Gemini :
 
 - `chapter_preface/index.md` : traduit en français par `translate_preface.txt`.
+- `chapter_introduction/index.md` : traduit en français par `translate_introduction.txt`.
+- `chapter_installation/index.md` : traduit en français par `translate_installation.txt`.
+- `chapter_notation/index.md` : traduit en français par `translate_notation.txt`.
 
 Ajouts manuels de structure française :
 
@@ -63,16 +66,14 @@ Ajouts manuels de structure française :
 
 ## Non traduit / restant à faire
 
-Les fichiers suivants sont encore majoritairement en anglais :
+Les chapitres copiés dans cette version partielle ont été traduits.
+Restent à faire :
 
-- `chapter_introduction/index.md`
-- `chapter_installation/index.md`
-- `chapter_notation/index.md`
 - tous les autres chapitres du dépôt officiel non encore copiés dans `d2l-fr`.
 
-La traduction complète du livre reste à faire chapitre par chapitre, en rétablissant l'authentification Gemini CLI puis en relançant les agents.
+La traduction complète du livre reste à faire chapitre par chapitre en lançant de nouveaux agents Gemini sur les chapitres restants.
 
-## Blocage rencontré
+## Blocage rencontré puis résolu
 
 Le premier run Gemini a réussi pour la préface, puis s'est arrêté pour les autres agents :
 
@@ -87,9 +88,11 @@ Tentative d'authentification :
 - Le CLI a terminé par : `Authentication timed out after 5 minutes. The browser tab may have gotten stuck in a loading state. Please try again or use NO_BROWSER=true for manual authentication.`
 - `NO_BROWSER=true` a ensuite échoué avec : `Manual authorization is required but the current session is non-interactive.`
 
+Après réactivation de l'authentification Gemini CLI, les agents `translate_installation.txt`, `translate_notation.txt` et `translate_introduction.txt` ont été relancés avec succès.
+
 ## Limites du build partiel
 
-Le build HTML a réussi avec 89 avertissements attendus pour une version partielle :
+Le build HTML a réussi avec 66 avertissements attendus pour une version partielle :
 
 - plusieurs citations et labels pointent vers des chapitres absents du build partiel ;
 - le site ne contient que les chapitres copiés/traduits à ce stade.

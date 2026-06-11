@@ -5,120 +5,123 @@ Notation
 ========
 
 
-Throughout this book, we adhere to the following notational conventions.
-Note that some of these symbols are placeholders, while others refer to
-specific objects. As a general rule of thumb, the indefinite article “a”
-often indicates that the symbol is a placeholder and that similarly
-formatted symbols can denote other objects of the same type. For
-example, “:math:`x`: a scalar” means that lowercased letters generally
-represent scalar values, but “:math:`\mathbb{Z}`: the set of integers”
-refers specifically to the symbol :math:`\mathbb{Z}`.
+Tout au long de ce livre, nous adhérons aux conventions de notation
+suivantes. Notez que certains de ces symboles sont des espaces réservés,
+tandis que d’autres font référence à des objets spécifiques. En règle
+générale, l’article indéfini « un » indique souvent que le symbole est
+un espace réservé et que des symboles formatés de manière similaire
+peuvent désigner d’autres objets du même type. Par exemple, « :math:`x`
+: un scalaire » signifie que les lettres minuscules représentent
+généralement des valeurs scalaires, mais « :math:`\mathbb{Z}` :
+l’ensemble des entiers » fait spécifiquement référence au symbole
+:math:`\mathbb{Z}`.
 
-Numerical Objects
+Objets numériques
 -----------------
 
-- :math:`x`: a scalar
-- :math:`\mathbf{x}`: a vector
-- :math:`\mathbf{X}`: a matrix
-- :math:`\mathsf{X}`: a general tensor
-- :math:`\mathbf{I}`: the identity matrix (of some given dimension),
-  i.e., a square matrix with :math:`1` on all diagonal entries and
-  :math:`0` on all off-diagonals
-- :math:`x_i`, :math:`[\mathbf{x}]_i`: the :math:`i^\textrm{th}` element
-  of vector :math:`\mathbf{x}`
-- :math:`x_{ij}`, :math:`x_{i,j}`,\ :math:`[\mathbf{X}]_{ij}`,
-  :math:`[\mathbf{X}]_{i,j}`: the element of matrix :math:`\mathbf{X}`
-  at row :math:`i` and column :math:`j`.
+- :math:`x` : un scalaire
+- :math:`\mathbf{x}` : un vecteur
+- :math:`\mathbf{X}` : une matrice
+- :math:`\mathsf{X}` : un tenseur général
+- :math:`\mathbf{I}` : la matrice identité (d’une dimension donnée),
+  c’est-à-dire une matrice carrée avec des :math:`1` sur toutes les
+  entrées de la diagonale et des :math:`0` partout ailleurs
+- :math:`x_i`, :math:`[\mathbf{x}]_i` : le :math:`i`-ème élément du
+  vecteur :math:`\mathbf{x}`
+- :math:`x_{ij}`, :math:`x_{i,j}`, :math:`[\mathbf{X}]_{ij}`,
+  :math:`[\mathbf{X}]_{i,j}` : l’élément de la matrice
+  :math:`\mathbf{X}` à la ligne :math:`i` et à la colonne :math:`j`.
 
-Set Theory
-----------
+Théorie des ensembles
+---------------------
 
-- :math:`\mathcal{X}`: a set
-- :math:`\mathbb{Z}`: the set of integers
-- :math:`\mathbb{Z}^+`: the set of positive integers
-- :math:`\mathbb{R}`: the set of real numbers
-- :math:`\mathbb{R}^n`: the set of :math:`n`-dimensional vectors of real
-  numbers
-- :math:`\mathbb{R}^{a\times b}`: The set of matrices of real numbers
-  with :math:`a` rows and :math:`b` columns
-- :math:`|\mathcal{X}|`: cardinality (number of elements) of set
+- :math:`\mathcal{X}` : un ensemble
+- :math:`\mathbb{Z}` : l’ensemble des entiers
+- :math:`\mathbb{Z}^+` : l’ensemble des entiers positifs
+- :math:`\mathbb{R}` : l’ensemble des nombres réels
+- :math:`\mathbb{R}^n` : l’ensemble des vecteurs de nombres réels de
+  dimension :math:`n`
+- :math:`\mathbb{R}^{a\times b}` : l’ensemble des matrices de nombres
+  réels avec :math:`a` lignes et :math:`b` colonnes
+- :math:`|\mathcal{X}|` : cardinalité (nombre d’éléments) de l’ensemble
   :math:`\mathcal{X}`
-- :math:`\mathcal{A}\cup\mathcal{B}`: union of sets :math:`\mathcal{A}`
-  and :math:`\mathcal{B}`
-- :math:`\mathcal{A}\cap\mathcal{B}`: intersection of sets
-  :math:`\mathcal{A}` and :math:`\mathcal{B}`
-- :math:`\mathcal{A}\setminus\mathcal{B}`: set subtraction of
-  :math:`\mathcal{B}` from :math:`\mathcal{A}` (contains only those
-  elements of :math:`\mathcal{A}` that do not belong to
+- :math:`\mathcal{A}\cup\mathcal{B}` : union des ensembles
+  :math:`\mathcal{A}` et :math:`\mathcal{B}`
+- :math:`\mathcal{A}\cap\mathcal{B}` : intersection des ensembles
+  :math:`\mathcal{A}` et :math:`\mathcal{B}`
+- :math:`\mathcal{A}\setminus\mathcal{B}` : soustraction d’ensembles de
+  :math:`\mathcal{B}` de :math:`\mathcal{A}` (contient uniquement les
+  éléments de :math:`\mathcal{A}` qui n’appartiennent pas à
   :math:`\mathcal{B}`)
 
-Functions and Operators
+Fonctions et opérateurs
 -----------------------
 
-- :math:`f(\cdot)`: a function
-- :math:`\log(\cdot)`: the natural logarithm (base :math:`e`)
-- :math:`\log_2(\cdot)`: logarithm to base :math:`2`
-- :math:`\exp(\cdot)`: the exponential function
-- :math:`\mathbf{1}(\cdot)`: the indicator function; evaluates to
-  :math:`1` if the boolean argument is true, and :math:`0` otherwise
-- :math:`\mathbf{1}_{\mathcal{X}}(z)`: the set-membership indicator
-  function; evaluates to :math:`1` if the element :math:`z` belongs to
-  the set :math:`\mathcal{X}` and :math:`0` otherwise
-- :math:`\mathbf{(\cdot)}^\top`: transpose of a vector or a matrix
-- :math:`\mathbf{X}^{-1}`: inverse of matrix :math:`\mathbf{X}`
-- :math:`\odot`: Hadamard (elementwise) product
-- :math:`[\cdot, \cdot]`: concatenation
-- :math:`\|\cdot\|_p`: :math:`\ell_p` norm
-- :math:`\|\cdot\|`: :math:`\ell_2` norm
-- :math:`\langle \mathbf{x}, \mathbf{y} \rangle`: inner (dot) product of
-  vectors :math:`\mathbf{x}` and :math:`\mathbf{y}`
-- :math:`\sum`: summation over a collection of elements
-- :math:`\prod`: product over a collection of elements
-- :math:`\stackrel{\textrm{def}}{=}`: an equality asserted as a
-  definition of the symbol on the left-hand side
+- :math:`f(\cdot)` : une fonction
+- :math:`\log(\cdot)` : le logarithme naturel (base :math:`e`)
+- :math:`\log_2(\cdot)` : logarithme en base :math:`2`
+- :math:`\exp(\cdot)` : la fonction exponentielle
+- :math:`\mathbf{1}(\cdot)` : la fonction indicatrice ; vaut :math:`1`
+  si l’argument booléen est vrai, et :math:`0` sinon
+- :math:`\mathbf{1}_{\mathcal{X}}(z)` : la fonction indicatrice
+  d’appartenance à un ensemble ; vaut :math:`1` si l’élément :math:`z`
+  appartient à l’ensemble :math:`\mathcal{X}` et :math:`0` sinon
+- :math:`\mathbf{(\cdot)}^\top` : transposée d’un vecteur ou d’une
+  matrice
+- :math:`\mathbf{X}^{-1}` : inverse de la matrice :math:`\mathbf{X}`
+- :math:`\odot` : produit de Hadamard (élément par élément)
+- :math:`[\cdot, \cdot]` : concaténation
+- :math:`\|\cdot\|_p` : norme :math:`\ell_p`
+- :math:`\|\cdot\|` : norme :math:`\ell_2`
+- :math:`\langle \mathbf{x}, \mathbf{y} \rangle` : produit scalaire des
+  vecteurs :math:`\mathbf{x}` et :math:`\mathbf{y}`
+- :math:`\sum` : sommation sur une collection d’éléments
+- :math:`\prod` : produit sur une collection d’éléments
+- :math:`\stackrel{\textrm{def}}{=}` : une égalité affirmée comme une
+  définition du symbole sur le côté gauche
 
-Calculus
---------
+Analyse
+-------
 
-- :math:`\frac{dy}{dx}`: derivative of :math:`y` with respect to
-  :math:`x`
-- :math:`\frac{\partial y}{\partial x}`: partial derivative of :math:`y`
-  with respect to :math:`x`
-- :math:`\nabla_{\mathbf{x}} y`: gradient of :math:`y` with respect to
+- :math:`\frac{dy}{dx}` : dérivée de :math:`y` par rapport à :math:`x`
+- :math:`\frac{\partial y}{\partial x}` : dérivée partielle de :math:`y`
+  par rapport à :math:`x`
+- :math:`\nabla_{\mathbf{x}} y` : gradient de :math:`y` par rapport à
   :math:`\mathbf{x}`
-- :math:`\int_a^b f(x) \;dx`: definite integral of :math:`f` from
-  :math:`a` to :math:`b` with respect to :math:`x`
-- :math:`\int f(x) \;dx`: indefinite integral of :math:`f` with respect
-  to :math:`x`
+- :math:`\int_a^b f(x) \;dx` : intégrale définie de :math:`f` de
+  :math:`a` à :math:`b` par rapport à :math:`x`
+- :math:`\int f(x) \;dx` : intégrale indéfinie de :math:`f` par rapport
+  à :math:`x`
 
-Probability and Information Theory
-----------------------------------
+Probabilités et théorie de l’information
+----------------------------------------
 
-- :math:`X`: a random variable
-- :math:`P`: a probability distribution
-- :math:`X \sim P`: the random variable :math:`X` follows distribution
-  :math:`P`
-- :math:`P(X=x)`: the probability assigned to the event where random
-  variable :math:`X` takes value :math:`x`
-- :math:`P(X \mid Y)`: the conditional probability distribution of
-  :math:`X` given :math:`Y`
-- :math:`p(\cdot)`: a probability density function (PDF) associated with
+- :math:`X` : une variable aléatoire
+- :math:`P` : une distribution de probabilité
+- :math:`X \sim P` : la variable aléatoire :math:`X` suit la
   distribution :math:`P`
-- :math:`{E}[X]`: expectation of a random variable :math:`X`
-- :math:`X \perp Y`: random variables :math:`X` and :math:`Y` are
-  independent
-- :math:`X \perp Y \mid Z`: random variables :math:`X` and :math:`Y` are
-  conditionally independent given :math:`Z`
-- :math:`\sigma_X`: standard deviation of random variable :math:`X`
-- :math:`\textrm{Var}(X)`: variance of random variable :math:`X`, equal
-  to :math:`\sigma^2_X`
-- :math:`\textrm{Cov}(X, Y)`: covariance of random variables :math:`X`
-  and :math:`Y`
-- :math:`\rho(X, Y)`: the Pearson correlation coefficient between
-  :math:`X` and :math:`Y`, equals
+- :math:`P(X=x)` : la probabilité assignée à l’événement où la variable
+  aléatoire :math:`X` prend la valeur :math:`x`
+- :math:`P(X \mid Y)` : la distribution de probabilité conditionnelle de
+  :math:`X` sachant :math:`Y`
+- :math:`p(\cdot)` : une fonction de densité de probabilité (PDF)
+  associée à la distribution :math:`P`
+- :math:`{E}[X]` : espérance d’une variable aléatoire :math:`X`
+- :math:`X \perp Y` : les variables aléatoires :math:`X` et :math:`Y`
+  sont indépendantes
+- :math:`X \perp Y \mid Z` : les variables aléatoires :math:`X` et
+  :math:`Y` sont conditionnellement indépendantes sachant :math:`Z`
+- :math:`\sigma_X` : écart-type de la variable aléatoire :math:`X`
+- :math:`\textrm{Var}(X)` : variance de la variable aléatoire :math:`X`,
+  égale à :math:`\sigma^2_X`
+- :math:`\textrm{Cov}(X, Y)` : covariance des variables aléatoires
+  :math:`X` et :math:`Y`
+- :math:`\rho(X, Y)` : le coefficient de corrélation de Pearson entre
+  :math:`X` and :math:`Y`, égal à
   :math:`\frac{\textrm{Cov}(X, Y)}{\sigma_X \sigma_Y}`
-- :math:`H(X)`: entropy of random variable :math:`X`
-- :math:`D_{\textrm{KL}}(P\|Q)`: the KL-divergence (or relative entropy)
-  from distribution :math:`Q` to distribution :math:`P`
+- :math:`H(X)` : entropie de la variable aléatoire :math:`X`
+- :math:`D_{\textrm{KL}}(P\|Q)` : la divergence de Kullback-Leibler (KL)
+  (ou entropie relative) de la distribution :math:`Q` vers la
+  distribution :math:`P`
 
 `Discussions <https://discuss.d2l.ai/t/25>`__

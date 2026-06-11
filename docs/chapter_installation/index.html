@@ -178,88 +178,164 @@ Show Source
         
   <section id="installation">
 <span id="chap-installation"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h1>
-<p>In order to get up and running, we will need an environment for running
-Python, the Jupyter Notebook, the relevant libraries, and the code
-needed to run the book itself.</p>
-<section id="installing-miniconda">
-<h2>Installing Miniconda<a class="headerlink" href="#installing-miniconda" title="Permalink to this heading">¶</a></h2>
-<p>Your simplest option is to install
-<a class="reference external" href="https://conda.io/en/latest/miniconda.html">Miniconda</a>. Note that the
-Python 3.x version is required. You can skip the following steps if your
-machine already has conda installed.</p>
-<p>Visit the Miniconda website and determine the appropriate version for
-your system based on your Python 3.x version and machine architecture.
-Suppose that your Python version is 3.9 (our tested version). If you are
-using macOS, you would download the bash script whose name contains the
-strings “MacOSX”, navigate to the download location, and execute the
-installation as follows (taking Intel Macs as an example):</p>
+<p>Afin d’être opérationnel, nous aurons besoin d’un environnement pour
+exécuter Python, le Jupyter Notebook, les bibliothèques pertinentes, et
+le code nécessaire pour exécuter le livre lui-même.</p>
+<section id="installation-de-miniconda">
+<h2>Installation de Miniconda<a class="headerlink" href="#installation-de-miniconda" title="Permalink to this heading">¶</a></h2>
+<p>Votre option la plus simple est d’installer
+<a class="reference external" href="https://conda.io/en/latest/miniconda.html">Miniconda</a>. Notez que la
+version Python 3.x est requise. Vous pouvez ignorer les étapes suivantes
+si votre machine possède déjà conda installé.</p>
+<p>Visitez le site Web de Miniconda et déterminez la version appropriée
+pour votre système en fonction de votre version de Python 3.x et de
+l’architecture de votre machine. Supposons que votre version de Python
+soit 3.9 (notre version testée). Si vous utilisez macOS, vous
+téléchargeriez le script bash dont le nom contient les chaînes “MacOSX”,
+navigueriez vers l’emplacement de téléchargement, et exécuteriez
+l’installation comme suit (en prenant les Macs Intel comme exemple) :</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># The file name is subject to changes</span>
 sh<span class="w"> </span>Miniconda3-py39_4.12.0-MacOSX-x86_64.sh<span class="w"> </span>-b
 </pre></div>
 </div>
-<p>A Linux user would download the file whose name contains the strings
-“Linux” and execute the following at the download location:</p>
+<p>Un utilisateur Linux téléchargerait le fichier dont le nom contient les
+chaînes “Linux” et exécuterait ce qui suit à l’emplacement de
+téléchargement :</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># The file name is subject to changes</span>
 sh<span class="w"> </span>Miniconda3-py39_4.12.0-Linux-x86_64.sh<span class="w"> </span>-b
 </pre></div>
 </div>
-<p>A Windows user would download and install Miniconda by following its
-<a class="reference external" href="https://conda.io/en/latest/miniconda.html">online instructions</a>. On
-Windows, you may search for <code class="docutils literal notranslate"><span class="pre">cmd</span></code> to open the Command Prompt
-(command-line interpreter) for running commands.</p>
-<p>Next, initialize the shell so we can run <code class="docutils literal notranslate"><span class="pre">conda</span></code> directly.</p>
+<p>Un utilisateur Windows téléchargerait et installerait Miniconda en
+suivant ses <a class="reference external" href="https://conda.io/en/latest/miniconda.html">instructions en
+ligne</a>. Sur Windows, vous
+pouvez rechercher <code class="docutils literal notranslate"><span class="pre">cmd</span></code> pour ouvrir l’Invite de commandes
+(interpréteur de ligne de commande) pour exécuter des commandes.</p>
+<p>Ensuite, initialisez le shell afin que nous puissions exécuter <code class="docutils literal notranslate"><span class="pre">conda</span></code>
+directement.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>~/miniconda3/bin/conda<span class="w"> </span>init
 </pre></div>
 </div>
-<p>Then close and reopen your current shell. You should be able to create a
-new environment as follows:</p>
+<p>Puis fermez et rouvrez votre shell actuel. Vous devriez être en mesure
+de créer un nouvel environnement comme suit :</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>d2l<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.9<span class="w"> </span>-y
 </pre></div>
 </div>
-<p>Now we can activate the <code class="docutils literal notranslate"><span class="pre">d2l</span></code> environment:</p>
+<p>Maintenant nous pouvons activer l’environnement <code class="docutils literal notranslate"><span class="pre">d2l</span></code> :</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>activate<span class="w"> </span>d2l
 </pre></div>
 </div>
 </section>
-<section id="installing-the-deep-learning-framework-and-the-d2l-package">
-<h2>Installing the Deep Learning Framework and the <code class="docutils literal notranslate"><span class="pre">d2l</span></code> Package<a class="headerlink" href="#installing-the-deep-learning-framework-and-the-d2l-package" title="Permalink to this heading">¶</a></h2>
-<p>Before installing any deep learning framework, please first check
-whether or not you have proper GPUs on your machine (the GPUs that power
-the display on a standard laptop are not relevant for our purposes). For
-example, if your computer has NVIDIA GPUs and has installed
-<a class="reference external" href="https://developer.nvidia.com/cuda-downloads">CUDA</a>, then you are all
-set. If your machine does not house any GPU, there is no need to worry
-just yet. Your CPU provides more than enough horsepower to get you
-through the first few chapters. Just remember that you will want to
-access GPUs before running larger models.</p>
-<p>Our next step is to install the <code class="docutils literal notranslate"><span class="pre">d2l</span></code> package that we developed in
-order to encapsulate frequently used functions and classes found
-throughout this book:</p>
+<section id="installation-du-framework-dapprentissage-profond-et-du-package-d2l">
+<h2>Installation du Framework d’Apprentissage Profond et du package <code class="docutils literal notranslate"><span class="pre">d2l</span></code><a class="headerlink" href="#installation-du-framework-dapprentissage-profond-et-du-package-d2l" title="Permalink to this heading">¶</a></h2>
+<p>Avant d’installer tout framework d’apprentissage profond, veuillez
+d’abord vérifier si vous avez des GPU appropriés sur votre machine (les
+GPU qui alimentent l’affichage sur un ordinateur portable standard ne
+sont pas pertinents pour nos besoins). Par exemple, si votre ordinateur
+possède des GPU NVIDIA et a installé
+<a class="reference external" href="https://developer.nvidia.com/cuda-downloads">CUDA</a>, alors vous êtes
+prêt. Si votre machine ne contient aucun GPU, il n’y a pas encore lieu
+de s’inquiéter. Votre CPU fournit plus qu’assez de puissance de calcul
+pour vous permettre de parcourir les premiers chapitres. Rappelez-vous
+simplement que vous voudrez accéder à des GPU avant d’exécuter des
+modèles plus volumineux.</p>
+<div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect"><div class="mdl-tabs__tab-bar text"><a href="#pytorch-1-0" onclick="tagClick('pytorch'); return false;" class="mdl-tabs__tab is-active">pytorch</a><a href="#mxnet-1-1" onclick="tagClick('mxnet'); return false;" class="mdl-tabs__tab ">mxnet</a><a href="#jax-1-2" onclick="tagClick('jax'); return false;" class="mdl-tabs__tab ">jax</a><a href="#tensorflow-1-3" onclick="tagClick('tensorflow'); return false;" class="mdl-tabs__tab ">tensorflow</a></div><div class="mdl-tabs__panel is-active" id="pytorch-1-0"><p>Vous pouvez installer PyTorch (les versions spécifiées sont testées au
+moment de la rédaction) avec le support CPU ou GPU comme suit :</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">torch</span><span class="o">==</span><span class="m">2</span>.0.0<span class="w"> </span><span class="nv">torchvision</span><span class="o">==</span><span class="m">0</span>.15.1
+</pre></div>
+</div>
+</div><div class="mdl-tabs__panel " id="mxnet-1-1"><p>Pour installer une version de MXNet compatible GPU, nous devons savoir
+quelle version de CUDA vous avez installée. Vous pouvez vérifier cela en
+exécutant <code class="docutils literal notranslate"><span class="pre">nvcc</span> <span class="pre">--version</span></code> ou <code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">/usr/local/cuda/version.txt</span></code>.
+Supposons que vous ayez installé CUDA 11.2, alors exécutez la commande
+suivante :</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># For macOS and Linux users</span>
+pip<span class="w"> </span>install<span class="w"> </span>mxnet-cu112<span class="o">==</span><span class="m">1</span>.9.1
+
+<span class="c1"># For Windows users</span>
+pip<span class="w"> </span>install<span class="w"> </span>mxnet-cu112<span class="o">==</span><span class="m">1</span>.9.1<span class="w"> </span>-f<span class="w"> </span>https://dist.mxnet.io/python
+</pre></div>
+</div>
+<p>Vous pouvez changer les derniers chiffres selon votre version de CUDA,
+par ex., <code class="docutils literal notranslate"><span class="pre">cu101</span></code> pour CUDA 10.1 et <code class="docutils literal notranslate"><span class="pre">cu90</span></code> for CUDA 9.0.</p>
+<p>Si votre machine n’a pas de GPU NVIDIA ou de CUDA, vous pouvez installer
+la version CPU comme suit :</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">mxnet</span><span class="o">==</span><span class="m">1</span>.9.1
+</pre></div>
+</div>
+</div><div class="mdl-tabs__panel " id="jax-1-2"><p>Vous pouvez installer JAX et Flax avec le support CPU ou GPU comme suit
+:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># GPU</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;jax[cuda11_pip]==0.4.13&quot;</span><span class="w"> </span>-f<span class="w"> </span>https://storage.googleapis.com/jax-releases/jax_cuda_releases.html<span class="w"> </span><span class="nv">flax</span><span class="o">==</span><span class="m">0</span>.7.0
+</pre></div>
+</div>
+<p>Si votre machine n’a pas de GPU NVIDIA ou de CUDA, vous pouvez installer
+la version CPU comme suit :</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># CPU</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;jax[cpu]==0.4.13&quot;</span><span class="w"> </span><span class="nv">flax</span><span class="o">==</span><span class="m">0</span>.7.0
+</pre></div>
+</div>
+</div><div class="mdl-tabs__panel " id="tensorflow-1-3"><p>Vous pouvez installer TensorFlow avec le support CPU ou GPU comme suit :</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">tensorflow</span><span class="o">==</span><span class="m">2</span>.12.0<span class="w"> </span>tensorflow-probability<span class="o">==</span><span class="m">0</span>.20.0
+</pre></div>
+</div>
+</div></div><p>Notre prochaine étape consiste à installer le package <code class="docutils literal notranslate"><span class="pre">d2l</span></code> que nous
+avons développé afin d’encapsuler les fonctions et classes fréquemment
+utilisées trouvées tout au long de ce livre :</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">d2l</span><span class="o">==</span><span class="m">1</span>.0.3
 </pre></div>
 </div>
 </section>
-<section id="downloading-and-running-the-code">
-<h2>Downloading and Running the Code<a class="headerlink" href="#downloading-and-running-the-code" title="Permalink to this heading">¶</a></h2>
-<p>Next, you will want to download the notebooks so that you can run each
-of the book’s code blocks. Simply click on the “Notebooks” tab at the
-top of any HTML page on <a class="reference external" href="https://d2l.ai/">the D2L.ai website</a> to
-download the code and then unzip it. Alternatively, you can fetch the
-notebooks from the command line as follows:</p>
-<p>If you do not already have <code class="docutils literal notranslate"><span class="pre">unzip</span></code> installed, first run
-<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">unzip</span></code>. Now we can start the Jupyter Notebook
-server by running:</p>
+<section id="telechargement-et-execution-du-code">
+<h2>Téléchargement et Exécution du Code<a class="headerlink" href="#telechargement-et-execution-du-code" title="Permalink to this heading">¶</a></h2>
+<p>Ensuite, vous voudrez télécharger les notebooks afin de pouvoir exécuter
+chacun des blocs de code du livre. Cliquez simplement sur l’onglet
+“Notebooks” en haut de n’importe quelle page HTML sur <a class="reference external" href="https://d2l.ai/">le site Web
+D2L.ai</a> pour télécharger le code, puis
+décompressez-le. Alternativement, vous pouvez récupérer les notebooks
+depuis la ligne de commande comme suit :</p>
+<div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect"><div class="mdl-tabs__tab-bar text"><a href="#pytorch-3-0" onclick="tagClick('pytorch'); return false;" class="mdl-tabs__tab is-active">pytorch</a><a href="#mxnet-3-1" onclick="tagClick('mxnet'); return false;" class="mdl-tabs__tab ">mxnet</a><a href="#jax-3-2" onclick="tagClick('jax'); return false;" class="mdl-tabs__tab ">jax</a><a href="#tensorflow-3-3" onclick="tagClick('tensorflow'); return false;" class="mdl-tabs__tab ">tensorflow</a></div><div class="mdl-tabs__panel is-active" id="pytorch-3-0"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>d2l-en<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>d2l-en
+curl<span class="w"> </span>https://d2l.ai/d2l-en-1.0.3.zip<span class="w"> </span>-o<span class="w"> </span>d2l-en.zip
+unzip<span class="w"> </span>d2l-en.zip<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>rm<span class="w"> </span>d2l-en.zip
+<span class="nb">cd</span><span class="w"> </span>pytorch
+</pre></div>
+</div>
+</div><div class="mdl-tabs__panel " id="mxnet-3-1"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>d2l-en<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>d2l-en
+curl<span class="w"> </span>https://d2l.ai/d2l-en-1.0.3.zip<span class="w"> </span>-o<span class="w"> </span>d2l-en.zip
+unzip<span class="w"> </span>d2l-en.zip<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>rm<span class="w"> </span>d2l-en.zip
+<span class="nb">cd</span><span class="w"> </span>mxnet
+</pre></div>
+</div>
+</div><div class="mdl-tabs__panel " id="jax-3-2"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>d2l-en<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>d2l-en
+curl<span class="w"> </span>https://d2l.ai/d2l-en-1.0.3.zip<span class="w"> </span>-o<span class="w"> </span>d2l-en.zip
+unzip<span class="w"> </span>d2l-en.zip<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>rm<span class="w"> </span>d2l-en.zip
+<span class="nb">cd</span><span class="w"> </span>jax
+</pre></div>
+</div>
+</div><div class="mdl-tabs__panel " id="tensorflow-3-3"><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>d2l-en<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>d2l-en
+curl<span class="w"> </span>https://d2l.ai/d2l-en-1.0.3.zip<span class="w"> </span>-o<span class="w"> </span>d2l-en.zip
+unzip<span class="w"> </span>d2l-en.zip<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>rm<span class="w"> </span>d2l-en.zip
+<span class="nb">cd</span><span class="w"> </span>tensorflow
+</pre></div>
+</div>
+</div></div><p>Si vous n’avez pas déjà <code class="docutils literal notranslate"><span class="pre">unzip</span></code> installé, exécutez d’abord
+<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">unzip</span></code>. Maintenant, nous pouvons démarrer le
+serveur Jupyter Notebook en exécutant :</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>jupyter<span class="w"> </span>notebook
 </pre></div>
 </div>
-<p>At this point, you can open <a class="reference external" href="http://localhost:8888">http://localhost:8888</a> (it may have already
-opened automatically) in your web browser. Then we can run the code for
-each section of the book. Whenever you open a new command line window,
-you will need to execute <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">d2l</span></code> to activate the runtime
-environment before running the D2L notebooks, or updating your packages
-(either the deep learning framework or the <code class="docutils literal notranslate"><span class="pre">d2l</span></code> package). To exit the
-environment, run <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">deactivate</span></code>.</p>
-</section>
+<p>À ce stade, vous pouvez ouvrir <a class="reference external" href="http://localhost:8888">http://localhost:8888</a> (il se peut qu’il
+se soit déjà ouvert automatiquement) dans votre navigateur Web. Ensuite,
+nous pouvons exécuter le code pour chaque section du livre. Chaque fois
+que vous ouvrez une nouvelle fenêtre de ligne de commande, vous devrez
+exécuter <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">d2l</span></code> pour activer l’environnement d’exécution
+avant d’exécuter les notebooks D2L, ou de mettre à jour vos packages
+(soit le framework d’apprentissage profond, soit le package <code class="docutils literal notranslate"><span class="pre">d2l</span></code>).
+Pour quitter l’environnement, exécutez <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">deactivate</span></code>.</p>
+<div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect"><div class="mdl-tabs__tab-bar text"><a href="#pytorch-5-0" onclick="tagClick('pytorch'); return false;" class="mdl-tabs__tab is-active">pytorch</a><a href="#mxnet-5-1" onclick="tagClick('mxnet'); return false;" class="mdl-tabs__tab ">mxnet</a><a href="#jax-5-2" onclick="tagClick('jax'); return false;" class="mdl-tabs__tab ">jax</a><a href="#tensorflow-5-3" onclick="tagClick('tensorflow'); return false;" class="mdl-tabs__tab ">tensorflow</a></div><div class="mdl-tabs__panel is-active" id="pytorch-5-0"><p><a class="reference external" href="https://discuss.d2l.ai/t/24">Discussions</a></p>
+</div><div class="mdl-tabs__panel " id="mxnet-5-1"><p><a class="reference external" href="https://discuss.d2l.ai/t/23">Discussions</a></p>
+</div><div class="mdl-tabs__panel " id="jax-5-2"><p><a class="reference external" href="https://discuss.d2l.ai/t/17964">Discussions</a></p>
+</div><div class="mdl-tabs__panel " id="tensorflow-5-3"><p><a class="reference external" href="https://discuss.d2l.ai/t/436">Discussions</a></p>
+</div></div></section>
 </section>
 
 
@@ -272,9 +348,9 @@ environment, run <code class="docutils literal notranslate"><span class="pre">co
     </p>
     <ul>
 <li><a class="reference internal" href="#">Installation</a><ul>
-<li><a class="reference internal" href="#installing-miniconda">Installing Miniconda</a></li>
-<li><a class="reference internal" href="#installing-the-deep-learning-framework-and-the-d2l-package">Installing the Deep Learning Framework and the <code class="docutils literal notranslate"><span class="pre">d2l</span></code> Package</a></li>
-<li><a class="reference internal" href="#downloading-and-running-the-code">Downloading and Running the Code</a></li>
+<li><a class="reference internal" href="#installation-de-miniconda">Installation de Miniconda</a></li>
+<li><a class="reference internal" href="#installation-du-framework-dapprentissage-profond-et-du-package-d2l">Installation du Framework d’Apprentissage Profond et du package <code class="docutils literal notranslate"><span class="pre">d2l</span></code></a></li>
+<li><a class="reference internal" href="#telechargement-et-execution-du-code">Téléchargement et Exécution du Code</a></li>
 </ul>
 </li>
 </ul>

@@ -233,6 +233,12 @@ touch<span class="w"> </span>docs/.nojekyll
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">chapter_preface/index.md</span></code> : traduit en français par
 <code class="docutils literal notranslate"><span class="pre">translate_preface.txt</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chapter_introduction/index.md</span></code> : traduit en français par
+<code class="docutils literal notranslate"><span class="pre">translate_introduction.txt</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chapter_installation/index.md</span></code> : traduit en français par
+<code class="docutils literal notranslate"><span class="pre">translate_installation.txt</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chapter_notation/index.md</span></code> : traduit en français par
+<code class="docutils literal notranslate"><span class="pre">translate_notation.txt</span></code>.</p></li>
 </ul>
 <p>Ajouts manuels de structure française :</p>
 <ul class="simple">
@@ -248,19 +254,17 @@ officielle, lien vers le dépôt original, crédits et licences.</p></li>
 </section>
 <section id="non-traduit-restant-a-faire">
 <h2>Non traduit / restant à faire<a class="headerlink" href="#non-traduit-restant-a-faire" title="Permalink to this heading">¶</a></h2>
-<p>Les fichiers suivants sont encore majoritairement en anglais :</p>
+<p>Les chapitres copiés dans cette version partielle ont été traduits.
+Restent à faire :</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">chapter_introduction/index.md</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">chapter_installation/index.md</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">chapter_notation/index.md</span></code></p></li>
 <li><p>tous les autres chapitres du dépôt officiel non encore copiés dans
 <code class="docutils literal notranslate"><span class="pre">d2l-fr</span></code>.</p></li>
 </ul>
-<p>La traduction complète du livre reste à faire chapitre par chapitre, en
-rétablissant l’authentification Gemini CLI puis en relançant les agents.</p>
+<p>La traduction complète du livre reste à faire chapitre par chapitre en
+lançant de nouveaux agents Gemini sur les chapitres restants.</p>
 </section>
-<section id="blocage-rencontre">
-<h2>Blocage rencontré<a class="headerlink" href="#blocage-rencontre" title="Permalink to this heading">¶</a></h2>
+<section id="blocage-rencontre-puis-resolu">
+<h2>Blocage rencontré puis résolu<a class="headerlink" href="#blocage-rencontre-puis-resolu" title="Permalink to this heading">¶</a></h2>
 <p>Le premier run Gemini a réussi pour la préface, puis s’est arrêté pour
 les autres agents :</p>
 <ul class="simple">
@@ -281,10 +285,13 @@ run interrompu.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">NO_BROWSER=true</span></code> a ensuite échoué avec :
 <code class="docutils literal notranslate"><span class="pre">Manual</span> <span class="pre">authorization</span> <span class="pre">is</span> <span class="pre">required</span> <span class="pre">but</span> <span class="pre">the</span> <span class="pre">current</span> <span class="pre">session</span> <span class="pre">is</span> <span class="pre">non-interactive.</span></code></p></li>
 </ul>
+<p>Après réactivation de l’authentification Gemini CLI, les agents
+<code class="docutils literal notranslate"><span class="pre">translate_installation.txt</span></code>, <code class="docutils literal notranslate"><span class="pre">translate_notation.txt</span></code> et
+<code class="docutils literal notranslate"><span class="pre">translate_introduction.txt</span></code> ont été relancés avec succès.</p>
 </section>
 <section id="limites-du-build-partiel">
 <h2>Limites du build partiel<a class="headerlink" href="#limites-du-build-partiel" title="Permalink to this heading">¶</a></h2>
-<p>Le build HTML a réussi avec 89 avertissements attendus pour une version
+<p>Le build HTML a réussi avec 66 avertissements attendus pour une version
 partielle :</p>
 <ul class="simple">
 <li><p>plusieurs citations et labels pointent vers des chapitres absents du
@@ -333,7 +340,7 @@ Pages depuis <code class="docutils literal notranslate"><span class="pre">main</
 <li><a class="reference internal" href="#build-valide">Build validé</a></li>
 <li><a class="reference internal" href="#traduction-realisee">Traduction réalisée</a></li>
 <li><a class="reference internal" href="#non-traduit-restant-a-faire">Non traduit / restant à faire</a></li>
-<li><a class="reference internal" href="#blocage-rencontre">Blocage rencontré</a></li>
+<li><a class="reference internal" href="#blocage-rencontre-puis-resolu">Blocage rencontré puis résolu</a></li>
 <li><a class="reference internal" href="#limites-du-build-partiel">Limites du build partiel</a></li>
 <li><a class="reference internal" href="#etat-github">État GitHub</a></li>
 </ul>
