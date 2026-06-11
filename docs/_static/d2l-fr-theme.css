@@ -1,0 +1,128 @@
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] .mdl-layout,
+html[data-theme="dark"] .mdl-layout__content,
+html[data-theme="dark"] .page-content,
+html[data-theme="dark"] .content {
+  background: #111827 !important;
+  color: #dbe4ee !important;
+}
+
+html[data-theme="dark"] .mdl-layout__header,
+html[data-theme="dark"] .mdl-layout__drawer,
+html[data-theme="dark"] .sidebar {
+  background: #0f172a !important;
+  color: #e5edf7 !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .mdl-layout__drawer .mdl-navigation .mdl-navigation__link,
+html[data-theme="dark"] .mdl-navigation__link,
+html[data-theme="dark"] .sidebar a,
+html[data-theme="dark"] .navlinks a,
+html[data-theme="dark"] a {
+  color: #93c5fd !important;
+}
+
+html[data-theme="dark"] .mdl-navigation__link.is-active,
+html[data-theme="dark"] .toctree-l1.current > a,
+html[data-theme="dark"] .toctree-l2.current > a {
+  color: #bfdbfe !important;
+}
+
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6,
+html[data-theme="dark"] .sidebar h1 {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] p,
+html[data-theme="dark"] li,
+html[data-theme="dark"] dd,
+html[data-theme="dark"] dt,
+html[data-theme="dark"] td,
+html[data-theme="dark"] th {
+  color: #dbe4ee !important;
+}
+
+html[data-theme="dark"] pre,
+html[data-theme="dark"] code,
+html[data-theme="dark"] .highlight,
+html[data-theme="dark"] .sourceCode {
+  background: #0b1220 !important;
+  color: #e5edf7 !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] pre span,
+html[data-theme="dark"] code span {
+  color: inherit;
+}
+
+html[data-theme="dark"] table,
+html[data-theme="dark"] .docutils,
+html[data-theme="dark"] .admonition,
+html[data-theme="dark"] blockquote {
+  background: #162033 !important;
+  border-color: #334155 !important;
+  color: #dbe4ee !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+  background: #0b1220 !important;
+  color: #e5edf7 !important;
+  border-color: #475569 !important;
+}
+
+html[data-theme="dark"] img {
+  background: transparent;
+}
+
+html[data-theme="dark"] .MathJax,
+html[data-theme="dark"] mjx-container {
+  color: #e5edf7 !important;
+}
+
+.d2l-theme-toggle {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 10000;
+  border: 1px solid #94a3b8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.22);
+  cursor: pointer;
+  font: 600 14px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 10px 14px;
+}
+
+html[data-theme="dark"] .d2l-theme-toggle {
+  background: #1e293b;
+  color: #f8fafc;
+  border-color: #475569;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.d2l-theme-toggle:focus-visible {
+  outline: 3px solid #60a5fa;
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .d2l-theme-toggle {
+    right: 12px;
+    bottom: 12px;
+    padding: 9px 12px;
+  }
+}
