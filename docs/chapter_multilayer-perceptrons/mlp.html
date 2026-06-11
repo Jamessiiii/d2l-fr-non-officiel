@@ -1,0 +1,566 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Perceptrons multicouches — Plonger au coeur du Deep Learning</title><link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css"><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script><style>body{max-width:1180px;margin:0 auto;padding:0 24px 48px;font-family:Arial,sans-serif;line-height:1.55}header{border-bottom:1px solid #ddd;margin-bottom:24px;padding:18px 0}nav.chapter{background:#f7f7f7;padding:12px 16px;margin:16px 0}main img{max-width:100%;height:auto}pre{overflow:auto;background:#f6f8fa;padding:12px}.pager a{margin-right:16px}</style></head><body><header><a href="../index.html">Plonger au coeur du Deep Learning</a> / <strong>Perceptrons multicouches</strong></header><nav class="chapter"><strong>Chapitre 5 - Perceptrons multicouches</strong><ol><li><a href="mlp.html">Perceptrons multicouches</a></li>
+<li><a href="mlp-implementation.html">Mise en œuvre des perceptrons multicouches</a></li>
+<li><a href="backprop.html">Propagation avant, rétropropagation et graphes de calcul</a></li>
+<li><a href="numerical-stability-and-init.html">Stabilité numérique et initialisation</a></li>
+<li><a href="generalization-deep.html">Généralisation en apprentissage profond</a></li>
+<li><a href="dropout.html">Dropout</a></li>
+<li><a href="kaggle-house-price.html">Prédiction du prix des maisons sur Kaggle</a></li></ol></nav><main><div class="sourceCode" id="cb1"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="perceptrons-multicouches">Perceptrons multicouches</h1>
+<p>:label:<code>sec_mlp</code></p>
+<p>Dans la :numref:<code>sec_softmax</code>, nous avons introduit la
+régression softmax, en implémentant l’algorithme à partir de zéro
+(:numref:<code>sec_softmax_scratch</code>) et en utilisant des API de
+haut niveau (:numref:<code>sec_softmax_concise</code>). Cela nous a
+permis d’entraîner des classifieurs capables de reconnaître 10
+catégories de vêtements à partir d’images de basse résolution. En
+chemin, nous avons appris à manipuler les données, à transformer nos
+sorties en une distribution de probabilité valide, à appliquer une
+fonction de perte appropriée, et à la minimiser par rapport aux
+paramètres de notre modèle. Maintenant que nous maîtrisons ces
+mécanismes dans le contexte de modèles linéaires simples, nous pouvons
+lancer notre exploration des réseaux de neurones profonds, la classe de
+modèles comparativement riche qui intéresse principalement ce livre.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> autograd, np, npx</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> grad, vmap</span></code></pre></div>
+<h2 id="couches-cachées">Couches cachées</h2>
+<p>Nous avons décrit les transformations affines dans la
+:numref:<code>subsec_linear_model</code> comme des transformations
+linéaires avec un biais ajouté. Pour commencer, rappelez-vous
+l’architecture du modèle correspondant à notre exemple de régression
+softmax, illustrée dans la :numref:<code>fig_softmaxreg</code>. Ce
+modèle projette les entrées directement vers les sorties via une seule
+transformation affine, suivie d’une opération softmax. Si nos étiquettes
+étaient réellement liées aux données d’entrée par une simple
+transformation affine, alors cette approche serait suffisante.
+Cependant, la linéarité (dans les transformations affines) est une
+hypothèse <em>forte</em>.</p>
+<h3 id="limites-des-modèles-linéaires">Limites des modèles
+linéaires</h3>
+<p>Par exemple, la linéarité implique l’hypothèse <em>plus faible</em>
+de <em>monotonie</em>, c’est-à-dire que toute augmentation de notre
+caractéristique doit soit toujours provoquer une augmentation de la
+sortie de notre modèle (si le poids correspondant est positif), soit
+toujours provoquer une baisse de la sortie de notre modèle (si le poids
+correspondant est négatif). Parfois, cela a du sens. Par exemple, si
+nous essayions de prédire si un individu remboursera un prêt, nous
+pourrions raisonnablement supposer que toutes choses étant égales par
+ailleurs, un demandeur ayant un revenu plus élevé serait toujours plus
+susceptible de rembourser qu’un demandeur ayant un revenu plus faible.
+Bien que monotone, cette relation n’est probablement pas associée
+linéairement à la probabilité de remboursement. Une augmentation du
+revenu de 0 $ à 50 000 $ correspond probablement à une augmentation plus
+importante de la probabilité de remboursement qu’une augmentation de 1
+million $ à 1,05 million $. Une façon de gérer cela pourrait être de
+post-traiter notre résultat de telle sorte que la linéarité devienne
+plus plausible, en utilisant l’application logistique (et donc le
+logarithme de la probabilité du résultat).</p>
+<p>Notez que nous pouvons facilement trouver des exemples qui violent la
+monotonie. Supposons par exemple que nous voulions prédire la santé en
+fonction de la température corporelle. Pour les individus ayant une
+température corporelle normale supérieure à 37°C (98,6°F), des
+températures plus élevées indiquent un risque plus important. Cependant,
+si la température corporelle descend en dessous de 37°C, des
+températures plus basses indiquent un risque plus important ! Là encore,
+nous pourrions résoudre le problème avec un prétraitement astucieux, tel
+que l’utilisation de la distance par rapport à 37°C comme
+caractéristique.</p>
+<p>But what about classifying images of cats and dogs? Should increasing
+the intensity of the pixel at location (13, 17) always increase (or
+always decrease) the likelihood that the image depicts a dog? Reliance
+on a linear model corresponds to the implicit assumption that the only
+requirement for differentiating cats and dogs is to assess the
+brightness of individual pixels. This approach is doomed to fail in a
+world where inverting an image preserves the category.</p>
+<p>Et pourtant, malgré l’absurdité apparente de la linéarité ici,
+comparé à nos exemples précédents, il est moins évident que nous
+pourrions résoudre le problème avec un simple correctif de
+prétraitement. En effet, l’importance de n’importe quel pixel dépend de
+manières complexes de son contexte (les valeurs des pixels
+environnants). Bien qu’il puisse exister une représentation de nos
+données qui prendrait en compte les interactions pertinentes entre nos
+caractéristiques, sur laquelle un modèle linéaire serait approprié, nous
+ne savons tout simplement pas comment la calculer à la main. Avec les
+réseaux de neurones profonds, nous utilisons des données d’observation
+pour apprendre conjointement à la fois une représentation via des
+couches cachées et un prédicteur linéaire qui agit sur cette
+représentation.</p>
+<p>Ce problème de non-linéarité est étudié depuis au moins un siècle
+:cite:<code>Fisher.1928</code>. Par exemple, les arbres de décision sous
+leur forme la plus basique utilisent une séquence de décisions binaires
+pour décider de l’appartenance à une classe
+:cite:<code>quinlan2014c4</code>. De même, les méthodes à noyau ont été
+utilisées pendant de nombreuses décennies pour modéliser des dépendances
+non linéaires :cite:<code>Aronszajn.1950</code>. Cela a trouvé son
+chemin dans les modèles de splines non paramétriques
+:cite:<code>Wahba.1990</code> et les méthodes à noyau
+:cite:<code>Scholkopf.Smola.2002</code>. C’est aussi quelque chose que
+le cerveau résout tout naturellement. Après tout, les neurones
+alimentent d’autres neurones qui, à leur tour, alimentent à nouveau
+d’autres neurones :cite:<code>Cajal.Azoulay.1894</code>. Par conséquent,
+nous avons une séquence de transformations relativement simples.</p>
+<h3 id="intégration-de-couches-cachées">Intégration de couches
+cachées</h3>
+<p>Nous pouvons surmonter les limites des modèles linéaires en
+incorporant une ou plusieurs couches cachées. La façon la plus simple de
+le faire est d’empiler de nombreuses couches entièrement connectées les
+unes sur les autres. Chaque couche alimente la couche supérieure,
+jusqu’à ce que nous générions des sorties. Nous pouvons considérer les
+premières <span class="math inline">\(L-1\)</span> couches comme notre
+représentation et la couche finale comme notre prédicteur linéaire.
+Cette architecture est couramment appelée un <em>perceptron
+multicouche</em>, souvent abrégé en <em>MLP</em>
+(:numref:<code>fig_mlp</code>).</p>
+<p><img src="img/mlp.svg"
+alt="Un MLP avec une couche cachée de cinq unités cachées." />
+:label:<code>fig_mlp</code></p>
+<p>Ce MLP a quatre entrées, trois sorties, et sa couche cachée contient
+cinq unités cachées. Étant donné que la couche d’entrée n’implique aucun
+calcul, produire des sorties avec ce réseau nécessite d’implémenter les
+calculs pour les couches cachée et de sortie ; ainsi, le nombre de
+couches dans ce MLP est de deux. Notez que les deux couches sont
+entièrement connectées. Chaque entrée influence chaque neurone de la
+couche cachée, et chacun d’entre eux influence à son tour chaque neurone
+de la couche de sortie. Hélas, nous n’en sommes pas encore tout à fait à
+la fin.</p>
+<h3 id="de-linéaire-à-non-linéaire">De linéaire à non linéaire</h3>
+<p>Comme précédemment, nous notons par la matrice <span
+class="math inline">\(\mathbf{X} \in \mathbb{R}^{n \times d}\)</span> un
+minibatch de <span class="math inline">\(n\)</span> exemples où chaque
+exemple a <span class="math inline">\(d\)</span> entrées
+(caractéristiques). Pour un MLP à une couche cachée dont la couche
+cachée a <span class="math inline">\(h\)</span> unités cachées, nous
+notons par <span class="math inline">\(\mathbf{H} \in \mathbb{R}^{n
+\times h}\)</span> les sorties de la couche cachée, qui sont des
+<em>représentations cachées</em>. Étant donné que les couches cachée et
+de sortie sont toutes deux entièrement connectées, nous avons des poids
+de couche cachée <span class="math inline">\(\mathbf{W}^{(1)} \in
+\mathbb{R}^{d \times h}\)</span> et des biais <span
+class="math inline">\(\mathbf{b}^{(1)} \in \mathbb{R}^{1 \times
+h}\)</span> et des poids de couche de sortie <span
+class="math inline">\(\mathbf{W}^{(2)} \in \mathbb{R}^{h \times
+q}\)</span> et des biais <span class="math inline">\(\mathbf{b}^{(2)}
+\in \mathbb{R}^{1 \times q}\)</span>. Cela nous permet de calculer les
+sorties <span class="math inline">\(\mathbf{O} \in \mathbb{R}^{n \times
+q}\)</span> du MLP à une couche cachée comme suit :</p>
+<p><span class="math display">\[
+\begin{aligned}
+    \mathbf{H} &amp; = \mathbf{X} \mathbf{W}^{(1)} + \mathbf{b}^{(1)},
+\\
+    \mathbf{O} &amp; = \mathbf{H}\mathbf{W}^{(2)} + \mathbf{b}^{(2)}.
+\end{aligned}
+\]</span></p>
+<p>Notez qu’après avoir ajouté la couche cachée, notre modèle nous
+oblige désormais à suivre et à mettre à jour des ensembles
+supplémentaires de paramètres. Alors, qu’avons-nous gagné en échange ?
+Vous pourriez être surpris de découvrir que — dans le modèle défini
+ci-dessus — <em>nous ne gagnons rien pour nos efforts</em> ! La raison
+est évidente. Les unités cachées ci-dessus sont données par une fonction
+affine des entrées, et les sorties (pré-softmax) ne sont qu’une fonction
+affine des unités cachées. Une fonction affine d’une fonction affine est
+elle-même une fonction affine. De plus, notre modèle linéaire était déjà
+capable de représenter n’importe quelle fonction affine.</p>
+<p>Pour voir cela formellement, nous pouvons simplement condenser la
+couche cachée dans la définition ci-dessus, donnant un modèle à couche
+unique équivalent avec les paramètres <span
+class="math inline">\(\mathbf{W} =
+\mathbf{W}^{(1)}\mathbf{W}^{(2)}\)</span> et <span
+class="math inline">\(\mathbf{b} = \mathbf{b}^{(1)} \mathbf{W}^{(2)} +
+\mathbf{b}^{(2)}\)</span> :</p>
+<p><span class="math display">\[
+\mathbf{O} = (\mathbf{X} \mathbf{W}^{(1)} +
+\mathbf{b}^{(1)})\mathbf{W}^{(2)} + \mathbf{b}^{(2)} = \mathbf{X}
+\mathbf{W}^{(1)}\mathbf{W}^{(2)} + \mathbf{b}^{(1)} \mathbf{W}^{(2)} +
+\mathbf{b}^{(2)} = \mathbf{X} \mathbf{W} + \mathbf{b}.
+\]</span></p>
+<p>Afin de réaliser le potentiel des architectures multicouches, nous
+avons besoin d’un ingrédient clé supplémentaire : une <em>fonction
+d’activation</em> non linéaire <span
+class="math inline">\(\sigma\)</span> à appliquer à chaque unité cachée
+suite à la transformation affine. Par exemple, un choix populaire est la
+fonction d’activation ReLU (unité linéaire rectifiée)
+:cite:<code>Nair.Hinton.2010</code> <span
+class="math inline">\(\sigma(x) = \mathrm{max}(0, x)\)</span> opérant
+sur ses arguments élément par élément. Les sorties des fonctions
+d’activation <span class="math inline">\(\sigma(\cdot)\)</span> sont
+appelées <em>activations</em>. En général, avec les fonctions
+d’activation en place, il n’est plus possible de condenser notre MLP en
+un modèle linéaire :</p>
+<p><span class="math display">\[
+\begin{aligned}
+    \mathbf{H} &amp; = \sigma(\mathbf{X} \mathbf{W}^{(1)} +
+\mathbf{b}^{(1)}), \\
+    \mathbf{O} &amp; = \mathbf{H}\mathbf{W}^{(2)} + \mathbf{b}^{(2)}.\\
+\end{aligned}
+\]</span></p>
+<p>Étant donné que chaque ligne de <span
+class="math inline">\(\mathbf{X}\)</span> correspond à un exemple du
+minibatch, avec un certain abus de notation, nous définissons la
+non-linéarité <span class="math inline">\(\sigma\)</span> pour
+s’appliquer à ses entrées ligne par ligne, c’est-à-dire un exemple à la
+fois. Notez que nous avons utilisé la même notation pour softmax lorsque
+nous avons désigné une opération ligne par ligne dans la
+:numref:<code>subsec_softmax_vectorization</code>. Très fréquemment, les
+fonctions d’activation que nous utilisons s’appliquent non seulement par
+ligne mais aussi élément par élément. Cela signifie qu’après avoir
+calculé la partie linéaire de la couche, nous pouvons calculer chaque
+activation sans regarder les valeurs prises par les autres unités
+cachées.</p>
+<p>Pour construire des MLP plus généraux, nous pouvons continuer à
+empiler de telles couches cachées, par exemple <span
+class="math inline">\(\mathbf{H}^{(1)} = \sigma_1(\mathbf{X}
+\mathbf{W}^{(1)} + \mathbf{b}^{(1)})\)</span> et <span
+class="math inline">\(\mathbf{H}^{(2)} = \sigma_2(\mathbf{H}^{(1)}
+\mathbf{W}^{(2)} + \mathbf{b}^{(2)})\)</span>, les unes sur les autres,
+produisant des modèles de plus en plus expressifs.</p>
+<h3 id="approximateurs-universels">Approximateurs universels</h3>
+<p>Nous savons que le cerveau est capable d’analyses statistiques très
+sophistiquées. À ce titre, il vaut la peine de se demander <em>jusqu’à
+quel point</em> un réseau profond pourrait être puissant. Cette question
+a reçu plusieurs réponses, par exemple dans
+:citet:<code>Cybenko.1989</code> dans le contexte des MLP, et dans
+:citet:<code>micchelli1984interpolation</code> dans le contexte des
+espaces de Hilbert à noyau reproduisant d’une manière qui pourrait être
+vue comme des réseaux à fonctions de base radiale (RBF) avec une seule
+couche cachée. Ces résultats (et d’autres résultats connexes) suggèrent
+que même avec un réseau à une seule couche cachée, moyennant
+suffisamment de nœuds (éventuellement un nombre absurde), et le bon
+ensemble de poids, nous pouvons modéliser n’importe quelle fonction.
+Apprendre réellement cette fonction est cependant la partie difficile.
+Vous pourriez considérer votre réseau de neurones comme étant un peu
+comme le langage de programmation C. Le langage, comme tout autre
+langage moderne, est capable d’exprimer n’importe quel programme
+calculable. Mais concevoir réellement un programme qui répond à vos
+spécifications est la partie difficile.</p>
+<p>De plus, ce n’est pas parce qu’un réseau à une seule couche cachée
+<em>peut</em> apprendre n’importe quelle fonction ne signifie pas que
+vous devriez essayer de résoudre tous vos problèmes avec un tel réseau.
+En fait, dans ce cas, les méthodes à noyau sont bien plus efficaces, car
+elles sont capables de résoudre le problème <em>exactement</em> même
+dans des espaces de dimension infinie
+:cite:<code>Kimeldorf.Wahba.1971,Scholkopf.Herbrich.Smola.2001</code>.
+En fait, nous pouvons approximer de nombreuses fonctions de manière
+beaucoup plus compacte en utilisant des réseaux plus profonds (plutôt
+que plus larges) :cite:<code>Simonyan.Zisserman.2014</code>. Nous
+aborderons des arguments plus rigoureux dans les chapitres suivants.</p>
+<h2 id="fonctions-dactivation">Fonctions d’activation</h2>
+<p>:label:<code>subsec_activation-functions</code></p>
+<p>Les fonctions d’activation décident si un neurone doit être activé ou
+non en calculant la somme pondérée et en y ajoutant ensuite un biais. Ce
+sont des opérateurs dérivables permettant de transformer les signaux
+d’entrée en sorties, tandis que la plupart d’entre eux ajoutent de la
+non-linéarité. Étant donné que les fonctions d’activation sont
+fondamentales pour l’apprentissage profond, (<strong>passons brièvement
+en revue certaines des plus courantes</strong>).</p>
+<h3 id="fonction-relu">Fonction ReLU</h3>
+<p>Le choix le plus populaire, en raison à la fois de la simplicité
+d’implémentation et de ses bonnes performances sur une variété de tâches
+prédictives, est l’<em>unité linéaire rectifiée</em> (<em>ReLU</em>)
+:cite:<code>Nair.Hinton.2010</code>. [<strong>ReLU fournit une
+transformation non linéaire très simple</strong>]. Étant donné un
+élément <span class="math inline">\(x\)</span>, la fonction est définie
+comme le maximum de cet élément et de 0 :</p>
+<p><span class="math display">\[\operatorname{ReLU}(x) = \max(x,
+0).\]</span></p>
+<p>Informellement, la fonction ReLU ne conserve que les éléments
+positifs et écarte tous les éléments négatifs en fixant les activations
+correspondantes à 0. Pour acquérir une certaine intuition, nous pouvons
+tracer la fonction. Comme vous pouvez le voir, la fonction d’activation
+est linéaire par morceaux.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.arange(<span class="op">-</span><span class="fl">8.0</span>, <span class="fl">8.0</span>, <span class="fl">0.1</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>x.attach_grad()</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> autograd.record():</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> npx.relu(x)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, y, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;relu(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> torch.arange(<span class="op">-</span><span class="fl">8.0</span>, <span class="fl">8.0</span>, <span class="fl">0.1</span>, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> torch.relu(x)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.detach(), y.detach(), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;relu(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> tf.Variable(tf.<span class="bu">range</span>(<span class="op">-</span><span class="fl">8.0</span>, <span class="fl">8.0</span>, <span class="fl">0.1</span>), dtype<span class="op">=</span>tf.float32)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> tf.nn.relu(x)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.numpy(), y.numpy(), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;relu(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> jnp.arange(<span class="op">-</span><span class="fl">8.0</span>, <span class="fl">8.0</span>, <span class="fl">0.1</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> jax.nn.relu(x)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, y, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;relu(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<p>Lorsque l’entrée est négative, la dérivée de la fonction ReLU est 0,
+et lorsque l’entrée est positive, la dérivée de la fonction ReLU est 1.
+Notez que la fonction ReLU n’est pas dérivable lorsque l’entrée prend
+une valeur précisément égale à 0. Dans ces cas, nous utilisons par
+défaut la dérivée à gauche et disons que la dérivée est 0 lorsque
+l’entrée est 0. Nous pouvons nous en sortir car l’entrée peut ne jamais
+être réellement nulle (les mathématiciens diraient qu’elle n’est pas
+dérivable sur un ensemble de mesure nulle). Un vieil adage dit que si
+des conditions aux limites subtiles comptent, nous faisons probablement
+des mathématiques (<em>réelles</em>), pas de l’ingénierie. Cette sagesse
+conventionnelle peut s’appliquer ici, ou du moins, le fait que nous
+n’effectuons pas d’optimisation sous contraintes
+:cite:<code>Mangasarian.1965,Rockafellar.1970</code>. Nous traçons la
+dérivée de la fonction ReLU ci-dessous.</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>y.backward()</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, x.grad, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of relu&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>y.backward(torch.ones_like(x), retain_graph<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.detach(), x.grad, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of relu&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> tf.GradientTape() <span class="im">as</span> t:</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> tf.nn.relu(x)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.numpy(), t.gradient(y, x).numpy(), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of relu&#39;</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>         figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>grad_relu <span class="op">=</span> vmap(grad(jax.nn.relu))</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, grad_relu(x), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of relu&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<p>La raison de l’utilisation de ReLU est que ses dérivées se comportent
+particulièrement bien : soit elles s’annulent, soit elles laissent
+simplement passer l’argument. Cela rend l’optimisation plus stable et a
+atténué le problème bien documenté de la disparition des gradients qui
+affectait les versions précédentes des réseaux de neurones (plus
+d’informations à ce sujet plus tard).</p>
+<p>Notez qu’il existe de nombreuses variantes de la fonction ReLU,
+notamment la fonction <em>ReLU paramétrée</em> (<em>pReLU</em>)
+:cite:<code>He.Zhang.Ren.ea.2015</code>. Cette variante ajoute un terme
+linéaire à ReLU, de sorte que certaines informations passent encore,
+même lorsque l’argument est négatif :</p>
+<p><span class="math display">\[\operatorname{pReLU}(x) = \max(0, x) +
+\alpha \min(0, x).\]</span></p>
+<h3 id="fonction-sigmoïde">Fonction sigmoïde</h3>
+<p>[<strong>La <em>fonction sigmoïde</em> transforme ces
+entrées</strong>] dont les valeurs se situent dans le domaine <span
+class="math inline">\(\mathbb{R}\)</span>, (<strong>en sorties qui se
+situent sur l’intervalle (0, 1).</strong>) Pour cette raison, la
+sigmoïde est souvent appelée une <em>fonction d’écrasement</em> : elle
+écrase n’importe quelle entrée dans la plage (-inf, inf) en une valeur
+dans la plage (0, 1) :</p>
+<p><span class="math display">\[\operatorname{sigmoid}(x) = \frac{1}{1 +
+\exp(-x)}.\]</span></p>
+<p>Dans les premiers réseaux de neurones, les scientifiques
+s’intéressaient à la modélisation des neurones biologiques qui soit
+<em>s’activent</em>, soit <em>ne s’activent pas</em>. Ainsi, les
+pionniers de ce domaine, remontant jusqu’à McCulloch et Pitts, les
+inventeurs du neurone artificiel, se sont concentrés sur les unités à
+seuillage :cite:<code>McCulloch.Pitts.1943</code>. Une activation par
+seuillage prend la valeur 0 lorsque son entrée est inférieure à un
+certain seuil et la valeur 1 lorsque l’entrée dépasse le seuil.</p>
+<p>Lorsque l’attention s’est portée sur l’apprentissage basé sur le
+gradient, la fonction sigmoïde était un choix naturel car il s’agit
+d’une approximation lisse et dérivable d’une unité à seuillage. Les
+sigmoïdes sont encore largement utilisées comme fonctions d’activation
+sur les unités de sortie lorsque nous voulons interpréter les sorties
+comme des probabilités pour des problèmes de classification binaire :
+vous pouvez considérer la sigmoïde comme un cas particulier de la
+softmax. Cependant, la sigmoïde a été largement remplacée par la ReLU,
+plus simple et plus facile à entraîner, pour la plupart des utilisations
+dans les couches cachées. Cela est dû en grande partie au fait que la
+sigmoïde pose des défis pour l’optimisation
+:cite:<code>LeCun.Bottou.Orr.ea.1998</code> étant donné que son gradient
+s’annule pour les arguments positifs <em>et</em> négatifs de grande
+valeur. Cela peut conduire à des plateaux dont il est difficile de
+s’échapper. Néanmoins, les sigmoïdes sont importantes. Dans les
+chapitres ultérieurs (par exemple, :numref:<code>sec_lstm</code>) sur
+les réseaux de neurones récurrents, nous décrirons des architectures qui
+exploitent les unités sigmoïdes pour contrôler le flux d’informations à
+travers le temps.</p>
+<p>Ci-dessous, nous traçons la fonction sigmoïde. Notez que lorsque
+l’entrée est proche de 0, la fonction sigmoïde s’approche d’une
+transformation linéaire.</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> autograd.record():</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> npx.sigmoid(x)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, y, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;sigmoid(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> torch.sigmoid(x)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.detach(), y.detach(), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;sigmoid(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> tf.nn.sigmoid(x)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.numpy(), y.numpy(), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;sigmoid(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> jax.nn.sigmoid(x)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, y, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;sigmoid(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<p>La dérivée de la fonction sigmoïde est donnée par l’équation suivante
+:</p>
+<p><span class="math display">\[\frac{d}{dx} \operatorname{sigmoid}(x) =
+\frac{\exp(-x)}{(1 + \exp(-x))^2} =
+\operatorname{sigmoid}(x)\left(1-\operatorname{sigmoid}(x)\right).\]</span></p>
+<p>La dérivée de la fonction sigmoïde est tracée ci-dessous. Notez que
+lorsque l’entrée est 0, la dérivée de la fonction sigmoïde atteint un
+maximum de 0,25. À mesure que l’entrée s’éloigne de 0 dans l’une ou
+l’autre direction, la dérivée s’approche de 0.</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>y.backward()</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, x.grad, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of sigmoid&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Clear out previous gradients</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>x.grad.data.zero_()</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>y.backward(torch.ones_like(x),retain_graph<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.detach(), x.grad, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of sigmoid&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> tf.GradientTape() <span class="im">as</span> t:</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> tf.nn.sigmoid(x)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.numpy(), t.gradient(y, x).numpy(), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of sigmoid&#39;</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>         figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>grad_sigmoid <span class="op">=</span> vmap(grad(jax.nn.sigmoid))</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, grad_sigmoid(x), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of sigmoid&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<h3 id="fonction-tanh">Fonction Tanh</h3>
+<p>:label:<code>subsec_tanh</code></p>
+<p>Comme la fonction sigmoïde, [<strong>la fonction tanh (tangente
+hyperbolique) écrase également ses entrées</strong>], en les
+transformant en éléments sur l’intervalle (<strong>entre <span
+class="math inline">\(-1\)</span> et <span
+class="math inline">\(1\)</span></strong>) :</p>
+<p><span class="math display">\[\operatorname{tanh}(x) = \frac{1 -
+\exp(-2x)}{1 + \exp(-2x)}.\]</span></p>
+<p>Nous traçons la fonction tanh ci-dessous. Notez que lorsque l’entrée
+approche de 0, la fonction tanh se rapproche d’une transformation
+linéaire. Bien que la forme de la fonction soit similaire à celle de la
+fonction sigmoïde, la fonction tanh présente une symétrie ponctuelle par
+rapport à l’origine du système de coordonnées
+:cite:<code>Kalman.Kwasny.1992</code>.</p>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> autograd.record():</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> np.tanh(x)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, y, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;tanh(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> torch.tanh(x)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.detach(), y.detach(), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;tanh(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> tf.nn.tanh(x)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.numpy(), y.numpy(), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;tanh(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> jax.nn.tanh(x)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, y, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;tanh(x)&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<p>La dérivée de la fonction tanh est :</p>
+<p><span class="math display">\[\frac{d}{dx} \operatorname{tanh}(x) = 1
+- \operatorname{tanh}^2(x).\]</span></p>
+<p>Elle est tracée ci-dessous. À mesure que l’entrée approche de 0, la
+dérivée de la fonction tanh s’approche d’un maximum de 1. Et comme nous
+l’avons vu avec la fonction sigmoïde, à mesure que l’entrée s’éloigne de
+0 dans l’une ou l’autre direction, la dérivée de la fonction tanh
+s’approche de 0.</p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>y.backward()</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, x.grad, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of tanh&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Clear out previous gradients</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>x.grad.data.zero_()</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>y.backward(torch.ones_like(x),retain_graph<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.detach(), x.grad, <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of tanh&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> tf.GradientTape() <span class="im">as</span> t:</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> tf.nn.tanh(x)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>d2l.plot(x.numpy(), t.gradient(y, x).numpy(), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of tanh&#39;</span>,</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>         figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>grad_tanh <span class="op">=</span> vmap(grad(jax.nn.tanh))</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>d2l.plot(x, grad_tanh(x), <span class="st">&#39;x&#39;</span>, <span class="st">&#39;grad of tanh&#39;</span>, figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="fl">2.5</span>))</span></code></pre></div>
+<h2 id="résumé-et-discussion">Résumé et discussion</h2>
+<p>Nous savons maintenant comment incorporer des non-linéarités pour
+construire des architectures de réseaux de neurones multicouches
+expressives. Soit dit en passant, vos connaissances vous permettent déjà
+de maîtriser une boîte à outils similaire à celle d’un praticien vers
+1990. D’une certaine manière, vous avez un avantage sur quiconque
+travaillait à l’époque, car vous pouvez exploiter de puissants
+frameworks d’apprentissage profond open-source pour construire des
+modèles rapidement, en utilisant seulement quelques lignes de code.
+Auparavant, l’entraînement de ces réseaux obligeait les chercheurs à
+coder explicitement les couches et les dérivées en C, Fortran ou même
+Lisp (dans le cas de LeNet).</p>
+<p>Un avantage secondaire est que ReLU est nettement plus propice à
+l’optimisation que la fonction sigmoïde ou tanh. On pourrait soutenir
+que ce fut l’une des innovations clés qui ont aidé à la résurgence de
+l’apprentissage profond au cours de la dernière décennie. Notez
+cependant que la recherche sur les fonctions d’activation ne s’est pas
+arrêtée. Par exemple, la fonction d’activation GELU (unité linéaire
+d’erreur gaussienne) <span class="math inline">\(x \Phi(x)\)</span> de
+:citet:<code>Hendrycks.Gimpel.2016</code> (<span
+class="math inline">\(\Phi(x)\)</span> est la fonction de répartition
+gaussienne standard) et la fonction d’activation Swish <span
+class="math inline">\(\sigma(x) = x \operatorname{sigmoid}(\beta
+x)\)</span> telle que proposée dans
+:citet:<code>Ramachandran.Zoph.Le.2017</code> peuvent donner une
+meilleure précision dans de nombreux cas.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Montrez que l’ajout de couches à un réseau profond
+<em>linéaire</em>, c’est-à-dire un réseau sans non-linéarité <span
+class="math inline">\(\sigma\)</span>, ne peut jamais augmenter la
+puissance expressive du réseau. Donnez un exemple où cela la réduit
+activement.</li>
+<li>Calculez la dérivée de la fonction d’activation pReLU.</li>
+<li>Calculez la dérivée de la fonction d’activation Swish <span
+class="math inline">\(x \operatorname{sigmoid}(\beta x)\)</span>.</li>
+<li>Montrez qu’un MLP utilisant uniquement ReLU (ou pReLU) construit une
+fonction linéaire continue par morceaux.</li>
+<li>Sigmoïde et tanh sont très similaires.
+<ol type="1">
+<li>Montrez que <span class="math inline">\(\operatorname{tanh}(x) + 1 =
+2 \operatorname{sigmoid}(2x)\)</span>.</li>
+<li>Prouvez que les classes de fonctions paramétrées par les deux
+non-linéarités sont identiques. Indice : les couches affines ont aussi
+des termes de biais.</li>
+</ol></li>
+<li>Supposons que nous ayons une non-linéarité qui s’applique à un
+minibatch à la fois, comme la normalisation par lots
+:cite:<code>Ioffe.Szegedy.2015</code>. Quels types de problèmes vous
+attendez-vous à ce que cela cause ?</li>
+<li>Fournissez un exemple où les gradients disparaissent pour la
+fonction d’activation sigmoïde.</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/90">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/91">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/226">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/17984">Discussions</a> :end_tab:</p>
+</main><p class="pager"><a href="index.html">Précédent</a> | <a href="mlp-implementation.html">Suivant</a></p></body></html>

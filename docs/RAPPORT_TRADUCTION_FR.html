@@ -40,6 +40,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <li><code>_build/html/chapter_preliminaries/index.html</code></li>
 <li><code>_build/html/chapter_linear-regression/index.html</code></li>
 <li><code>docs/chapter_linear-classification/index.html</code></li>
+<li><code>docs/chapter_multilayer-perceptrons/index.html</code></li>
 </ul>
 <p>Vérifications locales effectuées sur
 <code>http://localhost:4173</code> :</p>
@@ -122,6 +123,26 @@ traduit en français par
 <li><code>chapter_linear-classification/environment-and-distribution-shift.md</code>
 : traduit en français par
 <code>linear_classification_environment_and_distribution_shift.txt</code>.</li>
+<li><code>chapter_multilayer-perceptrons/index.md</code> : traduit en
+français par <code>multilayer_perceptrons_index.txt</code>.</li>
+<li><code>chapter_multilayer-perceptrons/mlp.md</code> : traduit en
+français par <code>multilayer_perceptrons_mlp.txt</code>.</li>
+<li><code>chapter_multilayer-perceptrons/mlp-implementation.md</code> :
+traduit en français par
+<code>multilayer_perceptrons_mlp_implementation.txt</code>.</li>
+<li><code>chapter_multilayer-perceptrons/numerical-stability-and-init.md</code>
+: traduit en français par
+<code>multilayer_perceptrons_numerical_stability_and_init.txt</code>.</li>
+<li><code>chapter_multilayer-perceptrons/backprop.md</code> : traduit en
+français par <code>multilayer_perceptrons_backprop.txt</code>.</li>
+<li><code>chapter_multilayer-perceptrons/dropout.md</code> : traduit en
+français par <code>multilayer_perceptrons_dropout.txt</code>.</li>
+<li><code>chapter_multilayer-perceptrons/generalization-deep.md</code> :
+traduit en français par
+<code>multilayer_perceptrons_generalization_deep.txt</code>.</li>
+<li><code>chapter_multilayer-perceptrons/kaggle-house-price.md</code> :
+traduit en français par
+<code>multilayer_perceptrons_kaggle_house_price.txt</code>.</li>
 </ul>
 <p>Ajouts manuels de structure française :</p>
 <ul>
@@ -147,6 +168,10 @@ partiel.</li>
 <li><code>img/softmaxreg.svg</code>, <code>img/cat-dog-train.png</code>,
 <code>img/cat-dog-test.png</code>, <code>img/popvssoda.png</code> :
 figures utilisées par <code>chapter_linear-classification</code>.</li>
+<li><code>img/dropout2.svg</code>, <code>img/forward.svg</code>,
+<code>img/house-pricing.png</code>, <code>img/kaggle-submit2.png</code>,
+<code>img/kaggle.png</code>, <code>img/mlp.svg</code> : figures
+utilisées par <code>chapter_multilayer-perceptrons</code>.</li>
 </ul>
 <h2 id="non-traduit-restant-à-faire">Non traduit / restant à faire</h2>
 <p>Les chapitres copiés dans cette version partielle ont été traduits.
@@ -212,6 +237,14 @@ le chapitre a donc été publié dans
 <code>docs/chapter_linear-classification/</code> via une génération HTML
 ciblée avec MathJax et les images locales, en attendant de stabiliser le
 pipeline Sphinx complet.</p>
+<p>Pour <code>chapter_multilayer-perceptrons</code>, huit agents Gemini
+ont été lancés en deux vagues. Les blocs de code fenced ont ensuite été
+restaurés depuis le dépôt original anglais. Le build D2L-Book local
+étant instable dans cette session, les notebooks et pages HTML publiques
+ont été générés à partir des sources Markdown traduites, avec MathJax et
+les images locales. Cette solution garde les sources françaises et le
+site consultable, mais le pipeline Sphinx complet devra être stabilisé
+avant la version finale.</p>
 <h2 id="limites-du-build-partiel">Limites du build partiel</h2>
 <p>Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un
 build complet précédent du même état avait listé 88 avertissements

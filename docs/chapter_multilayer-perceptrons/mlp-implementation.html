@@ -1,0 +1,320 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Mise en œuvre des perceptrons multicouches — Plonger au coeur du Deep Learning</title><link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css"><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script><style>body{max-width:1180px;margin:0 auto;padding:0 24px 48px;font-family:Arial,sans-serif;line-height:1.55}header{border-bottom:1px solid #ddd;margin-bottom:24px;padding:18px 0}nav.chapter{background:#f7f7f7;padding:12px 16px;margin:16px 0}main img{max-width:100%;height:auto}pre{overflow:auto;background:#f6f8fa;padding:12px}.pager a{margin-right:16px}</style></head><body><header><a href="../index.html">Plonger au coeur du Deep Learning</a> / <strong>Mise en œuvre des perceptrons multicouches</strong></header><nav class="chapter"><strong>Chapitre 5 - Perceptrons multicouches</strong><ol><li><a href="mlp.html">Perceptrons multicouches</a></li>
+<li><a href="mlp-implementation.html">Mise en œuvre des perceptrons multicouches</a></li>
+<li><a href="backprop.html">Propagation avant, rétropropagation et graphes de calcul</a></li>
+<li><a href="numerical-stability-and-init.html">Stabilité numérique et initialisation</a></li>
+<li><a href="generalization-deep.html">Généralisation en apprentissage profond</a></li>
+<li><a href="dropout.html">Dropout</a></li>
+<li><a href="kaggle-house-price.html">Prédiction du prix des maisons sur Kaggle</a></li></ol></nav><main><div class="sourceCode" id="cb1"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="mise-en-œuvre-des-perceptrons-multicouches">Mise en œuvre des
+perceptrons multicouches</h1>
+<p>:label:<code>sec_mlp-implementation</code></p>
+<p>Les perceptrons multicouches (MLP) ne sont pas beaucoup plus
+complexes à mettre en œuvre que les modèles linéaires simples. La
+principale différence conceptuelle est que nous concaténons désormais
+plusieurs couches.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> np, npx</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet.gluon <span class="im">import</span> nn</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flax <span class="im">import</span> linen <span class="im">as</span> nn</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span></code></pre></div>
+<h2 id="mise-en-œuvre-à-partir-de-zéro">Mise en œuvre à partir de
+zéro</h2>
+<p>Commençons à nouveau par implémenter un tel réseau à partir de
+zéro.</p>
+<h3 id="initialisation-des-paramètres-du-modèle">Initialisation des
+paramètres du modèle</h3>
+<p>Rappelons que Fashion-MNIST contient 10 classes, et que chaque image
+consiste en une grille de <span class="math inline">\(28 \times 28 =
+784\)</span> valeurs de pixels en niveaux de gris. Comme précédemment,
+nous ignorerons pour l’instant la structure spatiale entre les pixels,
+de sorte que nous pouvons considérer cela comme un ensemble de données
+de classification avec 784 caractéristiques d’entrée et 10 classes. Pour
+commencer, nous allons [<strong>implémenter un MLP avec une couche
+cachée et 256 unités cachées.</strong>] Le nombre de couches et leur
+largeur sont tous deux ajustables (ils sont considérés comme des
+hyperparamètres). En règle générale, nous choisissons des largeurs de
+couche divisibles par des puissances de 2 plus grandes. Cela est
+efficace d’un point de vue informatique en raison de la manière dont la
+mémoire est allouée et adressée dans le matériel.</p>
+<p>À nouveau, nous représenterons nos paramètres avec plusieurs
+tenseurs. Notez que <em>pour chaque couche</em>, nous devons suivre une
+matrice de poids et un vecteur de biais. Comme toujours, nous allouons
+de la mémoire pour les gradients de la perte par rapport à ces
+paramètres.</p>
+<p>:begin_tab:<code>mxnet</code> Dans le code ci-dessous, nous
+définissons et initialisons d’abord les paramètres, puis nous activons
+le suivi des gradients. :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> Dans le code ci-dessous, nous
+utilisons <code>nn.Parameter</code> pour enregistrer automatiquement un
+attribut de classe comme un paramètre à suivre par <code>autograd</code>
+(:numref:<code>sec_autograd</code>). :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> Dans le code ci-dessous, nous
+utilisons <code>tf.Variable</code> pour définir le paramètre du modèle.
+:end_tab:</p>
+<p>:begin_tab:<code>jax</code> Dans le code ci-dessous, nous utilisons
+<code>flax.linen.Module.param</code> pour définir le paramètre du
+modèle. :end_tab:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MLPScratch(d2l.Classifier):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_inputs, num_outputs, num_hiddens, lr, sigma<span class="op">=</span><span class="fl">0.01</span>):</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W1 <span class="op">=</span> np.random.randn(num_inputs, num_hiddens) <span class="op">*</span> sigma</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.b1 <span class="op">=</span> np.zeros(num_hiddens)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W2 <span class="op">=</span> np.random.randn(num_hiddens, num_outputs) <span class="op">*</span> sigma</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.b2 <span class="op">=</span> np.zeros(num_outputs)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> param <span class="kw">in</span> <span class="va">self</span>.get_scratch_params():</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>            param.attach_grad()</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MLPScratch(d2l.Classifier):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_inputs, num_outputs, num_hiddens, lr, sigma<span class="op">=</span><span class="fl">0.01</span>):</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W1 <span class="op">=</span> nn.Parameter(torch.randn(num_inputs, num_hiddens) <span class="op">*</span> sigma)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.b1 <span class="op">=</span> nn.Parameter(torch.zeros(num_hiddens))</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W2 <span class="op">=</span> nn.Parameter(torch.randn(num_hiddens, num_outputs) <span class="op">*</span> sigma)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.b2 <span class="op">=</span> nn.Parameter(torch.zeros(num_outputs))</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MLPScratch(d2l.Classifier):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_inputs, num_outputs, num_hiddens, lr, sigma<span class="op">=</span><span class="fl">0.01</span>):</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W1 <span class="op">=</span> tf.Variable(</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            tf.random.normal((num_inputs, num_hiddens)) <span class="op">*</span> sigma)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.b1 <span class="op">=</span> tf.Variable(tf.zeros(num_hiddens))</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W2 <span class="op">=</span> tf.Variable(</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>            tf.random.normal((num_hiddens, num_outputs)) <span class="op">*</span> sigma)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.b2 <span class="op">=</span> tf.Variable(tf.zeros(num_outputs))</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MLPScratch(d2l.Classifier):</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    num_inputs: <span class="bu">int</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    num_outputs: <span class="bu">int</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    num_hiddens: <span class="bu">int</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    lr: <span class="bu">float</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    sigma: <span class="bu">float</span> <span class="op">=</span> <span class="fl">0.01</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> setup(<span class="va">self</span>):</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W1 <span class="op">=</span> <span class="va">self</span>.param(<span class="st">&#39;W1&#39;</span>, nn.initializers.normal(<span class="va">self</span>.sigma),</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>                             (<span class="va">self</span>.num_inputs, <span class="va">self</span>.num_hiddens))</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.b1 <span class="op">=</span> <span class="va">self</span>.param(<span class="st">&#39;b1&#39;</span>, nn.initializers.zeros, <span class="va">self</span>.num_hiddens)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.W2 <span class="op">=</span> <span class="va">self</span>.param(<span class="st">&#39;W2&#39;</span>, nn.initializers.normal(<span class="va">self</span>.sigma),</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>                             (<span class="va">self</span>.num_hiddens, <span class="va">self</span>.num_outputs))</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.b2 <span class="op">=</span> <span class="va">self</span>.param(<span class="st">&#39;b2&#39;</span>, nn.initializers.zeros, <span class="va">self</span>.num_outputs)</span></code></pre></div>
+<h3 id="modèle">Modèle</h3>
+<p>Pour nous assurer de bien comprendre le fonctionnement global, nous
+allons [<strong>implémenter l’activation ReLU</strong>] nous-mêmes
+plutôt que d’invoquer directement la fonction <code>relu</code>
+intégrée.</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> relu(X):</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.maximum(X, <span class="dv">0</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> relu(X):</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    a <span class="op">=</span> torch.zeros_like(X)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> torch.<span class="bu">max</span>(X, a)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> relu(X):</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tf.math.maximum(X, <span class="dv">0</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> relu(X):</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> jnp.maximum(X, <span class="dv">0</span>)</span></code></pre></div>
+<p>Puisque nous ignorons la structure spatiale, nous transformons
+(<code>reshape</code>) chaque image bidimensionnelle en un vecteur plat
+de longueur <code>num_inputs</code>. Enfin, nous (<strong>implémentons
+notre modèle</strong>) avec seulement quelques lignes de code. Étant
+donné que nous utilisons l’autograd intégré du framework, c’est tout ce
+qu’il faut.</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(MLPScratch)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> forward(<span class="va">self</span>, X):</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> d2l.reshape(X, (<span class="op">-</span><span class="dv">1</span>, <span class="va">self</span>.num_inputs))</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    H <span class="op">=</span> relu(d2l.matmul(X, <span class="va">self</span>.W1) <span class="op">+</span> <span class="va">self</span>.b1)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> d2l.matmul(H, <span class="va">self</span>.W2) <span class="op">+</span> <span class="va">self</span>.b2</span></code></pre></div>
+<h3 id="entraînement">Entraînement</h3>
+<p>Heureusement, [<strong>la boucle d’entraînement pour les MLP est
+exactement la même que pour la régression softmax.</strong>] Nous
+définissons le modèle, les données et l’entraîneur, puis nous invoquons
+enfin la méthode <code>fit</code> sur le modèle et les données.</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> MLPScratch(num_inputs<span class="op">=</span><span class="dv">784</span>, num_outputs<span class="op">=</span><span class="dv">10</span>, num_hiddens<span class="op">=</span><span class="dv">256</span>, lr<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> d2l.FashionMNIST(batch_size<span class="op">=</span><span class="dv">256</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>trainer.fit(model, data)</span></code></pre></div>
+<h2 id="mise-en-œuvre-concise">Mise en œuvre concise</h2>
+<p>Comme on pouvait s’y attendre, en s’appuyant sur les API de haut
+niveau, nous pouvons implémenter les MLP de manière encore plus
+concise.</p>
+<h3 id="modèle-1">Modèle</h3>
+<p>Par rapport à notre mise en œuvre concise de la régression softmax
+(:numref:<code>sec_softmax_concise</code>), la seule différence est que
+nous ajoutons <em>deux</em> couches entièrement connectées là où nous
+n’en avions précédemment ajouté qu’une seule. La première est
+[<strong>la couche cachée</strong>], la seconde est la couche de
+sortie.</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MLP(d2l.Classifier):</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_outputs, num_hiddens, lr):</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> nn.Sequential()</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.add(nn.Dense(num_hiddens, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>                     nn.Dense(num_outputs))</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net.initialize()</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MLP(d2l.Classifier):</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_outputs, num_hiddens, lr):</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> nn.Sequential(nn.Flatten(), nn.LazyLinear(num_hiddens),</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>                                 nn.ReLU(), nn.LazyLinear(num_outputs))</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MLP(d2l.Classifier):</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_outputs, num_hiddens, lr):</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.net <span class="op">=</span> tf.keras.models.Sequential([</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>            tf.keras.layers.Flatten(),</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>            tf.keras.layers.Dense(num_hiddens, activation<span class="op">=</span><span class="st">&#39;relu&#39;</span>),</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>            tf.keras.layers.Dense(num_outputs)])</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MLP(d2l.Classifier):</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    num_outputs: <span class="bu">int</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    num_hiddens: <span class="bu">int</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    lr: <span class="bu">float</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">@nn.compact</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__call__</span>(<span class="va">self</span>, X):</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>        X <span class="op">=</span> X.reshape((X.shape[<span class="dv">0</span>], <span class="op">-</span><span class="dv">1</span>))  <span class="co"># Flatten</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>        X <span class="op">=</span> nn.Dense(<span class="va">self</span>.num_hiddens)(X)</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>        X <span class="op">=</span> nn.relu(X)</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>        X <span class="op">=</span> nn.Dense(<span class="va">self</span>.num_outputs)(X)</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> X</span></code></pre></div>
+<p>Précédemment, nous avions défini des méthodes <code>forward</code>
+pour les modèles afin de transformer l’entrée en utilisant les
+paramètres du modèle. Ces opérations sont essentiellement un pipeline :
+vous prenez une entrée et appliquez une transformation (par exemple, une
+multiplication matricielle avec des poids suivie de l’ajout d’un biais),
+puis vous utilisez de manière répétitive la sortie de la transformation
+actuelle comme entrée pour la transformation suivante. Cependant, vous
+avez peut-être remarqué qu’aucune méthode <code>forward</code> n’est
+définie ici. En fait, <code>MLP</code> hérite de la méthode
+<code>forward</code> de la classe <code>Module</code>
+(:numref:<code>subsec_oo-design-models</code>) pour invoquer simplement
+<code>self.net(X)</code> (<code>X</code> est l’entrée), qui est
+maintenant définie comme une séquence de transformations via la classe
+<code>Sequential</code>. La classe <code>Sequential</code> abstrait le
+processus de propagation avant, nous permettant de nous concentrer sur
+les transformations. Nous verrons plus en détail comment fonctionne la
+classe <code>Sequential</code> dans la
+:numref:<code>subsec_model-construction-sequential</code>.</p>
+<h3 id="entraînement-1">Entraînement</h3>
+<p>[<strong>La boucle d’entraînement</strong>] est exactement la même
+que lorsque nous avons implémenté la régression softmax. Cette
+modularité nous permet de séparer les questions concernant
+l’architecture du modèle des considérations orthogonales.</p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> MLP(num_outputs<span class="op">=</span><span class="dv">10</span>, num_hiddens<span class="op">=</span><span class="dv">256</span>, lr<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>trainer.fit(model, data)</span></code></pre></div>
+<h2 id="résumé">Résumé</h2>
+<p>Maintenant que nous avons plus de pratique dans la conception de
+réseaux profonds, le passage d’une seule à plusieurs couches de réseaux
+profonds ne pose plus un défi aussi important. En particulier, nous
+pouvons réutiliser l’algorithme d’entraînement et le chargeur de
+données. Notez cependant que l’implémentation des MLP à partir de zéro
+est tout de même laborieuse : nommer et suivre les paramètres du modèle
+rend difficile l’extension des modèles. Par exemple, imaginez que vous
+vouliez insérer une autre couche entre les couches 42 et 43. Cela
+pourrait maintenant être la couche 42b, à moins que nous ne soyons prêts
+à effectuer un renommage séquentiel. De plus, si nous implémentons le
+réseau à partir de zéro, il est beaucoup plus difficile pour le
+framework d’effectuer des optimisations de performance
+significatives.</p>
+<p>Néanmoins, vous avez maintenant atteint l’état de l’art de la fin des
+années 1980, époque où les réseaux profonds entièrement connectés
+étaient la méthode de choix pour la modélisation des réseaux de
+neurones. Notre prochaine étape conceptuelle consistera à considérer des
+images. Avant de le faire, nous devons examiner un certain nombre de
+bases statistiques et de détails sur la manière de calculer les modèles
+efficacement.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Modifiez le nombre d’unités cachées <code>num_hiddens</code> et
+tracez comment ce nombre affecte la précision du modèle. Quelle est la
+meilleure valeur pour cet hyperparamètre ?</li>
+<li>Essayez d’ajouter une couche cachée pour voir comment cela affecte
+les résultats.</li>
+<li>Pourquoi est-ce une mauvaise idée d’insérer une couche cachée avec
+un seul neurone ? Qu’est-ce qui pourrait mal se passer ?</li>
+<li>Comment le changement du taux d’apprentissage modifie-t-il vos
+résultats ? Avec tous les autres paramètres fixés, quel taux
+d’apprentissage vous donne les meilleurs résultats ? Quel est le lien
+avec le nombre d’époques ?</li>
+<li>Optimisons conjointement tous les hyperparamètres, c’est-à-dire le
+taux d’apprentissage, le nombre d’époques, le nombre de couches cachées
+et le nombre d’unités cachées par couche.
+<ol type="1">
+<li>Quel est le meilleur résultat que vous pouvez obtenir en les
+optimisant tous ?</li>
+<li>Pourquoi est-il beaucoup plus difficile de gérer plusieurs
+hyperparamètres ?</li>
+<li>Décrivez une stratégie efficace pour optimiser conjointement
+plusieurs paramètres.</li>
+</ol></li>
+<li>Comparez la vitesse du framework et de l’implémentation à partir de
+zéro pour un problème difficile. Comment cela évolue-t-il avec la
+complexité du réseau ?</li>
+<li>Mesurez la vitesse des multiplications tenseur-matrice pour des
+matrices bien alignées et mal alignées. Par exemple, testez des matrices
+de dimension 1024, 1025, 1026, 1028 et 1032.
+<ol type="1">
+<li>Comment cela change-t-il entre les GPU et les CPU ?</li>
+<li>Déterminez la largeur du bus mémoire de votre CPU et de votre
+GPU.</li>
+</ol></li>
+<li>Essayez différentes fonctions d’activation. Laquelle fonctionne le
+mieux ?</li>
+<li>Y a-t-il une différence entre les initialisations des poids du
+réseau ? Est-ce important ?</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/92">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/93">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/227">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/17985">Discussions</a> :end_tab:</p>
+</main><p class="pager"><a href="mlp.html">Précédent</a> | <a href="backprop.html">Suivant</a></p></body></html>

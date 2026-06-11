@@ -18,6 +18,7 @@ Traduit en français :
 - Préliminaires (`chapter_preliminaries/*.md`)
 - Régression linéaire (`chapter_linear-regression/*.md`)
 - Classification linéaire (`chapter_linear-classification/*.md`)
+- Perceptrons multicouches (`chapter_multilayer-perceptrons/*.md`)
 
 La traduction complète reste à poursuivre chapitre par chapitre avec des agents Gemini, en conservant le code, les équations, les labels, les références internes et la structure D2L-Book.
 

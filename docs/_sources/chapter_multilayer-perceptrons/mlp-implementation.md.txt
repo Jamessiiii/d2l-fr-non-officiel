@@ -1,0 +1,285 @@
+```{.python .input}
+%load_ext d2lbook.tab
+tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
+```
+
+# Mise en œuvre des perceptrons multicouches
+:label:`sec_mlp-implementation`
+
+Les perceptrons multicouches (MLP) ne sont pas beaucoup plus complexes à mettre en œuvre que les modèles linéaires simples. La principale différence conceptuelle est que nous concaténons désormais plusieurs couches.
+
+```{.python .input}
+%%tab mxnet
+from d2l import mxnet as d2l
+from mxnet import np, npx
+from mxnet.gluon import nn
+npx.set_np()
+```
+
+```{.python .input}
+%%tab pytorch
+from d2l import torch as d2l
+import torch
+from torch import nn
+```
+
+```{.python .input}
+%%tab tensorflow
+from d2l import tensorflow as d2l
+import tensorflow as tf
+```
+
+```{.python .input}
+%%tab jax
+from d2l import jax as d2l
+from flax import linen as nn
+import jax
+from jax import numpy as jnp
+```
+
+## Mise en œuvre à partir de zéro
+
+Commençons à nouveau par implémenter un tel réseau à partir de zéro.
+
+### Initialisation des paramètres du modèle
+
+Rappelons que Fashion-MNIST contient 10 classes, et que chaque image consiste en une grille de $28 \times 28 = 784$ valeurs de pixels en niveaux de gris. Comme précédemment, nous ignorerons pour l'instant la structure spatiale entre les pixels, de sorte que nous pouvons considérer cela comme un ensemble de données de classification avec 784 caractéristiques d'entrée et 10 classes. Pour commencer, nous allons [**implémenter un MLP avec une couche cachée et 256 unités cachées.**] Le nombre de couches et leur largeur sont tous deux ajustables (ils sont considérés comme des hyperparamètres). En règle générale, nous choisissons des largeurs de couche divisibles par des puissances de 2 plus grandes. Cela est efficace d'un point de vue informatique en raison de la manière dont la mémoire est allouée et adressée dans le matériel.
+
+À nouveau, nous représenterons nos paramètres avec plusieurs tenseurs. Notez que *pour chaque couche*, nous devons suivre une matrice de poids et un vecteur de biais. Comme toujours, nous allouons de la mémoire pour les gradients de la perte par rapport à ces paramètres.
+
+:begin_tab:`mxnet`
+Dans le code ci-dessous, nous définissons et initialisons d'abord les paramètres, puis nous activons le suivi des gradients.
+:end_tab:
+
+:begin_tab:`pytorch`
+Dans le code ci-dessous, nous utilisons `nn.Parameter` pour enregistrer automatiquement un attribut de classe comme un paramètre à suivre par `autograd` (:numref:`sec_autograd`).
+:end_tab:
+
+:begin_tab:`tensorflow`
+Dans le code ci-dessous, nous utilisons `tf.Variable` pour définir le paramètre du modèle.
+:end_tab:
+
+:begin_tab:`jax`
+Dans le code ci-dessous, nous utilisons `flax.linen.Module.param` pour définir le paramètre du modèle.
+:end_tab:
+
+```{.python .input}
+%%tab mxnet
+class MLPScratch(d2l.Classifier):
+    def __init__(self, num_inputs, num_outputs, num_hiddens, lr, sigma=0.01):
+        super().__init__()
+        self.save_hyperparameters()
+        self.W1 = np.random.randn(num_inputs, num_hiddens) * sigma
+        self.b1 = np.zeros(num_hiddens)
+        self.W2 = np.random.randn(num_hiddens, num_outputs) * sigma
+        self.b2 = np.zeros(num_outputs)
+        for param in self.get_scratch_params():
+            param.attach_grad()
+```
+
+```{.python .input}
+%%tab pytorch
+class MLPScratch(d2l.Classifier):
+    def __init__(self, num_inputs, num_outputs, num_hiddens, lr, sigma=0.01):
+        super().__init__()
+        self.save_hyperparameters()
+        self.W1 = nn.Parameter(torch.randn(num_inputs, num_hiddens) * sigma)
+        self.b1 = nn.Parameter(torch.zeros(num_hiddens))
+        self.W2 = nn.Parameter(torch.randn(num_hiddens, num_outputs) * sigma)
+        self.b2 = nn.Parameter(torch.zeros(num_outputs))
+```
+
+```{.python .input}
+%%tab tensorflow
+class MLPScratch(d2l.Classifier):
+    def __init__(self, num_inputs, num_outputs, num_hiddens, lr, sigma=0.01):
+        super().__init__()
+        self.save_hyperparameters()
+        self.W1 = tf.Variable(
+            tf.random.normal((num_inputs, num_hiddens)) * sigma)
+        self.b1 = tf.Variable(tf.zeros(num_hiddens))
+        self.W2 = tf.Variable(
+            tf.random.normal((num_hiddens, num_outputs)) * sigma)
+        self.b2 = tf.Variable(tf.zeros(num_outputs))
+```
+
+```{.python .input}
+%%tab jax
+class MLPScratch(d2l.Classifier):
+    num_inputs: int
+    num_outputs: int
+    num_hiddens: int
+    lr: float
+    sigma: float = 0.01
+
+    def setup(self):
+        self.W1 = self.param('W1', nn.initializers.normal(self.sigma),
+                             (self.num_inputs, self.num_hiddens))
+        self.b1 = self.param('b1', nn.initializers.zeros, self.num_hiddens)
+        self.W2 = self.param('W2', nn.initializers.normal(self.sigma),
+                             (self.num_hiddens, self.num_outputs))
+        self.b2 = self.param('b2', nn.initializers.zeros, self.num_outputs)
+```
+
+### Modèle
+
+Pour nous assurer de bien comprendre le fonctionnement global, nous allons [**implémenter l'activation ReLU**] nous-mêmes plutôt que d'invoquer directement la fonction `relu` intégrée.
+
+```{.python .input}
+%%tab mxnet
+def relu(X):
+    return np.maximum(X, 0)
+```
+
+```{.python .input}
+%%tab pytorch
+def relu(X):
+    a = torch.zeros_like(X)
+    return torch.max(X, a)
+```
+
+```{.python .input}
+%%tab tensorflow
+def relu(X):
+    return tf.math.maximum(X, 0)
+```
+
+```{.python .input}
+%%tab jax
+def relu(X):
+    return jnp.maximum(X, 0)
+```
+
+Puisque nous ignorons la structure spatiale, nous transformons (`reshape`) chaque image bidimensionnelle en un vecteur plat de longueur `num_inputs`. Enfin, nous (**implémentons notre modèle**) avec seulement quelques lignes de code. Étant donné que nous utilisons l'autograd intégré du framework, c'est tout ce qu'il faut.
+
+```{.python .input}
+%%tab all
+@d2l.add_to_class(MLPScratch)
+def forward(self, X):
+    X = d2l.reshape(X, (-1, self.num_inputs))
+    H = relu(d2l.matmul(X, self.W1) + self.b1)
+    return d2l.matmul(H, self.W2) + self.b2
+```
+
+### Entraînement
+
+Heureusement, [**la boucle d'entraînement pour les MLP est exactement la même que pour la régression softmax.**] Nous définissons le modèle, les données et l'entraîneur, puis nous invoquons enfin la méthode `fit` sur le modèle et les données.
+
+```{.python .input}
+%%tab all
+model = MLPScratch(num_inputs=784, num_outputs=10, num_hiddens=256, lr=0.1)
+data = d2l.FashionMNIST(batch_size=256)
+trainer = d2l.Trainer(max_epochs=10)
+trainer.fit(model, data)
+```
+
+## Mise en œuvre concise
+
+Comme on pouvait s'y attendre, en s'appuyant sur les API de haut niveau, nous pouvons implémenter les MLP de manière encore plus concise.
+
+### Modèle
+
+Par rapport à notre mise en œuvre concise de la régression softmax (:numref:`sec_softmax_concise`), la seule différence est que nous ajoutons *deux* couches entièrement connectées là où nous n'en avions précédemment ajouté qu'une seule. La première est [**la couche cachée**], la seconde est la couche de sortie.
+
+```{.python .input}
+%%tab mxnet
+class MLP(d2l.Classifier):
+    def __init__(self, num_outputs, num_hiddens, lr):
+        super().__init__()
+        self.save_hyperparameters()
+        self.net = nn.Sequential()
+        self.net.add(nn.Dense(num_hiddens, activation='relu'),
+                     nn.Dense(num_outputs))
+        self.net.initialize()
+```
+
+```{.python .input}
+%%tab pytorch
+class MLP(d2l.Classifier):
+    def __init__(self, num_outputs, num_hiddens, lr):
+        super().__init__()
+        self.save_hyperparameters()
+        self.net = nn.Sequential(nn.Flatten(), nn.LazyLinear(num_hiddens),
+                                 nn.ReLU(), nn.LazyLinear(num_outputs))
+```
+
+```{.python .input}
+%%tab tensorflow
+class MLP(d2l.Classifier):
+    def __init__(self, num_outputs, num_hiddens, lr):
+        super().__init__()
+        self.save_hyperparameters()
+        self.net = tf.keras.models.Sequential([
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(num_hiddens, activation='relu'),
+            tf.keras.layers.Dense(num_outputs)])
+```
+
+```{.python .input}
+%%tab jax
+class MLP(d2l.Classifier):
+    num_outputs: int
+    num_hiddens: int
+    lr: float
+
+    @nn.compact
+    def __call__(self, X):
+        X = X.reshape((X.shape[0], -1))  # Flatten
+        X = nn.Dense(self.num_hiddens)(X)
+        X = nn.relu(X)
+        X = nn.Dense(self.num_outputs)(X)
+        return X
+```
+
+Précédemment, nous avions défini des méthodes `forward` pour les modèles afin de transformer l'entrée en utilisant les paramètres du modèle. Ces opérations sont essentiellement un pipeline : vous prenez une entrée et appliquez une transformation (par exemple, une multiplication matricielle avec des poids suivie de l'ajout d'un biais), puis vous utilisez de manière répétitive la sortie de la transformation actuelle comme entrée pour la transformation suivante. Cependant, vous avez peut-être remarqué qu'aucune méthode `forward` n'est définie ici. En fait, `MLP` hérite de la méthode `forward` de la classe `Module` (:numref:`subsec_oo-design-models`) pour invoquer simplement `self.net(X)` (`X` est l'entrée), qui est maintenant définie comme une séquence de transformations via la classe `Sequential`. La classe `Sequential` abstrait le processus de propagation avant, nous permettant de nous concentrer sur les transformations. Nous verrons plus en détail comment fonctionne la classe `Sequential` dans la :numref:`subsec_model-construction-sequential`.
+
+
+### Entraînement
+
+[**La boucle d'entraînement**] est exactement la même que lorsque nous avons implémenté la régression softmax. Cette modularité nous permet de séparer les questions concernant l'architecture du modèle des considérations orthogonales.
+
+```{.python .input}
+%%tab all
+model = MLP(num_outputs=10, num_hiddens=256, lr=0.1)
+trainer.fit(model, data)
+```
+
+## Résumé
+
+Maintenant que nous avons plus de pratique dans la conception de réseaux profonds, le passage d'une seule à plusieurs couches de réseaux profonds ne pose plus un défi aussi important. En particulier, nous pouvons réutiliser l'algorithme d'entraînement et le chargeur de données. Notez cependant que l'implémentation des MLP à partir de zéro est tout de même laborieuse : nommer et suivre les paramètres du modèle rend difficile l'extension des modèles. Par exemple, imaginez que vous vouliez insérer une autre couche entre les couches 42 et 43. Cela pourrait maintenant être la couche 42b, à moins que nous ne soyons prêts à effectuer un renommage séquentiel. De plus, si nous implémentons le réseau à partir de zéro, il est beaucoup plus difficile pour le framework d'effectuer des optimisations de performance significatives.
+
+Néanmoins, vous avez maintenant atteint l'état de l'art de la fin des années 1980, époque où les réseaux profonds entièrement connectés étaient la méthode de choix pour la modélisation des réseaux de neurones. Notre prochaine étape conceptuelle consistera à considérer des images. Avant de le faire, nous devons examiner un certain nombre de bases statistiques et de détails sur la manière de calculer les modèles efficacement.
+
+
+## Exercices
+
+1. Modifiez le nombre d'unités cachées `num_hiddens` et tracez comment ce nombre affecte la précision du modèle. Quelle est la meilleure valeur pour cet hyperparamètre ?
+1. Essayez d'ajouter une couche cachée pour voir comment cela affecte les résultats.
+1. Pourquoi est-ce une mauvaise idée d'insérer une couche cachée avec un seul neurone ? Qu'est-ce qui pourrait mal se passer ?
+1. Comment le changement du taux d'apprentissage modifie-t-il vos résultats ? Avec tous les autres paramètres fixés, quel taux d'apprentissage vous donne les meilleurs résultats ? Quel est le lien avec le nombre d'époques ?
+1. Optimisons conjointement tous les hyperparamètres, c'est-à-dire le taux d'apprentissage, le nombre d'époques, le nombre de couches cachées et le nombre d'unités cachées par couche.
+    1. Quel est le meilleur résultat que vous pouvez obtenir en les optimisant tous ?
+    1. Pourquoi est-il beaucoup plus difficile de gérer plusieurs hyperparamètres ?
+    1. Décrivez une stratégie efficace pour optimiser conjointement plusieurs paramètres.
+1. Comparez la vitesse du framework et de l'implémentation à partir de zéro pour un problème difficile. Comment cela évolue-t-il avec la complexité du réseau ?
+1. Mesurez la vitesse des multiplications tenseur-matrice pour des matrices bien alignées et mal alignées. Par exemple, testez des matrices de dimension 1024, 1025, 1026, 1028 et 1032.
+    1. Comment cela change-t-il entre les GPU et les CPU ?
+    1. Déterminez la largeur du bus mémoire de votre CPU et de votre GPU.
+1. Essayez différentes fonctions d'activation. Laquelle fonctionne le mieux ?
+1. Y a-t-il une différence entre les initialisations des poids du réseau ? Est-ce important ?
+
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/92)
+:end_tab:
+
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/93)
+:end_tab:
+
+:begin_tab:`tensorflow`
+[Discussions](https://discuss.d2l.ai/t/227)
+:end_tab:
+
+:begin_tab:`jax`
+[Discussions](https://discuss.d2l.ai/t/17985)
+:end_tab:

@@ -1,0 +1,426 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Prédiction du prix des maisons sur Kaggle — Plonger au coeur du Deep Learning</title><link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css"><link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css"><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script><style>body{max-width:1180px;margin:0 auto;padding:0 24px 48px;font-family:Arial,sans-serif;line-height:1.55}header{border-bottom:1px solid #ddd;margin-bottom:24px;padding:18px 0}nav.chapter{background:#f7f7f7;padding:12px 16px;margin:16px 0}main img{max-width:100%;height:auto}pre{overflow:auto;background:#f6f8fa;padding:12px}.pager a{margin-right:16px}</style></head><body><header><a href="../index.html">Plonger au coeur du Deep Learning</a> / <strong>Prédiction du prix des maisons sur Kaggle</strong></header><nav class="chapter"><strong>Chapitre 5 - Perceptrons multicouches</strong><ol><li><a href="mlp.html">Perceptrons multicouches</a></li>
+<li><a href="mlp-implementation.html">Mise en œuvre des perceptrons multicouches</a></li>
+<li><a href="backprop.html">Propagation avant, rétropropagation et graphes de calcul</a></li>
+<li><a href="numerical-stability-and-init.html">Stabilité numérique et initialisation</a></li>
+<li><a href="generalization-deep.html">Généralisation en apprentissage profond</a></li>
+<li><a href="dropout.html">Dropout</a></li>
+<li><a href="kaggle-house-price.html">Prédiction du prix des maisons sur Kaggle</a></li></ol></nav><main><div class="sourceCode" id="cb1" data-n="1"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="prédiction-du-prix-des-maisons-sur-kaggle">Prédiction du prix
+des maisons sur Kaggle</h1>
+<p>:label:<code>sec_kaggle_house</code></p>
+<p>Maintenant que nous avons introduit quelques outils de base pour
+construire et entraîner des réseaux profonds et les régulariser avec des
+techniques incluant l’atténuation des poids (weight decay) et le
+dropout, nous sommes prêts à mettre toutes ces connaissances en pratique
+en participant à une compétition Kaggle. La compétition de prédiction du
+prix des maisons est un excellent point de départ. Les données sont
+assez génériques et ne présentent pas de structure exotique qui pourrait
+nécessiter des modèles spécialisés (comme pourraient le faire l’audio ou
+la vidéo). Cet ensemble de données, collecté par
+:citet:<code>De-Cock.2011</code>, couvre les prix des maisons à Ames,
+Iowa, sur la période 2006–2010. Il est considérablement plus grand que
+le célèbre <a
+href="https://archive.ics.uci.edu/ml/machine-learning-databases/housing/housing.names">Boston
+housing dataset</a> de Harrison et Rubinfeld (1978), possédant à la fois
+plus d’exemples et plus de caractéristiques.</p>
+<p>Dans cette section, nous vous guiderons à travers les détails du
+prétraitement des données, de la conception du modèle et de la sélection
+des hyperparamètres. Nous espérons qu’à travers une approche pratique,
+vous acquerrez des intuitions qui vous guideront dans votre carrière de
+data scientist.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> gluon, autograd, init, np, npx</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet.gluon <span class="im">import</span> nn</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>matplotlib inline</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span></code></pre></div>
+<h2 id="téléchargement-des-données">Téléchargement des données</h2>
+<p>Tout au long du livre, nous entraînerons et testerons des modèles sur
+divers ensembles de données téléchargés. Ici, nous (<strong>implémentons
+deux fonctions utilitaires</strong>) pour télécharger et extraire des
+fichiers zip ou tar. Encore une fois, nous passons sur les détails
+d’implémentation de telles fonctions utilitaires.</p>
+<div class="sourceCode" id="cb6" data-n="2"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> download(url, folder, sha1_hash<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Download a file to folder and return the local filepath.&quot;&quot;&quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> extract(filename, folder):</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Extract a zip/tar file into folder.&quot;&quot;&quot;</span></span></code></pre></div>
+<h2 id="kaggle">Kaggle</h2>
+<p><a href="https://www.kaggle.com">Kaggle</a> est une plateforme
+populaire qui héberge des compétitions de machine learning. Chaque
+compétition est centrée sur un ensemble de données et beaucoup sont
+parrainées par des parties prenantes qui offrent des prix aux solutions
+gagnantes. La plateforme aide les utilisateurs à interagir via des
+forums et du code partagé, favorisant à la fois la collaboration et la
+compétition. Bien que la course au classement échappe souvent à tout
+contrôle, les chercheurs se concentrant de manière myope sur les étapes
+de prétraitement plutôt que de se poser des questions fondamentales, il
+existe également une valeur énorme dans l’objectivité d’une plateforme
+qui facilite les comparaisons quantitatives directes entre les approches
+concurrentes ainsi que le partage de code afin que chacun puisse
+apprendre ce qui a fonctionné et ce qui n’a pas fonctionné. Si vous
+souhaitez participer à une compétition Kaggle, vous devrez d’abord créer
+un compte (voir :numref:<code>fig_kaggle</code>).</p>
+<p><img src="img/kaggle.png" alt="Le site Web de Kaggle." />
+:width:<code>400px</code> :label:<code>fig_kaggle</code></p>
+<p>Sur la page de la compétition de prédiction du prix des maisons,
+comme illustré dans :numref:<code>fig_house_pricing</code>, vous pouvez
+trouver l’ensemble de données (sous l’onglet “Data”), soumettre des
+prédictions et voir votre classement, L’URL est juste ici :</p>
+<blockquote>
+<p>https://www.kaggle.com/c/house-prices-advanced-regression-techniques</p>
+</blockquote>
+<p><img src="img/house-pricing.png"
+alt="La page de la compétition de prédiction du prix des maisons." />
+:width:<code>400px</code> :label:<code>fig_house_pricing</code></p>
+<h2 id="accès-et-lecture-de-lensemble-de-données">Accès et lecture de
+l’ensemble de données</h2>
+<p>Notez que les données de la compétition sont séparées en ensembles
+d’entraînement et de test. Chaque enregistrement inclut la valeur de la
+propriété de la maison et des attributs tels que le type de rue, l’année
+de construction, le type de toit, l’état du sous-sol, etc. Les
+caractéristiques se composent de divers types de données. Par exemple,
+l’année de construction est représentée par un entier, le type de toit
+par des affectations catégorielles discrètes, et d’autres
+caractéristiques par des nombres à virgule flottante. Et c’est là que la
+réalité complique les choses : pour certains exemples, certaines données
+sont totalement manquantes avec la valeur manquante marquée simplement
+comme “na”. Le prix de chaque maison est inclus pour l’ensemble
+d’entraînement uniquement (c’est une compétition après tout). Nous
+voudrons partitionner l’ensemble d’entraînement pour créer un ensemble
+de validation, mais nous ne pourrons évaluer nos modèles sur l’ensemble
+de test officiel qu’après avoir téléchargé les prédictions sur Kaggle.
+L’onglet “Data” de la compétition dans
+:numref:<code>fig_house_pricing</code> contient des liens pour
+télécharger les données.</p>
+<p>Pour commencer, nous allons [<strong>lire et traiter les données en
+utilisant <code>pandas</code></strong>], que nous avons introduit dans
+:numref:<code>sec_pandas</code>. Par commodité, nous pouvons télécharger
+et mettre en cache l’ensemble de données immobilières de Kaggle. Si un
+fichier correspondant à cet ensemble de données existe déjà dans le
+répertoire de cache et que son SHA-1 correspond à
+<code>sha1_hash</code>, notre code utilisera le fichier mis en cache
+pour éviter d’encombrer votre Internet avec des téléchargements
+redondants.</p>
+<div class="sourceCode" id="cb7" data-n="30"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> KaggleHouse(d2l.DataModule):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, batch_size, train<span class="op">=</span><span class="va">None</span>, val<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.save_hyperparameters()</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.train <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.raw_train <span class="op">=</span> pd.read_csv(d2l.download(</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>                d2l.DATA_URL <span class="op">+</span> <span class="st">&#39;kaggle_house_pred_train.csv&#39;</span>, <span class="va">self</span>.root,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>                sha1_hash<span class="op">=</span><span class="st">&#39;585e9cc93e70b39160e7921475f9bcd7d31219ce&#39;</span>))</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>            <span class="va">self</span>.raw_val <span class="op">=</span> pd.read_csv(d2l.download(</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>                d2l.DATA_URL <span class="op">+</span> <span class="st">&#39;kaggle_house_pred_test.csv&#39;</span>, <span class="va">self</span>.root,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>                sha1_hash<span class="op">=</span><span class="st">&#39;fa19780a7b011d9b009e8bff8e99922a8ee2eb90&#39;</span>))</span></code></pre></div>
+<p>L’ensemble de données d’entraînement comprend 1460 exemples, 80
+caractéristiques et une étiquette, tandis que les données de validation
+contiennent 1459 exemples et 80 caractéristiques.</p>
+<div class="sourceCode" id="cb8" data-n="31"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> KaggleHouse(batch_size<span class="op">=</span><span class="dv">64</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(data.raw_train.shape)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(data.raw_val.shape)</span></code></pre></div>
+<h2 id="prétraitement-des-données">Prétraitement des données</h2>
+<p>Jetons [<strong>un coup d’œil aux quatre premières et aux deux
+dernières caractéristiques ainsi qu’à l’étiquette (SalePrice)</strong>]
+des quatre premiers exemples.</p>
+<div class="sourceCode" id="cb9" data-n="10"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(data.raw_train.iloc[:<span class="dv">4</span>, [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="op">-</span><span class="dv">3</span>, <span class="op">-</span><span class="dv">2</span>, <span class="op">-</span><span class="dv">1</span>]])</span></code></pre></div>
+<p>On voit que dans chaque exemple, la première caractéristique est
+l’identifiant. Cela aide le modèle à déterminer chaque exemple
+d’entraînement. Bien que cela soit pratique, cela ne porte aucune
+information à des fins de prédiction. Par conséquent, nous le
+supprimerons de l’ensemble de données avant de fournir les données au
+modèle. De plus, étant donné une grande variété de types de données,
+nous devrons prétraiter les données avant de pouvoir commencer la
+modélisation.</p>
+<p>Commençons par les caractéristiques numériques. Tout d’abord, nous
+appliquons une heuristique, [<strong>en remplaçant toutes les valeurs
+manquantes par la moyenne de la caractéristique
+correspondante.</strong>] Ensuite, pour mettre toutes les
+caractéristiques sur une échelle commune, nous
+(<strong><em>standardisons</em> les données en redimensionnant les
+caractéristiques à une moyenne nulle et une variance unitaire</strong>)
+:</p>
+<p><span class="math display">\[x \leftarrow \frac{x -
+\mu}{\sigma},\]</span></p>
+<p>où <span class="math inline">\(\mu\)</span> et <span
+class="math inline">\(\sigma\)</span> désignent respectivement la
+moyenne et l’écart-type. Pour vérifier que cela transforme effectivement
+notre caractéristique (variable) de sorte qu’elle ait une moyenne nulle
+et une variance unitaire, notez que <span
+class="math inline">\(E[\frac{x-\mu}{\sigma}] = \frac{\mu - \mu}{\sigma}
+= 0\)</span> et que <span class="math inline">\(E[(x-\mu)^2] = (\sigma^2
++ \mu^2) - 2\mu^2+\mu^2 = \sigma^2\)</span>. Intuitivement, nous
+standardisons les données pour deux raisons. Premièrement, cela s’avère
+pratique pour l’optimisation. Deuxièmement, parce que nous ne savons pas
+<em>a priori</em> quelles caractéristiques seront pertinentes, nous ne
+voulons pas pénaliser les coefficients affectés à une caractéristique
+plus qu’à une autre.</p>
+<p>[<strong>Ensuite, nous traitons les valeurs discrètes.</strong>]
+Celles-ci incluent des caractéristiques telles que “MSZoning”.
+(<strong>Nous les remplaçons par un encodage “one-hot”</strong>) de la
+même manière que nous avons précédemment transformé les étiquettes
+multi-classes en vecteurs (voir
+:numref:<code>subsec_classification-problem</code>). Par exemple,
+“MSZoning” prend les valeurs “RL” et “RM”. En supprimant la
+caractéristique “MSZoning”, deux nouvelles caractéristiques indicatrices
+“MSZoning_RL” et “MSZoning_RM” sont créées avec des valeurs étant soit
+0, soit 1. Selon l’encodage one-hot, si la valeur d’origine de
+“MSZoning” est “RL”, alors “MSZoning_RL” est 1 et “MSZoning_RM” est 0.
+Le package <code>pandas</code> le fait automatiquement pour nous.</p>
+<div class="sourceCode" id="cb10" data-n="32"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(KaggleHouse)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> preprocess(<span class="va">self</span>):</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Remove the ID and label columns</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    label <span class="op">=</span> <span class="st">&#39;SalePrice&#39;</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    features <span class="op">=</span> pd.concat(</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>        (<span class="va">self</span>.raw_train.drop(columns<span class="op">=</span>[<span class="st">&#39;Id&#39;</span>, label]),</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>         <span class="va">self</span>.raw_val.drop(columns<span class="op">=</span>[<span class="st">&#39;Id&#39;</span>])))</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Standardize numerical columns</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    numeric_features <span class="op">=</span> features.dtypes[features.dtypes<span class="op">!=</span><span class="st">&#39;object&#39;</span>].index</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    features[numeric_features] <span class="op">=</span> features[numeric_features].<span class="bu">apply</span>(</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">lambda</span> x: (x <span class="op">-</span> x.mean()) <span class="op">/</span> (x.std()))</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Replace NAN numerical features by 0</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    features[numeric_features] <span class="op">=</span> features[numeric_features].fillna(<span class="dv">0</span>)</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Replace discrete features by one-hot encoding</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    features <span class="op">=</span> pd.get_dummies(features, dummy_na<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Save preprocessed features</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.train <span class="op">=</span> features[:<span class="va">self</span>.raw_train.shape[<span class="dv">0</span>]].copy()</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.train[label] <span class="op">=</span> <span class="va">self</span>.raw_train[label]</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.val <span class="op">=</span> features[<span class="va">self</span>.raw_train.shape[<span class="dv">0</span>]:].copy()</span></code></pre></div>
+<p>Vous pouvez voir que cette conversion augmente le nombre de
+caractéristiques de 79 à 331 (en excluant les colonnes ID et
+étiquette).</p>
+<div class="sourceCode" id="cb11" data-n="33"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>data.preprocess()</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>data.train.shape</span></code></pre></div>
+<h2 id="mesure-derreur">Mesure d’erreur</h2>
+<p>Pour commencer, nous allons entraîner un modèle linéaire avec une
+perte quadratique. Sans surprise, notre modèle linéaire ne mènera pas à
+une soumission gagnante pour la compétition, mais il fournit un test de
+cohérence pour voir s’il y a des informations significatives dans les
+données. Si nous ne pouvons pas faire mieux que de deviner au hasard
+ici, il y a de fortes chances que nous ayons un bug de traitement des
+données. Et si les choses fonctionnent, le modèle linéaire servira de
+base de référence nous donnant une intuition sur la proximité du modèle
+simple avec les meilleurs modèles rapportés, nous donnant une idée du
+gain que nous devrions attendre de modèles plus sophistiqués.</p>
+<p>Avec les prix des maisons, comme avec les prix des actions, nous nous
+soucions des quantités relatives plus que des quantités absolues. Ainsi,
+[<strong>nous avons tendance à nous soucier davantage de l’erreur
+relative <span class="math inline">\(\frac{y -
+\hat{y}}{y}\)</span></strong>] que de l’erreur absolue <span
+class="math inline">\(y - \hat{y}\)</span>. Par exemple, si notre
+prédiction est erronée de 100 000 $ lors de l’estimation du prix d’une
+maison dans l’Ohio rural, où la valeur d’une maison typique est de 125
+000 $, alors nous faisons probablement un travail horrible. D’un autre
+côté, si nous nous trompons de ce montant à Los Altos Hills, en
+Californie, cela pourrait représenter une prédiction d’une précision
+étonnante (là-bas, le prix médian des maisons dépasse 4 millions de
+$).</p>
+<p>(<strong>Une façon de résoudre ce problème consiste à mesurer l’écart
+dans le logarithme des estimations de prix.</strong>) En fait, il s’agit
+également de la mesure d’erreur officielle utilisée par la compétition
+pour évaluer la qualité des soumissions. Après tout, une petite valeur
+<span class="math inline">\(\delta\)</span> pour <span
+class="math inline">\(|\log y - \log \hat{y}| \leq \delta\)</span> se
+traduit par <span class="math inline">\(e^{-\delta} \leq
+\frac{\hat{y}}{y} \leq e^\delta\)</span>. Cela conduit à l’erreur
+quadratique moyenne suivante entre le logarithme du prix prédit et le
+logarithme du prix réel :</p>
+<p><span class="math display">\[\sqrt{\frac{1}{n}\sum_{i=1}^n\left(\log
+y_i -\log \hat{y}_i\right)^2}.\]</span></p>
+<div class="sourceCode" id="cb12" data-n="60"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">@d2l.add_to_class</span>(KaggleHouse)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_dataloader(<span class="va">self</span>, train):</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    label <span class="op">=</span> <span class="st">&#39;SalePrice&#39;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> <span class="va">self</span>.train <span class="cf">if</span> train <span class="cf">else</span> <span class="va">self</span>.val</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> label <span class="kw">not</span> <span class="kw">in</span> data: <span class="cf">return</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    get_tensor <span class="op">=</span> <span class="kw">lambda</span> x: d2l.tensor(x.values.astype(<span class="bu">float</span>),</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>                                      dtype<span class="op">=</span>d2l.float32)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Logarithm of prices </span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    tensors <span class="op">=</span> (get_tensor(data.drop(columns<span class="op">=</span>[label])),  <span class="co"># X</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>               d2l.reshape(d2l.log(get_tensor(data[label])), (<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>)))  <span class="co"># Y</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="va">self</span>.get_tensorloader(tensors, train)</span></code></pre></div>
+<h2 id="validation-croisée-à-k-blocs">Validation croisée à <span
+class="math inline">\(K\)</span> blocs</h2>
+<p>Vous vous souvenez peut-être que nous avons introduit la
+[<strong>validation croisée</strong>] dans
+:numref:<code>subsec_generalization-model-selection</code>, où nous
+avons discuté de la manière de gérer la sélection de modèle. Nous en
+ferons bon usage pour sélectionner la conception du modèle et ajuster
+les hyperparamètres. Nous avons d’abord besoin d’une fonction qui
+renvoie le <span class="math inline">\(i^{\text{ème}}\)</span> bloc des
+données dans une procédure de validation croisée à <span
+class="math inline">\(K\)</span> blocs. Elle procède en découpant le
+<span class="math inline">\(i^{\text{ème}}\)</span> segment comme
+données de validation et en renvoyant le reste comme données
+d’entraînement. Notez que ce n’est pas la manière la plus efficace de
+gérer les données et nous ferions certainement quelque chose de beaucoup
+plus intelligent si notre ensemble de données était considérablement
+plus grand. Mais cette complexité supplémentaire pourrait obscurcir
+notre code inutilement, nous pouvons donc l’omettre ici en toute
+sécurité en raison de la simplicité de notre problème.</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> k_fold_data(data, k):</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    rets <span class="op">=</span> []</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    fold_size <span class="op">=</span> data.train.shape[<span class="dv">0</span>] <span class="op">//</span> k</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(k):</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>        idx <span class="op">=</span> <span class="bu">range</span>(j <span class="op">*</span> fold_size, (j<span class="op">+</span><span class="dv">1</span>) <span class="op">*</span> fold_size)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>        rets.append(KaggleHouse(data.batch_size, data.train.drop(index<span class="op">=</span>idx),  </span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>                                data.train.loc[idx]))    </span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> rets</span></code></pre></div>
+<p>[<strong>L’erreur de validation moyenne est renvoyée</strong>]
+lorsque nous entraînons <span class="math inline">\(K\)</span> fois dans
+la validation croisée à <span class="math inline">\(K\)</span>
+blocs.</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> k_fold(trainer, data, k, lr):</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    val_loss, models <span class="op">=</span> [], []</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i, data_fold <span class="kw">in</span> <span class="bu">enumerate</span>(k_fold_data(data, k)):</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>        model <span class="op">=</span> d2l.LinearRegression(lr)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>        model.board.yscale<span class="op">=</span><span class="st">&#39;log&#39;</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i <span class="op">!=</span> <span class="dv">0</span>: model.board.display <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>        trainer.fit(model, data_fold)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>        val_loss.append(<span class="bu">float</span>(model.board.data[<span class="st">&#39;val_loss&#39;</span>][<span class="op">-</span><span class="dv">1</span>].y))</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>        models.append(model)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&#39;average validation log mse = </span><span class="sc">{</span><span class="bu">sum</span>(val_loss)<span class="op">/</span><span class="bu">len</span>(val_loss)<span class="sc">}</span><span class="ss">&#39;</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> models</span></code></pre></div>
+<h2 id="sélection-de-modèle">[<strong>Sélection de modèle</strong>]</h2>
+<p>Dans cet exemple, nous choisissons un ensemble d’hyperparamètres non
+optimisés et laissons le lecteur améliorer le modèle. Trouver un bon
+choix peut prendre du temps, selon le nombre de variables que l’on
+optimise. Avec un ensemble de données suffisamment grand, et les types
+normaux d’hyperparamètres, la validation croisée à <span
+class="math inline">\(K\)</span> blocs a tendance à être raisonnablement
+résiliente contre les tests multiples. Cependant, si nous essayons un
+nombre déraisonnablement grand d’options, nous pourrions constater que
+nos performances de validation ne sont plus représentatives de l’erreur
+réelle.</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>trainer <span class="op">=</span> d2l.Trainer(max_epochs<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>models <span class="op">=</span> k_fold(trainer, data, k<span class="op">=</span><span class="dv">5</span>, lr<span class="op">=</span><span class="fl">0.01</span>)</span></code></pre></div>
+<p>Notez que parfois le nombre d’erreurs d’entraînement pour un ensemble
+d’hyperparamètres peut être très faible, même si le nombre d’erreurs sur
+la validation croisée à <span class="math inline">\(K\)</span> blocs
+devient considérablement plus élevé. Cela indique que nous sommes en
+surapprentissage. Tout au long de l’entraînement, vous voudrez
+surveiller les deux nombres. Moins de surapprentissage pourrait indiquer
+que nos données peuvent supporter un modèle plus puissant. Un
+surapprentissage massif pourrait suggérer que nous pouvons gagner en
+incorporant des techniques de régularisation.</p>
+<h2 id="soumission-des-prédictions-sur-kaggle">[<strong>Soumission des
+prédictions sur Kaggle</strong>]</h2>
+<p>Maintenant que nous savons quel devrait être un bon choix
+d’hyperparamètres, nous pourrions calculer les prédictions moyennes sur
+l’ensemble de test par tous les <span class="math inline">\(K\)</span>
+modèles. Sauvegarder les prédictions dans un fichier csv simplifiera le
+téléchargement des résultats sur Kaggle. Le code suivant générera un
+fichier appelé <code>submission.csv</code>.</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python input"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>):</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    preds <span class="op">=</span> [model(d2l.tensor(data.val.values.astype(<span class="bu">float</span>), dtype<span class="op">=</span>d2l.float32))</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>             <span class="cf">for</span> model <span class="kw">in</span> models]</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> tab.selected(<span class="st">&#39;jax&#39;</span>):</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    preds <span class="op">=</span> [model.<span class="bu">apply</span>({<span class="st">&#39;params&#39;</span>: trainer.state.params},</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>             d2l.tensor(data.val.values.astype(<span class="bu">float</span>), dtype<span class="op">=</span>d2l.float32))</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>             <span class="cf">for</span> model <span class="kw">in</span> models]</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Taking exponentiation of predictions in the logarithm scale</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>ensemble_preds <span class="op">=</span> d2l.reduce_mean(d2l.exp(d2l.concat(preds, <span class="dv">1</span>)), <span class="dv">1</span>)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>submission <span class="op">=</span> pd.DataFrame({<span class="st">&#39;Id&#39;</span>:data.raw_val.Id,</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>                           <span class="st">&#39;SalePrice&#39;</span>:d2l.numpy(ensemble_preds)})</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>submission.to_csv(<span class="st">&#39;submission.csv&#39;</span>, index<span class="op">=</span><span class="va">False</span>)</span></code></pre></div>
+<p>Ensuite, comme démontré dans :numref:<code>fig_kaggle_submit2</code>,
+nous pouvons soumettre nos prédictions sur Kaggle et voir comment elles
+se comparent aux prix réels des maisons (étiquettes) sur l’ensemble de
+test. Les étapes sont assez simples :</p>
+<ul>
+<li>Connectez-vous au site Web de Kaggle et visitez la page de la
+compétition de prédiction du prix des maisons.</li>
+<li>Cliquez sur le bouton “Submit Predictions” ou “Late
+Submission”.</li>
+<li>Cliquez sur le bouton “Upload Submission File” dans la case en
+pointillés au bas de la page et sélectionnez le fichier de prédiction
+que vous souhaitez télécharger.</li>
+<li>Cliquez sur le bouton “Make Submission” au bas de la page pour
+afficher vos résultats.</li>
+</ul>
+<p><img src="img/kaggle-submit2.png"
+alt="Soumission de données à Kaggle." /> :width:<code>400px</code>
+:label:<code>fig_kaggle_submit2</code></p>
+<h2 id="résumé-et-discussion">Résumé et discussion</h2>
+<p>Les données réelles contiennent souvent un mélange de différents
+types de données et doivent être prétraitées. Redimensionner les données
+à valeurs réelles pour obtenir une moyenne nulle et une variance
+unitaire est un bon choix par défaut. Il en va de même pour le
+remplacement des valeurs manquantes par leur moyenne. De plus, la
+transformation des caractéristiques catégorielles en caractéristiques
+indicatrices nous permet de les traiter comme des vecteurs one-hot.
+Lorsque nous avons tendance à nous soucier davantage de l’erreur
+relative que de l’erreur absolue, nous pouvons mesurer l’écart dans le
+logarithme de la prédiction. Pour sélectionner le modèle et ajuster les
+hyperparamètres, nous pouvons utiliser la validation croisée à <span
+class="math inline">\(K\)</span> blocs.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Soumettez vos prédictions pour cette section à Kaggle. Quel est
+votre score ?</li>
+<li>Est-ce toujours une bonne idée de remplacer les valeurs manquantes
+par une moyenne ? Indice : pouvez-vous imaginer une situation où les
+valeurs ne manquent pas au hasard ?</li>
+<li>Améliorez le score en ajustant les hyperparamètres via la validation
+croisée à <span class="math inline">\(K\)</span> blocs.</li>
+<li>Améliorez le score en améliorant le modèle (par exemple, couches,
+atténuation des poids et dropout).</li>
+<li>Que se passe-t-il si nous ne standardisons pas les caractéristiques
+numériques continues comme nous l’avons fait dans cette section ?</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/106">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/107">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/237">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/17988">Discussions</a> :end_tab:</p>
+</main><p class="pager"><a href="dropout.html">Précédent</a></p></body></html>
