@@ -4,11 +4,11 @@ Date : 2026-06-11
 
 ## Artefacts produits
 
-- Sources françaises partielles : `/Users/janslou/Desktop/livre IA/d2l-fr`
-- Site HTML français partiel généré : `/Users/janslou/Desktop/livre IA/d2l-fr/_build/html`
-- Site HTML préparé pour GitHub Pages : `/Users/janslou/Desktop/livre IA/d2l-fr/docs`
-- Notebooks générés : `/Users/janslou/Desktop/livre IA/d2l-fr/notebooks`
-- Dépôt original cloné : `/Users/janslou/Desktop/livre IA/d2l-en`
+- Sources françaises partielles : `d2l-fr/`
+- Site HTML français partiel généré : `d2l-fr/_build/html`
+- Site HTML préparé pour GitHub Pages : `d2l-fr/docs`
+- Notebooks générés : `d2l-fr/notebooks`
+- Dépôt original cloné localement : `d2l-en/`
 - Dépôt GitHub personnel créé : `https://github.com/Jamessiiii/d2l-fr-non-officiel`
 
 ## Build validé
@@ -18,7 +18,7 @@ Le pipeline D2L-Book a été validé sur un smoke test anglais, puis sur la vers
 Commandes utiles :
 
 ```bash
-cd "/Users/janslou/Desktop/livre IA/d2l-fr"
+cd d2l-fr
 . .venv-build/bin/activate
 d2lbook build eval --tab all
 d2lbook build rst --tab all
@@ -40,6 +40,7 @@ Le build HTML final a réussi et produit notamment :
 - `_build/html/chapter_linear-regression/index.html`
 - `docs/chapter_linear-classification/index.html`
 - `docs/chapter_multilayer-perceptrons/index.html`
+- `docs/chapter_builders-guide/index.html`
 
 Vérifications locales effectuées sur `http://localhost:4173` :
 
@@ -90,6 +91,14 @@ Traduction réalisée par agent Gemini :
 - `chapter_multilayer-perceptrons/dropout.md` : traduit en français par `multilayer_perceptrons_dropout.txt`.
 - `chapter_multilayer-perceptrons/generalization-deep.md` : traduit en français par `multilayer_perceptrons_generalization_deep.txt`.
 - `chapter_multilayer-perceptrons/kaggle-house-price.md` : traduit en français par `multilayer_perceptrons_kaggle_house_price.txt`.
+- `chapter_builders-guide/index.md` : traduit en français par `builders_guide_index.txt`.
+- `chapter_builders-guide/model-construction.md` : traduit en français par `builders_guide_model_construction.txt`.
+- `chapter_builders-guide/parameters.md` : traduit en français par `builders_guide_parameters.txt`.
+- `chapter_builders-guide/init-param.md` : traduit en français par `builders_guide_init_param.txt`.
+- `chapter_builders-guide/lazy-init.md` : traduit en français par `builders_guide_lazy_init.txt`.
+- `chapter_builders-guide/custom-layer.md` : traduit en français par `builders_guide_custom_layer.txt`.
+- `chapter_builders-guide/read-write.md` : traduit en français par `builders_guide_read_write.txt`.
+- `chapter_builders-guide/use-gpu.md` : traduit en français par `builders_guide_use_gpu.txt`.
 
 Ajouts manuels de structure française :
 
@@ -103,6 +112,7 @@ Ajouts manuels de structure française :
 - `img/capacity-vs-error.svg`, `img/fit-linreg.svg`, `img/singleneuron.svg`, `img/neuron.svg` : figures utilisées par `chapter_linear-regression`.
 - `img/softmaxreg.svg`, `img/cat-dog-train.png`, `img/cat-dog-test.png`, `img/popvssoda.png` : figures utilisées par `chapter_linear-classification`.
 - `img/dropout2.svg`, `img/forward.svg`, `img/house-pricing.png`, `img/kaggle-submit2.png`, `img/kaggle.png`, `img/mlp.svg` : figures utilisées par `chapter_multilayer-perceptrons`.
+- `img/blocks.svg`, `img/copyto.svg` : figures utilisées par `chapter_builders-guide`.
 
 ## Non traduit / restant à faire
 
@@ -140,6 +150,8 @@ Pour `chapter_linear-classification`, huit agents Gemini ont été lancés en de
 
 Pour `chapter_multilayer-perceptrons`, huit agents Gemini ont été lancés en deux vagues. Les blocs de code fenced ont ensuite été restaurés depuis le dépôt original anglais. Le build D2L-Book local étant instable dans cette session, les notebooks et pages HTML publiques ont été générés à partir des sources Markdown traduites, avec MathJax et les images locales. Cette solution garde les sources françaises et le site consultable, mais le pipeline Sphinx complet devra être stabilisé avant la version finale.
 
+Pour `chapter_builders-guide`, huit agents Gemini ont été lancés en deux vagues. Les blocs de code fenced ont ensuite été restaurés depuis le dépôt original anglais. Les notebooks et pages HTML publiques ont été générés à partir des sources Markdown traduites, avec MathJax et les images locales, car le pipeline D2L-Book/Sphinx complet reste instable dans cette session.
+
 ## Limites du build partiel
 
 Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un build complet précédent du même état avait listé 88 avertissements attendus pour une version partielle :
@@ -152,8 +164,8 @@ Pour le build complet, il faudra restaurer une copie complète ou des liens robu
 Note technique : l'ancien environnement `.venv-build` placé dans la racine du dépôt a fini par bloquer `pkg_resources`/`notedown`. Les builds courants utilisent des environnements virtuels frais hors dépôt, notamment :
 
 ```bash
-/Users/janslou/Desktop/livre IA/d2l-fr-venv-build-fresh
-/Users/janslou/Desktop/livre IA/d2l-fr-venv-build-run2
+../d2l-fr-venv-build-fresh
+../d2l-fr-venv-build-run2
 ```
 
 Le HTML a été produit en lançant directement Sphinx sur `_build/rst_all` après génération des notebooks/RST, afin d'éviter la réécriture de deux notebooks `eval_all` vides observée pendant un run interrompu.

@@ -19,6 +19,7 @@ Traduit en français :
 - Régression linéaire (`chapter_linear-regression/*.md`)
 - Classification linéaire (`chapter_linear-classification/*.md`)
 - Perceptrons multicouches (`chapter_multilayer-perceptrons/*.md`)
+- Guide du constructeur (`chapter_builders-guide/*.md`)
 
 La traduction complète reste à poursuivre chapitre par chapitre avec des agents Gemini, en conservant le code, les équations, les labels, les références internes et la structure D2L-Book.
 
@@ -30,8 +31,8 @@ Les notebooks générés se trouvent dans `notebooks/`.
 Pour reconstruire localement :
 
 ```bash
-cd "/Users/janslou/Desktop/livre IA/d2l-fr"
-. "/Users/janslou/Desktop/livre IA/d2l-fr-venv-build-fresh/bin/activate"
+cd d2l-fr
+. ../d2l-fr-venv-build-fresh/bin/activate
 d2lbook build eval --tab all
 d2lbook build rst --tab all
 install -m 0644 frontpage.html _build/rst_all/frontpage.html

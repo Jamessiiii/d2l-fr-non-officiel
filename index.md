@@ -26,4 +26,5 @@ chapter_preliminaries/index
 chapter_linear-regression/index
 chapter_linear-classification/index
 chapter_multilayer-perceptrons/index
+chapter_builders-guide/index
 ```
