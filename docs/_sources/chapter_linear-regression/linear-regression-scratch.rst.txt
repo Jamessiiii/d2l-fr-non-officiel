@@ -1,0 +1,272 @@
+
+.. _sec_linear_scratch:
+
+Implémentation de la régression linéaire à partir de zéro
+=========================================================
+
+
+Nous sommes maintenant prêts à travailler sur une implémentation
+complète et fonctionnelle de la régression linéaire. Dans cette section,
+nous implémenterons l’intégralité de la méthode à partir de zéro, y
+compris (i) le modèle ; (ii) la fonction de perte ; (iii) un optimiseur
+par descente de gradient stochastique par mini-lots ; et (iv) la
+fonction d’entraînement qui assemble toutes ces pièces. Enfin, nous
+exécuterons notre générateur de données synthétiques de la
+:numref:`sec_synthetic-regression-data` et appliquerons notre modèle
+sur le jeu de données résultant. Bien que les frameworks de deep
+learning modernes puissent automatiser presque tout ce travail,
+implémenter les choses à partir de zéro est le seul moyen de s’assurer
+que vous savez vraiment ce que vous faites. De plus, lorsqu’il sera
+temps de personnaliser les modèles, de définir nos propres couches ou
+fonctions de perte, comprendre comment les choses fonctionnent sous le
+capot s’avérera utile. Dans cette section, nous nous appuierons
+uniquement sur les tenseurs et la différentiation automatique. Plus
+tard, nous introduirons une implémentation plus concise, profitant des
+options avancées des frameworks de deep learning tout en conservant la
+structure de ce qui suit ci-dessous.
+
+Définir le modèle
+-----------------
+
+Avant de pouvoir commencer à optimiser les paramètres de notre modèle
+par SGD par mini-lots, nous devons d’abord avoir des paramètres. Dans ce
+qui suit, nous initialisons les poids en tirant des nombres aléatoires
+d’une distribution normale de moyenne 0 et d’un écart-type de 0,01. Le
+nombre magique 0,01 fonctionne souvent bien en pratique, mais vous
+pouvez spécifier une valeur différente via l’argument ``sigma``. De
+plus, nous fixons le biais à 0. Notez que pour la conception orientée
+objet, nous ajoutons le code à la méthode ``__init__`` d’une sous-classe
+de ``d2l.Module`` (introduite dans la
+:numref:`subsec_oo-design-models`).
+
+Ensuite, nous devons définir notre modèle, en reliant son entrée et ses
+paramètres à sa sortie. En utilisant la même notation que dans l’
+:eq:`eq_linreg-y-vec` pour notre modèle linéaire, nous prenons
+simplement le produit matrice-vecteur des caractéristiques d’entrée
+:math:`\mathbf{X}` et des poids du modèle :math:`\mathbf{w}`, et
+ajoutons le décalage :math:`b` à chaque exemple. Le produit
+:math:`\mathbf{Xw}` est un vecteur et :math:`b` est un scalaire. En
+raison du mécanisme de diffusion (voir la
+:numref:`subsec_broadcasting`), lorsque nous ajoutons un vecteur et un
+scalaire, le scalaire est ajouté à chaque composante du vecteur. La
+méthode ``forward`` résultante est enregistrée dans la classe
+``LinearRegressionScratch`` via ``add_to_class`` (introduit dans la
+:numref:`oo-design-utilities`).
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    @d2l.add_to_class(LinearRegressionScratch)  #@save
+    def forward(self, X):
+        return d2l.matmul(X, self.w) + self.b
+
+Définir la fonction de perte
+----------------------------
+
+Puisque la mise à jour de notre modèle nécessite de prendre le gradient
+de notre fonction de perte, nous devrions définir d’abord la fonction de
+perte. Ici, nous utilisons la fonction de perte quadratique de l’
+:eq:`eq_mse`. Dans l’implémentation, nous devons transformer la
+valeur réelle ``y`` dans la forme de la valeur prédite ``y_hat``. Le
+résultat renvoyé par la méthode suivante aura également la même forme
+que ``y_hat``. Nous renvoyons également la valeur de perte moyenne parmi
+tous les exemples du mini-lot.
+
+Définir l’algorithme d’optimisation
+-----------------------------------
+
+Comme discuté dans la :numref:`sec_linear_regression`, la régression
+linéaire possède une solution analytique. Cependant, notre objectif ici
+est d’illustrer comment entraîner des réseaux de neurones plus généraux,
+et cela nécessite que nous vous enseignions comment utiliser la SGD par
+mini-lots. Par conséquent, nous saisirons cette opportunité pour
+introduire votre premier exemple fonctionnel de SGD. À chaque étape, en
+utilisant un mini-lot tiré au hasard de notre jeu de données, nous
+estimons le gradient de la perte par rapport aux paramètres. Ensuite,
+nous mettons à jour les paramètres dans la direction qui peut réduire la
+perte.
+
+Le code suivant applique la mise à jour, étant donné un ensemble de
+paramètres et un taux d’apprentissage ``lr``. Puisque notre perte est
+calculée comme une moyenne sur le mini-lot, nous n’avons pas besoin
+d’ajuster le taux d’apprentissage en fonction de la taille du lot. Dans
+les chapitres suivants, nous étudierons comment les taux d’apprentissage
+devraient être ajustés pour de très grands mini-lots tels qu’ils
+apparaissent dans l’apprentissage distribué à grande échelle. Pour
+l’instant, nous pouvons ignorer cette dépendance.
+
+Nous définissons ensuite la méthode ``configure_optimizers``, qui
+renvoie une instance de la classe ``SGD``.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    @d2l.add_to_class(LinearRegressionScratch)  #@save
+    def configure_optimizers(self):
+
+Entraînement
+------------
+
+Maintenant que nous avons toutes les pièces en place (paramètres,
+fonction de perte, modèle et optimiseur), nous sommes prêts à
+implémenter la boucle d’entraînement principale. Il est crucial que vous
+compreniez parfaitement ce code, car vous utiliserez des boucles
+d’entraînement similaires pour tous les autres modèles de deep learning
+abordés dans ce livre. Dans chaque *époque*, nous itérons à travers
+l’ensemble du jeu de données d’entraînement, en passant une fois par
+chaque exemple (en supposant que le nombre d’exemples est divisible par
+la taille du lot). À chaque *itération*, nous récupérons un mini-lot
+d’exemples d’entraînement et calculons sa perte via la méthode
+``training_step`` du modèle. Ensuite, nous calculons les gradients par
+rapport à chaque paramètre. Enfin, nous appellerons l’algorithme
+d’optimisation pour mettre à jour les paramètres du modèle. En résumé,
+nous exécuterons la boucle suivante :
+
+- Initialiser les paramètres :math:`(\mathbf{w}, b)`
+- Répéter jusqu’à la fin
+
+  - Calculer le gradient
+    :math:`\mathbf{g} \leftarrow \partial_{(\mathbf{w},b)} \frac{1}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} l(\mathbf{x}^{(i)}, y^{(i)}, \mathbf{w}, b)`
+  - Mettre à jour les paramètres
+    :math:`(\mathbf{w}, b) \leftarrow (\mathbf{w}, b) - \eta \mathbf{g}`
+
+Rappelez-vous que le jeu de données de régression synthétique que nous
+avons généré dans la :numref:`sec_synthetic-regression-data` ne
+fournit pas de jeu de données de validation. Dans la plupart des cas,
+cependant, nous voudrons un jeu de données de validation pour mesurer la
+qualité de notre modèle. Ici, nous passons le chargeur de données de
+validation une fois par époque pour mesurer la performance du modèle.
+Suivant notre conception orientée objet, les méthodes ``prepare_batch``
+et ``fit_epoch`` sont enregistrées dans la classe ``d2l.Trainer``
+(introduite dans la :numref:`oo-design-training`).
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    @d2l.add_to_class(d2l.Trainer)  #@save
+    def prepare_batch(self, batch):
+        return batch
+
+Nous sommes presque prêts à entraîner le modèle, mais nous avons d’abord
+besoin de données d’entraînement. Ici, nous utilisons la classe
+``SyntheticRegressionData`` et passons certains paramètres de vérité
+terrain. Ensuite, nous entraînons notre modèle avec le taux
+d’apprentissage ``lr=0,03`` et fixons ``max_epochs=3``. Notez qu’en
+général, le nombre d’époques et le taux d’apprentissage sont tous deux
+des hyperparamètres. En général, le réglage des hyperparamètres est
+délicat et nous voudrons généralement utiliser une séparation en trois
+parties, un ensemble pour l’entraînement, un deuxième pour la sélection
+des hyperparamètres, et le troisième réservé à l’évaluation finale. Nous
+omettons ces détails pour l’instant mais nous y reviendrons plus tard.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    model = LinearRegressionScratch(2, lr=0.03)
+    data = d2l.SyntheticRegressionData(w=d2l.tensor([2, -3.4]), b=4.2)
+    trainer = d2l.Trainer(max_epochs=3)
+    trainer.fit(model, data)
+
+Parce que nous avons nous-mêmes synthétisé le jeu de données, nous
+savons précisément quels sont les vrais paramètres. Ainsi, nous pouvons
+évaluer le succès de notre entraînement en comparant les vrais
+paramètres avec ceux que nous avons appris via notre boucle
+d’entraînement. En effet, ils s’avèrent être très proches les uns des
+autres.
+
+On ne devrait pas tenir pour acquise la capacité à retrouver exactement
+les paramètres de la vérité terrain. En général, pour les modèles
+profonds, il n’existe pas de solutions uniques pour les paramètres, et
+même pour les modèles linéaires, retrouver exactement les paramètres
+n’est possible que lorsqu’aucune caractéristique n’est linéairement
+dépendante des autres. Cependant, en apprentissage automatique, nous
+sommes souvent moins préoccupés par la récupération des vrais paramètres
+sous-jacents, mais plutôt par des paramètres qui conduisent à une
+prédiction hautement précise :cite:`Vapnik.1992`. Heureusement, même
+sur des problèmes d’optimisation difficiles, la descente de gradient
+stochastique peut souvent trouver des solutions remarquablement bonnes,
+en partie grâce au fait que, pour les réseaux profonds, il existe de
+nombreuses configurations des paramètres qui conduisent à une prédiction
+hautement précise.
+
+Résumé
+------
+
+Dans cette section, nous avons franchi une étape importante vers la
+conception de systèmes de deep learning en implémentant un modèle de
+réseau de neurones et une boucle d’entraînement entièrement
+fonctionnels. Au cours de ce processus, nous avons construit un chargeur
+de données, un modèle, une fonction de perte, une procédure
+d’optimisation, ainsi qu’un outil de visualisation et de surveillance.
+Nous avons fait cela en composant un objet Python qui contient tous les
+composants pertinents pour l’entraînement d’un modèle. Bien qu’il ne
+s’agisse pas encore d’une implémentation de qualité professionnelle,
+elle est parfaitement fonctionnelle et un code comme celui-ci pourrait
+déjà vous aider à résoudre rapidement de petits problèmes. Dans les
+sections à venir, nous verrons comment faire cela à la fois de manière
+*plus concise* (en évitant le code répétitif) et de manière *plus
+efficace* (en utilisant nos GPU à leur plein potentiel).
+
+Exercices
+---------
+
+1. Que se passerait-il si nous devions initialiser les poids à zéro.
+   L’algorithme fonctionnerait-il toujours ? Et si nous initialisions
+   les paramètres avec une variance de :math:`1000` plutôt que
+   :math:`0,01` ?
+2. Supposez que vous soyez `Georg Simon
+   Ohm <https://fr.wikipedia.org/wiki/Georg_Ohm>`__ essayant de
+   concevoir un modèle pour la résistance qui relie la tension et le
+   courant. Pouvez-vous utiliser la différentiation automatique pour
+   apprendre les paramètres de votre modèle ?
+3. Pouvez-vous utiliser la `loi de
+   Planck <https://fr.wikipedia.org/wiki/Loi_de_Planck>`__ pour
+   déterminer la température d’un objet en utilisant la densité
+   spectrale d’énergie ? Pour référence, la densité spectrale :math:`B`
+   du rayonnement émanant d’un corps noir est
+   :math:`B(\lambda, T) = \frac{2 hc^2}{\lambda^5} \cdot \left(\exp \frac{h c}{\lambda k T} - 1\right)^{-1}`.
+   Ici, :math:`\lambda` est la longueur d’onde, :math:`T` est la
+   température, :math:`c` est la vitesse de la lumière, :math:`h` est la
+   constante de Planck, et :math:`k` est la constante de Boltzmann. Vous
+   mesurez l’énergie pour différentes longueurs d’onde :math:`\lambda`
+   et vous devez maintenant ajuster la courbe de densité spectrale à la
+   loi de Planck.
+4. Quels sont les problèmes que vous pourriez rencontrer si vous vouliez
+   calculer les dérivées secondes de la perte ? Comment les
+   fixeriez-vous ?
+5. Pourquoi la méthode ``reshape`` est-elle nécessaire dans la fonction
+   ``loss`` ?
+6. Expérimentez en utilisant différents taux d’apprentissage pour
+   découvrir à quelle vitesse la valeur de la fonction de perte chute.
+   Pouvez-vous réduire l’erreur en augmentant le nombre d’époques
+   d’entraînement ?
+7. Si le nombre d’exemples ne peut pas être divisé par la taille du lot,
+   qu’arrive-t-il à ``data_iter`` à la fin d’une époque ?
+8. Essayez d’implémenter une fonction de perte différente, telle que la
+   perte en valeur absolue
+   ``(y_hat - d2l.reshape(y, y_hat.shape)).abs().sum()``.
+
+   1. Vérifiez ce qui se passe pour des données régulières.
+   2. Vérifiez s’il y a une différence de comportement si vous perturbez
+      activement certaines entrées, telles que :math:`y_5 = 10000`, de
+      :math:`\mathbf{y}`.
+   3. Pouvez-vous imaginer une solution simple pour combiner les
+      meilleurs aspects de la perte quadratique et de la perte en valeur
+      absolue ? Indice : comment pouvez-vous éviter des valeurs de
+      gradient vraiment importantes ?
+
+9. Pourquoi devons-nous remélanger le jeu de données ? Pouvez-vous
+   concevoir un cas où un jeu de données construit de manière
+   malveillante briserait l’algorithme d’optimisation autrement ?

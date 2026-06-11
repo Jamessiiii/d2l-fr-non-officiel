@@ -1,0 +1,302 @@
+```{.python .input}
+%load_ext d2lbook.tab
+tab.interact_select(['mxnet', 'pytorch', 'tensorflow', 'jax'])
+```
+
+# Données de régression synthétiques
+:label:`sec_synthetic-regression-data`
+
+
+L'apprentissage automatique consiste avant tout à extraire des informations à partir de données. 
+Vous pourriez donc vous demander ce que nous pourrions apprendre de données synthétiques ? 
+Bien que nous ne nous souciions pas intrinsèquement des motifs que nous avons nous-mêmes injectés dans un modèle artificiel de génération de données, 
+de tels jeux de données sont néanmoins utiles à des fins didactiques, 
+car ils nous aident à évaluer les propriétés de nos algorithmes d'apprentissage 
+et à confirmer que nos implémentations fonctionnent comme prévu. 
+Par exemple, si nous créons des données pour lesquelles les paramètres corrects sont connus *a priori*, 
+nous pouvons alors vérifier que notre modèle peut effectivement les retrouver.
+
+```{.python .input}
+%%tab mxnet
+%matplotlib inline
+from d2l import mxnet as d2l
+from mxnet import np, npx, gluon
+import random
+npx.set_np()
+```
+
+```{.python .input}
+%%tab pytorch
+%matplotlib inline
+from d2l import torch as d2l
+import torch
+import random
+```
+
+```{.python .input}
+%%tab tensorflow
+%matplotlib inline
+from d2l import tensorflow as d2l
+import tensorflow as tf
+import random
+```
+
+```{.python .input}
+%%tab jax
+%matplotlib inline
+from d2l import jax as d2l
+import jax
+from jax import numpy as jnp
+import numpy as np
+import random
+import tensorflow as tf
+import tensorflow_datasets as tfds
+```
+
+## Génération du jeu de données
+
+Pour cet exemple, nous travaillerons en basse dimension 
+par souci de concision. 
+L'extrait de code suivant génère 1000 exemples 
+avec des caractéristiques en 2 dimensions tirées 
+d'une distribution normale standard. 
+La matrice de conception résultante $\mathbf{X}$ 
+appartient à $\mathbb{R}^{1000 \times 2}$. 
+Nous générons chaque étiquette en appliquant 
+une fonction linéaire de *vérité terrain* (*ground truth*), 
+en les corrompant via un bruit additif $\boldsymbol{\epsilon}$, 
+tiré de manière indépendante et identique pour chaque exemple :
+
+(**$$\mathbf{y}= \mathbf{X} \mathbf{w} + b + \boldsymbol{\epsilon}.$$**)
+
+Par commodité, nous supposons que $\boldsymbol{\epsilon}$ est tiré 
+d'une distribution normale avec une moyenne $\mu= 0$ 
+et un écart-type $\sigma = 0.01$. 
+Notez que pour la conception orientée objet, 
+nous ajoutons le code à la méthode `__init__` d'une sous-classe de `d2l.DataModule` (introduite dans :numref:`oo-design-data`). 
+Il est de bonne pratique de permettre le réglage de tout hyperparamètre supplémentaire. 
+Nous y parvenons avec `save_hyperparameters()`. 
+La taille de lot (`batch_size`) sera déterminée plus tard.
+
+```{.python .input}
+%%tab all
+class SyntheticRegressionData(d2l.DataModule):  #@save
+    """Synthetic data for linear regression."""
+    def __init__(self, w, b, noise=0.01, num_train=1000, num_val=1000, 
+                 batch_size=32):
+        super().__init__()
+        self.save_hyperparameters()
+        n = num_train + num_val
+        if tab.selected('pytorch') or tab.selected('mxnet'):                
+            self.X = d2l.randn(n, len(w))
+            noise = d2l.randn(n, 1) * noise
+        if tab.selected('tensorflow'):
+            self.X = tf.random.normal((n, w.shape[0]))
+            noise = tf.random.normal((n, 1)) * noise
+        if tab.selected('jax'):
+            key = jax.random.PRNGKey(0)
+            key1, key2 = jax.random.split(key)
+            self.X = jax.random.normal(key1, (n, w.shape[0]))
+            noise = jax.random.normal(key2, (n, 1)) * noise
+        self.y = d2l.matmul(self.X, d2l.reshape(w, (-1, 1))) + b + noise
+```
+
+Ci-dessous, nous définissons les vrais paramètres à $\mathbf{w} = [2, -3.4]^\top$ et $b = 4.2$. 
+Plus tard, nous pourrons comparer nos paramètres estimés à ces valeurs de *vérité terrain*.
+
+```{.python .input}
+%%tab all
+data = SyntheticRegressionData(w=d2l.tensor([2, -3.4]), b=4.2)
+```
+
+[**Chaque ligne de `features` consiste en un vecteur de $\mathbb{R}^2$ et chaque ligne de `labels` est un scalaire.**] Jetons un coup d'œil à la première entrée.
+
+```{.python .input}
+%%tab all
+print('features:', data.X[0],'\nlabel:', data.y[0])
+```
+
+## Lecture du jeu de données
+
+L'entraînement des modèles d'apprentissage automatique nécessite souvent plusieurs passages sur un jeu de données, 
+en prélevant un mini-lot (*minibatch*) d'exemples à la fois. 
+Ces données sont ensuite utilisées pour mettre à jour le modèle. 
+Pour illustrer comment cela fonctionne, nous 
+[**implémentons la méthode `get_dataloader`,**] 
+en l'enregistrant dans la classe `SyntheticRegressionData` via `add_to_class` (introduit dans :numref:`oo-design-utilities`). 
+Elle (**prend une taille de lot, une matrice de caractéristiques 
+et un vecteur d'étiquettes, et génère des mini-lots de taille `batch_size`.**) 
+En tant que tel, chaque mini-lot consiste en un tuple de caractéristiques et d'étiquettes. 
+Notez que nous devons faire attention à savoir si nous sommes en mode entraînement ou validation : 
+dans le premier cas, nous voudrons lire les données dans un ordre aléatoire, 
+tandis que pour le second, pouvoir lire les données dans un ordre prédéfini 
+peut être important à des fins de débogage.
+
+```{.python .input}
+%%tab all
+@d2l.add_to_class(SyntheticRegressionData)
+def get_dataloader(self, train):
+    if train:
+        indices = list(range(0, self.num_train))
+        # The examples are read in random order
+        random.shuffle(indices)
+    else:
+        indices = list(range(self.num_train, self.num_train+self.num_val))
+    for i in range(0, len(indices), self.batch_size):
+        if tab.selected('mxnet', 'pytorch', 'jax'):
+            batch_indices = d2l.tensor(indices[i: i+self.batch_size])
+            yield self.X[batch_indices], self.y[batch_indices]
+        if tab.selected('tensorflow'):
+            j = tf.constant(indices[i : i+self.batch_size])
+            yield tf.gather(self.X, j), tf.gather(self.y, j)
+```
+
+Pour forger une certaine intuition, inspectons le premier mini-lot de 
+données. Chaque mini-lot de caractéristiques nous fournit à la fois sa taille et la dimensionnalité des caractéristiques d'entrée. 
+De même, notre mini-lot d'étiquettes aura une forme correspondante donnée par `batch_size`.
+
+```{.python .input}
+%%tab all
+X, y = next(iter(data.train_dataloader()))
+print('X shape:', X.shape, '\ny shape:', y.shape)
+```
+
+Bien qu'elle paraisse anodine, l'invocation 
+de `iter(data.train_dataloader())` 
+illustre la puissance de la conception orientée objet de Python. 
+Notez que nous avons ajouté une méthode à la classe `SyntheticRegressionData` 
+*après* avoir créé l'objet `data`. 
+Néanmoins, l'objet bénéficie de 
+l'ajout de fonctionnalités *ex post facto* à la classe.
+
+Tout au long de l'itération, nous obtenons des mini-lots distincts 
+jusqu'à ce que l'ensemble du jeu de données ait été épuisé (essayez ceci). 
+Bien que l'itération implémentée ci-dessus soit bonne à des fins didactiques, 
+elle est inefficace d'une manière qui pourrait nous poser des problèmes avec des cas réels. 
+Par exemple, elle nécessite que nous chargions toutes les données en mémoire 
+et que nous effectuions de nombreux accès aléatoires à la mémoire. 
+Les itérateurs intégrés implémentés dans un framework de deep learning 
+sont considérablement plus efficaces et ils peuvent gérer 
+des sources telles que des données stockées dans des fichiers, 
+données reçues via un flux, 
+et données générées ou traitées à la volée. 
+Ensuite, essayons d'implémenter la même méthode en utilisant des itérateurs intégrés.
+
+## Implémentation concise du chargeur de données
+
+Plutôt que d'écrire notre propre itérateur, 
+nous pouvons [**appeler l'API existante d'un framework pour charger des données.**] 
+Comme précédemment, nous avons besoin d'un jeu de données avec des caractéristiques `X` et des étiquettes `y`. 
+Au-delà de cela, nous définissons `batch_size` dans le chargeur de données intégré 
+et le laissons s'occuper du mélange efficace des exemples.
+
+:begin_tab:`jax`
+JAX repose entièrement sur une API de type NumPy avec accélération matérielle et transformations fonctionnelles, 
+donc au moins la version actuelle n'inclut pas de méthodes de chargement de données. 
+Avec d'autres bibliothèques, nous disposons déjà d'excellents chargeurs de données, 
+et JAX suggère de les utiliser à la place. 
+Ici, nous allons récupérer le chargeur de données de TensorFlow 
+et le modifier légèrement pour le faire fonctionner avec JAX.
+:end_tab:
+
+```{.python .input}
+%%tab all
+@d2l.add_to_class(d2l.DataModule)  #@save
+def get_tensorloader(self, tensors, train, indices=slice(0, None)):
+    tensors = tuple(a[indices] for a in tensors)
+    if tab.selected('mxnet'):
+        dataset = gluon.data.ArrayDataset(*tensors)
+        return gluon.data.DataLoader(dataset, self.batch_size,
+                                     shuffle=train)
+    if tab.selected('pytorch'):
+        dataset = torch.utils.data.TensorDataset(*tensors)
+        return torch.utils.data.DataLoader(dataset, self.batch_size,
+                                           shuffle=train)
+    if tab.selected('jax'):
+        # Use Tensorflow Datasets & Dataloader. JAX or Flax do not provide
+        # any dataloading functionality
+        shuffle_buffer = tensors[0].shape[0] if train else 1
+        return tfds.as_numpy(
+            tf.data.Dataset.from_tensor_slices(tensors).shuffle(
+                buffer_size=shuffle_buffer).batch(self.batch_size))
+
+    if tab.selected('tensorflow'):
+        shuffle_buffer = tensors[0].shape[0] if train else 1
+        return tf.data.Dataset.from_tensor_slices(tensors).shuffle(
+            buffer_size=shuffle_buffer).batch(self.batch_size)
+```
+
+```{.python .input}
+%%tab all
+@d2l.add_to_class(SyntheticRegressionData)  #@save
+def get_dataloader(self, train):
+    i = slice(0, self.num_train) if train else slice(self.num_train, None)
+    return self.get_tensorloader((self.X, self.y), train, i)
+```
+
+Le nouveau chargeur de données se comporte exactement comme le précédent, sauf qu'il est plus efficace et possède des fonctionnalités supplémentaires.
+
+```{.python .input  n=4}
+%%tab all
+X, y = next(iter(data.train_dataloader()))
+print('X shape:', X.shape, '\ny shape:', y.shape)
+```
+
+Par exemple, le chargeur de données fourni par l'API du framework 
+prend en charge la méthode intégrée `__len__`, 
+nous pouvons donc interroger sa longueur, 
+c'est-à-dire le nombre de lots.
+
+```{.python .input}
+%%tab all
+len(data.train_dataloader())
+```
+
+## Résumé
+
+Les chargeurs de données sont un moyen pratique d'abstraire 
+le processus de chargement et de manipulation des données. 
+De cette façon, le même *algorithme* d'apprentissage automatique 
+est capable de traiter de nombreux types et sources de données différents 
+sans nécessiter de modification. 
+L'un des aspects intéressants des chargeurs de données 
+est qu'ils peuvent être composés. 
+Par exemple, nous pourrions charger des images 
+puis avoir un filtre de post-traitement 
+qui les recadre ou les modifie d'une autre manière. 
+En tant que tels, les chargeurs de données peuvent être utilisés 
+pour décrire un pipeline complet de traitement de données. 
+
+Quant au modèle lui-même, le modèle linéaire bidimensionnel 
+est à peu près le plus simple que nous puissions rencontrer. 
+Il nous permet de tester la précision des modèles de régression 
+sans nous soucier d'avoir des quantités insuffisantes de données 
+ou un système d'équations sous-déterminé. 
+Nous en ferons bon usage dans la section suivante.  
+
+
+## Exercices
+
+1. Que se passera-t-il si le nombre d'exemples ne peut pas être divisé par la taille du lot ? Comment changeriez-vous ce comportement en spécifiant un argument différent à l'aide de l'API du framework ?
+1. Supposons que nous voulions générer un énorme jeu de données, où à la fois la taille du vecteur de paramètres `w` et le nombre d'exemples `num_examples` sont grands.
+    1. Que se passe-t-il si nous ne pouvons pas conserver toutes les données en mémoire ?
+    1. Comment mélangeriez-vous les données si elles sont stockées sur disque ? Votre tâche consiste à concevoir un algorithme *efficace* qui ne nécessite pas trop de lectures ou d'écritures aléatoires. Indice : les [générateurs de permutations pseudonymes](https://en.wikipedia.org/wiki/Pseudorandom_permutation) vous permettent de concevoir un remélange sans avoir besoin de stocker explicitement la table de permutation :cite:`Naor.Reingold.1999`. 
+1. Implémentez un générateur de données qui produit de nouvelles données à la volée, chaque fois que l'itérateur est appelé. 
+1. Comment concevriez-vous un générateur de données aléatoires qui génère *les mêmes* données chaque fois qu'il est appelé ?
+
+
+:begin_tab:`mxnet`
+[Discussions](https://discuss.d2l.ai/t/6662)
+:end_tab:
+
+:begin_tab:`pytorch`
+[Discussions](https://discuss.d2l.ai/t/6663)
+:end_tab:
+
+:begin_tab:`tensorflow`
+[Discussions](https://discuss.d2l.ai/t/6664)
+:end_tab:
+
+:begin_tab:`jax`
+[Discussions](https://discuss.d2l.ai/t/17975)
+:end_tab:

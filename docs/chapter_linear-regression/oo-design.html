@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>3.2. Conception orientée objet pour l’implémentation &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3.3. Données de régression synthétiques" href="synthetic-regression-data.html" />
+    <link rel="prev" title="3.1. Régression linéaire" href="linear-regression.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">3. </span>Réseaux de neurones linéaires pour la régression</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">3.2. </span>Conception orientée objet pour l’implémentation</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_linear-regression/oo-design.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weight-decay.html">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weight-decay.html">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="conception-orientee-objet-pour-limplementation">
+<span id="sec-oo-design"></span><h1><span class="section-number">3.2. </span>Conception orientée objet pour l’implémentation<a class="headerlink" href="#conception-orientee-objet-pour-limplementation" title="Permalink to this heading">¶</a></h1>
+<p>Dans notre introduction à la régression linéaire, nous avons passé en
+revue divers composants, notamment les données, le modèle, la fonction
+de perte, et l’algorithme d’optimisation. En effet, la régression
+linéaire est l’un des modèles d’apprentissage automatique les plus
+simples. Son entraînement, cependant, utilise un grand nombre des mêmes
+composants que ceux requis par les autres modèles de ce livre. Par
+conséquent, avant de plonger dans les détails de l’implémentation, il
+est utile de concevoir certaines des API que nous utiliserons tout au
+long de l’ouvrage. En traitant les composants du deep learning comme des
+objets, nous pouvons commencer par définir des classes pour ces objets
+et leurs interactions. Cette conception orientée objet pour
+l’implémentation simplifiera grandement la présentation et vous pourriez
+même vouloir l’utiliser dans vos propres projets.</p>
+<p>Inspirés par des bibliothèques open-source telles que <a class="reference external" href="https://www.pytorchlightning.ai/">PyTorch
+Lightning</a>, à haut niveau, nous
+souhaitons avoir trois classes : (i) <code class="docutils literal notranslate"><span class="pre">Module</span></code> contient les modèles,
+les pertes et les méthodes d’optimisation ; (ii) <code class="docutils literal notranslate"><span class="pre">DataModule</span></code> fournit
+des chargeurs de données pour l’entraînement et la validation ; (iii)
+les deux classes sont combinées à l’aide de la classe <code class="docutils literal notranslate"><span class="pre">Trainer</span></code>, qui
+nous permet d’entraîner des modèles sur une variété de plateformes
+matérielles. La plupart du code de ce livre adapte <code class="docutils literal notranslate"><span class="pre">Module</span></code> et
+<code class="docutils literal notranslate"><span class="pre">DataModule</span></code>. Nous n’aborderons la classe <code class="docutils literal notranslate"><span class="pre">Trainer</span></code> que lorsque nous
+discuterons des GPU, des CPU, de l’entraînement parallèle et des
+algorithmes d’optimisation.</p>
+<section id="utilitaires">
+<span id="oo-design-utilities"></span><h2><span class="section-number">3.2.1. </span>Utilitaires<a class="headerlink" href="#utilitaires" title="Permalink to this heading">¶</a></h2>
+<p>Nous avons besoin de quelques utilitaires pour simplifier la
+programmation orientée objet dans les notebooks Jupyter. L’un des défis
+est que les définitions de classes ont tendance à être d’assez longs
+blocs de code. La lisibilité des notebooks exige des fragments de code
+courts, entrecoupés d’explications, une exigence incompatible avec le
+style de programmation courant pour les bibliothèques Python. La
+première fonction utilitaire nous permet d’enregistrer des fonctions en
+tant que méthodes dans une classe <em>après</em> que la classe a été créée. En
+fait, nous pouvons le faire <em>même après</em> avoir créé des instances de la
+classe ! Cela nous permet de diviser l’implémentation d’une classe en
+plusieurs blocs de code.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">add_to_class</span><span class="p">(</span><span class="n">Class</span><span class="p">):</span>  <span class="c1">#@save</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Register functions as methods in created class.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">Class</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+</pre></div>
+</div>
+<p>Jetons un coup d’œil rapide à la façon de l’utiliser. Nous prévoyons
+d’implémenter une classe <code class="docutils literal notranslate"><span class="pre">A</span></code> avec une méthode <code class="docutils literal notranslate"><span class="pre">do</span></code>. Au lieu d’avoir
+le code pour <code class="docutils literal notranslate"><span class="pre">A</span></code> et <code class="docutils literal notranslate"><span class="pre">do</span></code> dans le même bloc de code, nous pouvons
+d’abord déclarer la classe <code class="docutils literal notranslate"><span class="pre">A</span></code> et créer une instance <code class="docutils literal notranslate"><span class="pre">a</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">A</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Ensuite, nous définissons la méthode <code class="docutils literal notranslate"><span class="pre">do</span></code> comme nous le ferions
+normalement, mais pas dans la portée de la classe <code class="docutils literal notranslate"><span class="pre">A</span></code>. Au lieu de
+cela, nous décorons cette méthode par <code class="docutils literal notranslate"><span class="pre">add_to_class</span></code> avec la classe
+<code class="docutils literal notranslate"><span class="pre">A</span></code> comme argument. Ce faisant, la méthode est capable d’accéder aux
+variables membres de <code class="docutils literal notranslate"><span class="pre">A</span></code> exactement comme nous nous y attendrions si
+elle avait été incluse dans la définition de <code class="docutils literal notranslate"><span class="pre">A</span></code>. Voyons ce qui se
+passe quand nous l’invoquons pour l’instance <code class="docutils literal notranslate"><span class="pre">a</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@add_to_class</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Class attribute &quot;b&quot; is&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+
+<span class="n">a</span><span class="o">.</span><span class="n">do</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>La seconde est une classe utilitaire qui enregistre tous les arguments
+de la méthode <code class="docutils literal notranslate"><span class="pre">__init__</span></code> d’une classe en tant qu’attributs de classe.
+Cela nous permet d’étendre implicitement les signatures d’appel des
+constructeurs sans code supplémentaire.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">HyperParameters</span><span class="p">:</span>  <span class="c1">#@save</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The base class of hyperparameters.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_hyperparameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="k">raise</span> <span class="bp">NotImplemented</span>
+</pre></div>
+</div>
+<p>Nous reportons son implémentation dans le <code class="xref std std-numref docutils literal notranslate"><span class="pre">sec_utils</span></code>. Pour
+l’utiliser, nous définissons notre classe qui hérite de
+<code class="docutils literal notranslate"><span class="pre">HyperParameters</span></code> et appelle <code class="docutils literal notranslate"><span class="pre">save_hyperparameters</span></code> dans la méthode
+<code class="docutils literal notranslate"><span class="pre">__init__</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Call the fully implemented HyperParameters class saved in d2l</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">B</span><span class="p">(</span><span class="n">d2l</span><span class="o">.</span><span class="n">HyperParameters</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_hyperparameters</span><span class="p">(</span><span class="n">ignore</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;self.a =&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="s1">&#39;self.b =&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;There is no self.c =&#39;</span><span class="p">,</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">))</span>
+
+<span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Le dernier utilitaire nous permet de tracer la progression de
+l’expérience de manière interactive pendant qu’elle se déroule. Par
+déférence pour le bien plus puissant (et complexe)
+<a class="reference external" href="https://www.tensorflow.org/tensorboard">TensorBoard</a>, nous le
+nommons <code class="docutils literal notranslate"><span class="pre">ProgressBoard</span></code>. L’implémentation est reportée au
+<code class="xref std std-numref docutils literal notranslate"><span class="pre">sec_utils</span></code>. Pour l’instant, voyons-le simplement en action.</p>
+<p>La méthode <code class="docutils literal notranslate"><span class="pre">draw</span></code> trace un point <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> dans la figure, avec le
+<code class="docutils literal notranslate"><span class="pre">label</span></code> spécifié dans la légende. Le paramètre optionnel <code class="docutils literal notranslate"><span class="pre">every_n</span></code>
+lisse la ligne en n’affichant que <span class="math notranslate nohighlight">\(1/n\)</span> points dans la figure.
+Leurs valeurs sont la moyenne des <span class="math notranslate nohighlight">\(n\)</span> points voisins de la figure
+originale.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ProgressBoard</span><span class="p">(</span><span class="n">d2l</span><span class="o">.</span><span class="n">HyperParameters</span><span class="p">):</span>  <span class="c1">#@save</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The board that plots data points in animation.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xlim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">ylim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xscale</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">yscale</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+                 <span class="n">ls</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="s1">&#39;-.&#39;</span><span class="p">,</span> <span class="s1">&#39;:&#39;</span><span class="p">],</span> <span class="n">colors</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;C0&#39;</span><span class="p">,</span> <span class="s1">&#39;C1&#39;</span><span class="p">,</span> <span class="s1">&#39;C2&#39;</span><span class="p">,</span> <span class="s1">&#39;C3&#39;</span><span class="p">],</span>
+                 <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span> <span class="n">display</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_hyperparameters</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">every_n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="bp">NotImplemented</span>
+</pre></div>
+</div>
+<p>Dans l’exemple suivant, nous dessinons <code class="docutils literal notranslate"><span class="pre">sin</span></code> et <code class="docutils literal notranslate"><span class="pre">cos</span></code> avec un
+lissage différent. Si vous exécutez ce bloc de code, vous verrez les
+lignes s’allonger en animation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">board</span> <span class="o">=</span> <span class="n">d2l</span><span class="o">.</span><span class="n">ProgressBoard</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">):</span>
+    <span class="n">board</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="s1">&#39;sin&#39;</span><span class="p">,</span> <span class="n">every_n</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">board</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="s1">&#39;cos&#39;</span><span class="p">,</span> <span class="n">every_n</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="modeles">
+<span id="subsec-oo-design-models"></span><h2><span class="section-number">3.2.2. </span>Modèles<a class="headerlink" href="#modeles" title="Permalink to this heading">¶</a></h2>
+<p>La classe <code class="docutils literal notranslate"><span class="pre">Module</span></code> est la classe de base de tous les modèles que nous
+implémenterons. Nous avons besoin au minimum de trois méthodes. La
+première, <code class="docutils literal notranslate"><span class="pre">__init__</span></code>, stocke les paramètres apprenables, la méthode
+<code class="docutils literal notranslate"><span class="pre">training_step</span></code> accepte un lot de données pour renvoyer la valeur de
+la perte, et enfin, <code class="docutils literal notranslate"><span class="pre">configure_optimizers</span></code> renvoie la méthode
+d’optimisation, ou une liste d’entre elles, qui est utilisée pour mettre
+à jour les paramètres apprenables. En option, nous pouvons définir
+<code class="docutils literal notranslate"><span class="pre">validation_step</span></code> pour rapporter les mesures d’évaluation. Parfois,
+nous plaçons le code de calcul de la sortie dans une méthode <code class="docutils literal notranslate"><span class="pre">forward</span></code>
+séparée pour le rendre plus réutilisable.</p>
+</section>
+<section id="donnees">
+<span id="oo-design-data"></span><h2><span class="section-number">3.2.3. </span>Données<a class="headerlink" href="#donnees" title="Permalink to this heading">¶</a></h2>
+<p>La classe <code class="docutils literal notranslate"><span class="pre">DataModule</span></code> est la classe de base pour les données. Très
+fréquemment, la méthode <code class="docutils literal notranslate"><span class="pre">__init__</span></code> est utilisée pour préparer les
+données. Cela inclut le téléchargement et le prétraitement si
+nécessaire. La méthode <code class="docutils literal notranslate"><span class="pre">train_dataloader</span></code> renvoie le chargeur de
+données pour le jeu de données d’entraînement. Un chargeur de données
+est un générateur (Python) qui produit un lot de données à chaque fois
+qu’il est utilisé. Ce lot est ensuite transmis à la méthode
+<code class="docutils literal notranslate"><span class="pre">training_step</span></code> de <code class="docutils literal notranslate"><span class="pre">Module</span></code> pour calculer la perte. Il existe une
+méthode optionnelle <code class="docutils literal notranslate"><span class="pre">val_dataloader</span></code> pour renvoyer le chargeur du jeu
+de données de validation. Elle se comporte de la même manière, si ce
+n’est qu’elle produit des lots de données pour la méthode
+<code class="docutils literal notranslate"><span class="pre">validation_step</span></code> de <code class="docutils literal notranslate"><span class="pre">Module</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">DataModule</span><span class="p">(</span><span class="n">d2l</span><span class="o">.</span><span class="n">HyperParameters</span><span class="p">):</span>  <span class="c1">#@save</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The base class of data.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_dataloader</span><span class="p">(</span><span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">val_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_dataloader</span><span class="p">(</span><span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="entrainement">
+<span id="oo-design-training"></span><h2><span class="section-number">3.2.4. </span>Entraînement<a class="headerlink" href="#entrainement" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Trainer</span><span class="p">(</span><span class="n">d2l</span><span class="o">.</span><span class="n">HyperParameters</span><span class="p">):</span>  <span class="c1">#@save</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The base class for training models with data.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">,</span> <span class="n">num_gpus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">gradient_clip_val</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_hyperparameters</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">num_gpus</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;No GPU support yet&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">val_dataloader</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_train_batches</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_val_batches</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">board</span><span class="o">.</span><span class="n">xlim</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_epochs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</pre></div>
+</div>
+</section>
+<section id="resume">
+<h2><span class="section-number">3.2.5. </span>Résumé<a class="headerlink" href="#resume" title="Permalink to this heading">¶</a></h2>
+<p>Pour mettre en évidence la conception orientée objet de nos futures
+implémentations de deep learning, les classes ci-dessus montrent
+simplement comment leurs objets stockent les données et interagissent
+entre eux. Nous continuerons à enrichir les implémentations de ces
+classes, par exemple via <code class="docutils literal notranslate"><span class="pre">&#64;add_to_class</span></code>, dans le reste du livre. De
+plus, ces classes entièrement implémentées sont enregistrées dans la
+<a class="reference external" href="https://github.com/d2l-ai/d2l-en/tree/master/d2l">bibliothèque D2L</a>,
+une <em>boîte à outils légère</em> qui facilite la modélisation structurée pour
+le deep learning. En particulier, elle facilite la réutilisation de
+nombreux composants entre les projets sans avoir à changer grand-chose.
+Par exemple, nous pouvons remplacer uniquement l’optimiseur, uniquement
+le modèle, uniquement le jeu de données, etc. ; ce degré de modularité
+porte ses fruits tout au long du livre en termes de concision et de
+simplicité (c’est pourquoi nous l’avons ajouté) et il peut en faire de
+même pour vos propres projets.</p>
+</section>
+<section id="exercices">
+<h2><span class="section-number">3.2.6. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Localisez les implémentations complètes des classes ci-dessus qui
+sont enregistrées dans la <a class="reference external" href="https://github.com/d2l-ai/d2l-en/tree/master/d2l">bibliothèque
+D2L</a>. Nous vous
+recommandons vivement d’examiner l’implémentation en détail une fois
+que vous aurez acquis un peu plus de familiarité avec la modélisation
+en deep learning.</p></li>
+<li><p>Supprimez l’instruction <code class="docutils literal notranslate"><span class="pre">save_hyperparameters</span></code> dans la classe
+<code class="docutils literal notranslate"><span class="pre">B</span></code>. Pouvez-vous toujours afficher <code class="docutils literal notranslate"><span class="pre">self.a</span></code> et <code class="docutils literal notranslate"><span class="pre">self.b</span></code> ?
+Facultatif : si vous avez plongé dans l’implémentation complète de la
+classe <code class="docutils literal notranslate"><span class="pre">HyperParameters</span></code>, pouvez-vous expliquer pourquoi ?</p></li>
+</ol>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">3.2. Conception orientée objet pour l’implémentation</a><ul>
+<li><a class="reference internal" href="#utilitaires">3.2.1. Utilitaires</a></li>
+<li><a class="reference internal" href="#modeles">3.2.2. Modèles</a></li>
+<li><a class="reference internal" href="#donnees">3.2.3. Données</a></li>
+<li><a class="reference internal" href="#entrainement">3.2.4. Entraînement</a></li>
+<li><a class="reference internal" href="#resume">3.2.5. Résumé</a></li>
+<li><a class="reference internal" href="#exercices">3.2.6. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="linear-regression.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>3.1. Régression linéaire</div>
+         </div>
+     </a>
+     <a id="button-next" href="synthetic-regression-data.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>3.3. Données de régression synthétiques</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

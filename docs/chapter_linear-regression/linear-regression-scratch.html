@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>3.4. Implémentation de la régression linéaire à partir de zéro &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3.5. Implémentation concise de la régression linéaire" href="linear-regression-concise.html" />
+    <link rel="prev" title="3.3. Données de régression synthétiques" href="synthetic-regression-data.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">3. </span>Réseaux de neurones linéaires pour la régression</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">3.4. </span>Implémentation de la régression linéaire à partir de zéro</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_linear-regression/linear-regression-scratch.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weight-decay.html">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weight-decay.html">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="implementation-de-la-regression-lineaire-a-partir-de-zero">
+<span id="sec-linear-scratch"></span><h1><span class="section-number">3.4. </span>Implémentation de la régression linéaire à partir de zéro<a class="headerlink" href="#implementation-de-la-regression-lineaire-a-partir-de-zero" title="Permalink to this heading">¶</a></h1>
+<p>Nous sommes maintenant prêts à travailler sur une implémentation
+complète et fonctionnelle de la régression linéaire. Dans cette section,
+nous implémenterons l’intégralité de la méthode à partir de zéro, y
+compris (i) le modèle ; (ii) la fonction de perte ; (iii) un optimiseur
+par descente de gradient stochastique par mini-lots ; et (iv) la
+fonction d’entraînement qui assemble toutes ces pièces. Enfin, nous
+exécuterons notre générateur de données synthétiques de la
+<a class="reference internal" href="synthetic-regression-data.html#sec-synthetic-regression-data"><span class="std std-numref">Section 3.3</span></a> et appliquerons notre modèle
+sur le jeu de données résultant. Bien que les frameworks de deep
+learning modernes puissent automatiser presque tout ce travail,
+implémenter les choses à partir de zéro est le seul moyen de s’assurer
+que vous savez vraiment ce que vous faites. De plus, lorsqu’il sera
+temps de personnaliser les modèles, de définir nos propres couches ou
+fonctions de perte, comprendre comment les choses fonctionnent sous le
+capot s’avérera utile. Dans cette section, nous nous appuierons
+uniquement sur les tenseurs et la différentiation automatique. Plus
+tard, nous introduirons une implémentation plus concise, profitant des
+options avancées des frameworks de deep learning tout en conservant la
+structure de ce qui suit ci-dessous.</p>
+<section id="definir-le-modele">
+<h2><span class="section-number">3.4.1. </span>Définir le modèle<a class="headerlink" href="#definir-le-modele" title="Permalink to this heading">¶</a></h2>
+<p>Avant de pouvoir commencer à optimiser les paramètres de notre modèle
+par SGD par mini-lots, nous devons d’abord avoir des paramètres. Dans ce
+qui suit, nous initialisons les poids en tirant des nombres aléatoires
+d’une distribution normale de moyenne 0 et d’un écart-type de 0,01. Le
+nombre magique 0,01 fonctionne souvent bien en pratique, mais vous
+pouvez spécifier une valeur différente via l’argument <code class="docutils literal notranslate"><span class="pre">sigma</span></code>. De
+plus, nous fixons le biais à 0. Notez que pour la conception orientée
+objet, nous ajoutons le code à la méthode <code class="docutils literal notranslate"><span class="pre">__init__</span></code> d’une sous-classe
+de <code class="docutils literal notranslate"><span class="pre">d2l.Module</span></code> (introduite dans la
+<a class="reference internal" href="oo-design.html#subsec-oo-design-models"><span class="std std-numref">Section 3.2.2</span></a>).</p>
+<p>Ensuite, nous devons définir notre modèle, en reliant son entrée et ses
+paramètres à sa sortie. En utilisant la même notation que dans l’
+<a class="reference internal" href="linear-regression.html#equation-eq-linreg-y-vec">(3.1.4)</a> pour notre modèle linéaire, nous prenons
+simplement le produit matrice-vecteur des caractéristiques d’entrée
+<span class="math notranslate nohighlight">\(\mathbf{X}\)</span> et des poids du modèle <span class="math notranslate nohighlight">\(\mathbf{w}\)</span>, et
+ajoutons le décalage <span class="math notranslate nohighlight">\(b\)</span> à chaque exemple. Le produit
+<span class="math notranslate nohighlight">\(\mathbf{Xw}\)</span> est un vecteur et <span class="math notranslate nohighlight">\(b\)</span> est un scalaire. En
+raison du mécanisme de diffusion (voir la
+<a class="reference internal" href="../chapter_preliminaries/ndarray.html#subsec-broadcasting"><span class="std std-numref">Section 2.1.4</span></a>), lorsque nous ajoutons un vecteur et un
+scalaire, le scalaire est ajouté à chaque composante du vecteur. La
+méthode <code class="docutils literal notranslate"><span class="pre">forward</span></code> résultante est enregistrée dans la classe
+<code class="docutils literal notranslate"><span class="pre">LinearRegressionScratch</span></code> via <code class="docutils literal notranslate"><span class="pre">add_to_class</span></code> (introduit dans la
+<a class="reference internal" href="oo-design.html#oo-design-utilities"><span class="std std-numref">Section 3.2.1</span></a>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@d2l</span><span class="o">.</span><span class="n">add_to_class</span><span class="p">(</span><span class="n">LinearRegressionScratch</span><span class="p">)</span>  <span class="c1">#@save</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">d2l</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span>
+</pre></div>
+</div>
+</section>
+<section id="definir-la-fonction-de-perte">
+<h2><span class="section-number">3.4.2. </span>Définir la fonction de perte<a class="headerlink" href="#definir-la-fonction-de-perte" title="Permalink to this heading">¶</a></h2>
+<p>Puisque la mise à jour de notre modèle nécessite de prendre le gradient
+de notre fonction de perte, nous devrions définir d’abord la fonction de
+perte. Ici, nous utilisons la fonction de perte quadratique de l’
+<a class="reference internal" href="linear-regression.html#equation-eq-mse">(3.1.5)</a>. Dans l’implémentation, nous devons transformer la
+valeur réelle <code class="docutils literal notranslate"><span class="pre">y</span></code> dans la forme de la valeur prédite <code class="docutils literal notranslate"><span class="pre">y_hat</span></code>. Le
+résultat renvoyé par la méthode suivante aura également la même forme
+que <code class="docutils literal notranslate"><span class="pre">y_hat</span></code>. Nous renvoyons également la valeur de perte moyenne parmi
+tous les exemples du mini-lot.</p>
+</section>
+<section id="definir-lalgorithme-doptimisation">
+<h2><span class="section-number">3.4.3. </span>Définir l’algorithme d’optimisation<a class="headerlink" href="#definir-lalgorithme-doptimisation" title="Permalink to this heading">¶</a></h2>
+<p>Comme discuté dans la <a class="reference internal" href="linear-regression.html#sec-linear-regression"><span class="std std-numref">Section 3.1</span></a>, la régression
+linéaire possède une solution analytique. Cependant, notre objectif ici
+est d’illustrer comment entraîner des réseaux de neurones plus généraux,
+et cela nécessite que nous vous enseignions comment utiliser la SGD par
+mini-lots. Par conséquent, nous saisirons cette opportunité pour
+introduire votre premier exemple fonctionnel de SGD. À chaque étape, en
+utilisant un mini-lot tiré au hasard de notre jeu de données, nous
+estimons le gradient de la perte par rapport aux paramètres. Ensuite,
+nous mettons à jour les paramètres dans la direction qui peut réduire la
+perte.</p>
+<p>Le code suivant applique la mise à jour, étant donné un ensemble de
+paramètres et un taux d’apprentissage <code class="docutils literal notranslate"><span class="pre">lr</span></code>. Puisque notre perte est
+calculée comme une moyenne sur le mini-lot, nous n’avons pas besoin
+d’ajuster le taux d’apprentissage en fonction de la taille du lot. Dans
+les chapitres suivants, nous étudierons comment les taux d’apprentissage
+devraient être ajustés pour de très grands mini-lots tels qu’ils
+apparaissent dans l’apprentissage distribué à grande échelle. Pour
+l’instant, nous pouvons ignorer cette dépendance.</p>
+<p>Nous définissons ensuite la méthode <code class="docutils literal notranslate"><span class="pre">configure_optimizers</span></code>, qui
+renvoie une instance de la classe <code class="docutils literal notranslate"><span class="pre">SGD</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@d2l</span><span class="o">.</span><span class="n">add_to_class</span><span class="p">(</span><span class="n">LinearRegressionScratch</span><span class="p">)</span>  <span class="c1">#@save</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</pre></div>
+</div>
+</section>
+<section id="entrainement">
+<h2><span class="section-number">3.4.4. </span>Entraînement<a class="headerlink" href="#entrainement" title="Permalink to this heading">¶</a></h2>
+<p>Maintenant que nous avons toutes les pièces en place (paramètres,
+fonction de perte, modèle et optimiseur), nous sommes prêts à
+implémenter la boucle d’entraînement principale. Il est crucial que vous
+compreniez parfaitement ce code, car vous utiliserez des boucles
+d’entraînement similaires pour tous les autres modèles de deep learning
+abordés dans ce livre. Dans chaque <em>époque</em>, nous itérons à travers
+l’ensemble du jeu de données d’entraînement, en passant une fois par
+chaque exemple (en supposant que le nombre d’exemples est divisible par
+la taille du lot). À chaque <em>itération</em>, nous récupérons un mini-lot
+d’exemples d’entraînement et calculons sa perte via la méthode
+<code class="docutils literal notranslate"><span class="pre">training_step</span></code> du modèle. Ensuite, nous calculons les gradients par
+rapport à chaque paramètre. Enfin, nous appellerons l’algorithme
+d’optimisation pour mettre à jour les paramètres du modèle. En résumé,
+nous exécuterons la boucle suivante :</p>
+<ul class="simple">
+<li><p>Initialiser les paramètres <span class="math notranslate nohighlight">\((\mathbf{w}, b)\)</span></p></li>
+<li><p>Répéter jusqu’à la fin</p>
+<ul>
+<li><p>Calculer le gradient
+<span class="math notranslate nohighlight">\(\mathbf{g} \leftarrow \partial_{(\mathbf{w},b)} \frac{1}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} l(\mathbf{x}^{(i)}, y^{(i)}, \mathbf{w}, b)\)</span></p></li>
+<li><p>Mettre à jour les paramètres
+<span class="math notranslate nohighlight">\((\mathbf{w}, b) \leftarrow (\mathbf{w}, b) - \eta \mathbf{g}\)</span></p></li>
+</ul>
+</li>
+</ul>
+<p>Rappelez-vous que le jeu de données de régression synthétique que nous
+avons généré dans la <a class="reference internal" href="synthetic-regression-data.html#sec-synthetic-regression-data"><span class="std std-numref">Section 3.3</span></a> ne
+fournit pas de jeu de données de validation. Dans la plupart des cas,
+cependant, nous voudrons un jeu de données de validation pour mesurer la
+qualité de notre modèle. Ici, nous passons le chargeur de données de
+validation une fois par époque pour mesurer la performance du modèle.
+Suivant notre conception orientée objet, les méthodes <code class="docutils literal notranslate"><span class="pre">prepare_batch</span></code>
+et <code class="docutils literal notranslate"><span class="pre">fit_epoch</span></code> sont enregistrées dans la classe <code class="docutils literal notranslate"><span class="pre">d2l.Trainer</span></code>
+(introduite dans la <a class="reference internal" href="oo-design.html#oo-design-training"><span class="std std-numref">Section 3.2.4</span></a>).</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@d2l</span><span class="o">.</span><span class="n">add_to_class</span><span class="p">(</span><span class="n">d2l</span><span class="o">.</span><span class="n">Trainer</span><span class="p">)</span>  <span class="c1">#@save</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">batch</span>
+</pre></div>
+</div>
+<p>Nous sommes presque prêts à entraîner le modèle, mais nous avons d’abord
+besoin de données d’entraînement. Ici, nous utilisons la classe
+<code class="docutils literal notranslate"><span class="pre">SyntheticRegressionData</span></code> et passons certains paramètres de vérité
+terrain. Ensuite, nous entraînons notre modèle avec le taux
+d’apprentissage <code class="docutils literal notranslate"><span class="pre">lr=0,03</span></code> et fixons <code class="docutils literal notranslate"><span class="pre">max_epochs=3</span></code>. Notez qu’en
+général, le nombre d’époques et le taux d’apprentissage sont tous deux
+des hyperparamètres. En général, le réglage des hyperparamètres est
+délicat et nous voudrons généralement utiliser une séparation en trois
+parties, un ensemble pour l’entraînement, un deuxième pour la sélection
+des hyperparamètres, et le troisième réservé à l’évaluation finale. Nous
+omettons ces détails pour l’instant mais nous y reviendrons plus tard.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">LinearRegressionScratch</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.03</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">d2l</span><span class="o">.</span><span class="n">SyntheticRegressionData</span><span class="p">(</span><span class="n">w</span><span class="o">=</span><span class="n">d2l</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.4</span><span class="p">]),</span> <span class="n">b</span><span class="o">=</span><span class="mf">4.2</span><span class="p">)</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">d2l</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">max_epochs</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Parce que nous avons nous-mêmes synthétisé le jeu de données, nous
+savons précisément quels sont les vrais paramètres. Ainsi, nous pouvons
+évaluer le succès de notre entraînement en comparant les vrais
+paramètres avec ceux que nous avons appris via notre boucle
+d’entraînement. En effet, ils s’avèrent être très proches les uns des
+autres.</p>
+<p>On ne devrait pas tenir pour acquise la capacité à retrouver exactement
+les paramètres de la vérité terrain. En général, pour les modèles
+profonds, il n’existe pas de solutions uniques pour les paramètres, et
+même pour les modèles linéaires, retrouver exactement les paramètres
+n’est possible que lorsqu’aucune caractéristique n’est linéairement
+dépendante des autres. Cependant, en apprentissage automatique, nous
+sommes souvent moins préoccupés par la récupération des vrais paramètres
+sous-jacents, mais plutôt par des paramètres qui conduisent à une
+prédiction hautement précise <span id="id1">()</span>. Heureusement, même
+sur des problèmes d’optimisation difficiles, la descente de gradient
+stochastique peut souvent trouver des solutions remarquablement bonnes,
+en partie grâce au fait que, pour les réseaux profonds, il existe de
+nombreuses configurations des paramètres qui conduisent à une prédiction
+hautement précise.</p>
+</section>
+<section id="resume">
+<h2><span class="section-number">3.4.5. </span>Résumé<a class="headerlink" href="#resume" title="Permalink to this heading">¶</a></h2>
+<p>Dans cette section, nous avons franchi une étape importante vers la
+conception de systèmes de deep learning en implémentant un modèle de
+réseau de neurones et une boucle d’entraînement entièrement
+fonctionnels. Au cours de ce processus, nous avons construit un chargeur
+de données, un modèle, une fonction de perte, une procédure
+d’optimisation, ainsi qu’un outil de visualisation et de surveillance.
+Nous avons fait cela en composant un objet Python qui contient tous les
+composants pertinents pour l’entraînement d’un modèle. Bien qu’il ne
+s’agisse pas encore d’une implémentation de qualité professionnelle,
+elle est parfaitement fonctionnelle et un code comme celui-ci pourrait
+déjà vous aider à résoudre rapidement de petits problèmes. Dans les
+sections à venir, nous verrons comment faire cela à la fois de manière
+<em>plus concise</em> (en évitant le code répétitif) et de manière <em>plus
+efficace</em> (en utilisant nos GPU à leur plein potentiel).</p>
+</section>
+<section id="exercices">
+<h2><span class="section-number">3.4.6. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Que se passerait-il si nous devions initialiser les poids à zéro.
+L’algorithme fonctionnerait-il toujours ? Et si nous initialisions
+les paramètres avec une variance de <span class="math notranslate nohighlight">\(1000\)</span> plutôt que
+<span class="math notranslate nohighlight">\(0,01\)</span> ?</p></li>
+<li><p>Supposez que vous soyez <a class="reference external" href="https://fr.wikipedia.org/wiki/Georg_Ohm">Georg Simon
+Ohm</a> essayant de
+concevoir un modèle pour la résistance qui relie la tension et le
+courant. Pouvez-vous utiliser la différentiation automatique pour
+apprendre les paramètres de votre modèle ?</p></li>
+<li><p>Pouvez-vous utiliser la <a class="reference external" href="https://fr.wikipedia.org/wiki/Loi_de_Planck">loi de
+Planck</a> pour
+déterminer la température d’un objet en utilisant la densité
+spectrale d’énergie ? Pour référence, la densité spectrale <span class="math notranslate nohighlight">\(B\)</span>
+du rayonnement émanant d’un corps noir est
+<span class="math notranslate nohighlight">\(B(\lambda, T) = \frac{2 hc^2}{\lambda^5} \cdot \left(\exp \frac{h c}{\lambda k T} - 1\right)^{-1}\)</span>.
+Ici, <span class="math notranslate nohighlight">\(\lambda\)</span> est la longueur d’onde, <span class="math notranslate nohighlight">\(T\)</span> est la
+température, <span class="math notranslate nohighlight">\(c\)</span> est la vitesse de la lumière, <span class="math notranslate nohighlight">\(h\)</span> est la
+constante de Planck, et <span class="math notranslate nohighlight">\(k\)</span> est la constante de Boltzmann. Vous
+mesurez l’énergie pour différentes longueurs d’onde <span class="math notranslate nohighlight">\(\lambda\)</span>
+et vous devez maintenant ajuster la courbe de densité spectrale à la
+loi de Planck.</p></li>
+<li><p>Quels sont les problèmes que vous pourriez rencontrer si vous vouliez
+calculer les dérivées secondes de la perte ? Comment les
+fixeriez-vous ?</p></li>
+<li><p>Pourquoi la méthode <code class="docutils literal notranslate"><span class="pre">reshape</span></code> est-elle nécessaire dans la fonction
+<code class="docutils literal notranslate"><span class="pre">loss</span></code> ?</p></li>
+<li><p>Expérimentez en utilisant différents taux d’apprentissage pour
+découvrir à quelle vitesse la valeur de la fonction de perte chute.
+Pouvez-vous réduire l’erreur en augmentant le nombre d’époques
+d’entraînement ?</p></li>
+<li><p>Si le nombre d’exemples ne peut pas être divisé par la taille du lot,
+qu’arrive-t-il à <code class="docutils literal notranslate"><span class="pre">data_iter</span></code> à la fin d’une époque ?</p></li>
+<li><p>Essayez d’implémenter une fonction de perte différente, telle que la
+perte en valeur absolue
+<code class="docutils literal notranslate"><span class="pre">(y_hat</span> <span class="pre">-</span> <span class="pre">d2l.reshape(y,</span> <span class="pre">y_hat.shape)).abs().sum()</span></code>.</p>
+<ol class="arabic simple">
+<li><p>Vérifiez ce qui se passe pour des données régulières.</p></li>
+<li><p>Vérifiez s’il y a une différence de comportement si vous perturbez
+activement certaines entrées, telles que <span class="math notranslate nohighlight">\(y_5 = 10000\)</span>, de
+<span class="math notranslate nohighlight">\(\mathbf{y}\)</span>.</p></li>
+<li><p>Pouvez-vous imaginer une solution simple pour combiner les
+meilleurs aspects de la perte quadratique et de la perte en valeur
+absolue ? Indice : comment pouvez-vous éviter des valeurs de
+gradient vraiment importantes ?</p></li>
+</ol>
+</li>
+<li><p>Pourquoi devons-nous remélanger le jeu de données ? Pouvez-vous
+concevoir un cas où un jeu de données construit de manière
+malveillante briserait l’algorithme d’optimisation autrement ?</p></li>
+</ol>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">3.4. Implémentation de la régression linéaire à partir de zéro</a><ul>
+<li><a class="reference internal" href="#definir-le-modele">3.4.1. Définir le modèle</a></li>
+<li><a class="reference internal" href="#definir-la-fonction-de-perte">3.4.2. Définir la fonction de perte</a></li>
+<li><a class="reference internal" href="#definir-lalgorithme-doptimisation">3.4.3. Définir l’algorithme d’optimisation</a></li>
+<li><a class="reference internal" href="#entrainement">3.4.4. Entraînement</a></li>
+<li><a class="reference internal" href="#resume">3.4.5. Résumé</a></li>
+<li><a class="reference internal" href="#exercices">3.4.6. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="synthetic-regression-data.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>3.3. Données de régression synthétiques</div>
+         </div>
+     </a>
+     <a id="button-next" href="linear-regression-concise.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>3.5. Implémentation concise de la régression linéaire</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

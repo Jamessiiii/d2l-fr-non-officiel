@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>3.3. Données de régression synthétiques &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3.4. Implémentation de la régression linéaire à partir de zéro" href="linear-regression-scratch.html" />
+    <link rel="prev" title="3.2. Conception orientée objet pour l’implémentation" href="oo-design.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">3. </span>Réseaux de neurones linéaires pour la régression</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">3.3. </span>Données de régression synthétiques</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_linear-regression/synthetic-regression-data.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weight-decay.html">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weight-decay.html">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="donnees-de-regression-synthetiques">
+<span id="sec-synthetic-regression-data"></span><h1><span class="section-number">3.3. </span>Données de régression synthétiques<a class="headerlink" href="#donnees-de-regression-synthetiques" title="Permalink to this heading">¶</a></h1>
+<p>L’apprentissage automatique consiste avant tout à extraire des
+informations à partir de données. Vous pourriez donc vous demander ce
+que nous pourrions apprendre de données synthétiques ? Bien que nous ne
+nous souciions pas intrinsèquement des motifs que nous avons nous-mêmes
+injectés dans un modèle artificiel de génération de données, de tels
+jeux de données sont néanmoins utiles à des fins didactiques, car ils
+nous aident à évaluer les propriétés de nos algorithmes d’apprentissage
+et à confirmer que nos implémentations fonctionnent comme prévu. Par
+exemple, si nous créons des données pour lesquelles les paramètres
+corrects sont connus <em>a priori</em>, nous pouvons alors vérifier que notre
+modèle peut effectivement les retrouver.</p>
+<section id="generation-du-jeu-de-donnees">
+<h2><span class="section-number">3.3.1. </span>Génération du jeu de données<a class="headerlink" href="#generation-du-jeu-de-donnees" title="Permalink to this heading">¶</a></h2>
+<p>Pour cet exemple, nous travaillerons en basse dimension par souci de
+concision. L’extrait de code suivant génère 1000 exemples avec des
+caractéristiques en 2 dimensions tirées d’une distribution normale
+standard. La matrice de conception résultante <span class="math notranslate nohighlight">\(\mathbf{X}\)</span>
+appartient à <span class="math notranslate nohighlight">\(\mathbb{R}^{1000 \times 2}\)</span>. Nous générons chaque
+étiquette en appliquant une fonction linéaire de <em>vérité terrain</em>
+(<em>ground truth</em>), en les corrompant via un bruit additif
+<span class="math notranslate nohighlight">\(\boldsymbol{\epsilon}\)</span>, tiré de manière indépendante et identique
+pour chaque exemple :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-synthetic-regression-data-0">
+<span class="eqno">(3.3.1)<a class="headerlink" href="#equation-chapter-linear-regression-synthetic-regression-data-0" title="Permalink to this equation">¶</a></span>\[\mathbf{y}= \mathbf{X} \mathbf{w} + b + \boldsymbol{\epsilon}.\]</div>
+<p>Par commodité, nous supposons que <span class="math notranslate nohighlight">\(\boldsymbol{\epsilon}\)</span> est tiré
+d’une distribution normale avec une moyenne <span class="math notranslate nohighlight">\(\mu= 0\)</span> et un
+écart-type <span class="math notranslate nohighlight">\(\sigma = 0.01\)</span>. Notez que pour la conception orientée
+objet, nous ajoutons le code à la méthode <code class="docutils literal notranslate"><span class="pre">__init__</span></code> d’une sous-classe
+de <code class="docutils literal notranslate"><span class="pre">d2l.DataModule</span></code> (introduite dans <a class="reference internal" href="oo-design.html#oo-design-data"><span class="std std-numref">Section 3.2.3</span></a>). Il
+est de bonne pratique de permettre le réglage de tout hyperparamètre
+supplémentaire. Nous y parvenons avec <code class="docutils literal notranslate"><span class="pre">save_hyperparameters()</span></code>. La
+taille de lot (<code class="docutils literal notranslate"><span class="pre">batch_size</span></code>) sera déterminée plus tard.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SyntheticRegressionData</span><span class="p">(</span><span class="n">d2l</span><span class="o">.</span><span class="n">DataModule</span><span class="p">):</span>  <span class="c1">#@save</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Synthetic data for linear regression.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">num_train</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">num_val</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                 <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_hyperparameters</span><span class="p">()</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">num_train</span> <span class="o">+</span> <span class="n">num_val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">d2l</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">d2l</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span> <span class="o">+</span> <span class="n">b</span> <span class="o">+</span> <span class="n">noise</span>
+</pre></div>
+</div>
+<p>Ci-dessous, nous définissons les vrais paramètres à
+<span class="math notranslate nohighlight">\(\mathbf{w} = [2, -3.4]^\top\)</span> et <span class="math notranslate nohighlight">\(b = 4.2\)</span>. Plus tard, nous
+pourrons comparer nos paramètres estimés à ces valeurs de <em>vérité
+terrain</em>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">SyntheticRegressionData</span><span class="p">(</span><span class="n">w</span><span class="o">=</span><span class="n">d2l</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.4</span><span class="p">]),</span> <span class="n">b</span><span class="o">=</span><span class="mf">4.2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Chaque ligne de <code class="docutils literal notranslate"><span class="pre">features</span></code> consiste en un vecteur de
+<span class="math notranslate nohighlight">\(\mathbb{R}^2\)</span> et chaque ligne de <code class="docutils literal notranslate"><span class="pre">labels</span></code> est un scalaire.
+Jetons un coup d’œil à la première entrée.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;features:&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">label:&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="lecture-du-jeu-de-donnees">
+<h2><span class="section-number">3.3.2. </span>Lecture du jeu de données<a class="headerlink" href="#lecture-du-jeu-de-donnees" title="Permalink to this heading">¶</a></h2>
+<p>L’entraînement des modèles d’apprentissage automatique nécessite souvent
+plusieurs passages sur un jeu de données, en prélevant un mini-lot
+(<em>minibatch</em>) d’exemples à la fois. Ces données sont ensuite utilisées
+pour mettre à jour le modèle. Pour illustrer comment cela fonctionne,
+nous implémentons la méthode <code class="docutils literal notranslate"><span class="pre">get_dataloader</span></code>, en l’enregistrant dans
+la classe <code class="docutils literal notranslate"><span class="pre">SyntheticRegressionData</span></code> via <code class="docutils literal notranslate"><span class="pre">add_to_class</span></code> (introduit
+dans <a class="reference internal" href="oo-design.html#oo-design-utilities"><span class="std std-numref">Section 3.2.1</span></a>). Elle prend une taille de lot, une
+matrice de caractéristiques et un vecteur d’étiquettes, et génère des
+mini-lots de taille <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>. En tant que tel, chaque mini-lot
+consiste en un tuple de caractéristiques et d’étiquettes. Notez que nous
+devons faire attention à savoir si nous sommes en mode entraînement ou
+validation : dans le premier cas, nous voudrons lire les données dans un
+ordre aléatoire, tandis que pour le second, pouvoir lire les données
+dans un ordre prédéfini peut être important à des fins de débogage.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@d2l</span><span class="o">.</span><span class="n">add_to_class</span><span class="p">(</span><span class="n">SyntheticRegressionData</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">train</span><span class="p">:</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_train</span><span class="p">))</span>
+        <span class="c1"># The examples are read in random order</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_train</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_train</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">num_val</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>Pour forger une certaine intuition, inspectons le premier mini-lot de
+données. Chaque mini-lot de caractéristiques nous fournit à la fois sa
+taille et la dimensionnalité des caractéristiques d’entrée. De même,
+notre mini-lot d’étiquettes aura une forme correspondante donnée par
+<code class="docutils literal notranslate"><span class="pre">batch_size</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;X shape:&#39;</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">y shape:&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Bien qu’elle paraisse anodine, l’invocation de
+<code class="docutils literal notranslate"><span class="pre">iter(data.train_dataloader())</span></code> illustre la puissance de la conception
+orientée objet de Python. Notez que nous avons ajouté une méthode à la
+classe <code class="docutils literal notranslate"><span class="pre">SyntheticRegressionData</span></code> <em>après</em> avoir créé l’objet <code class="docutils literal notranslate"><span class="pre">data</span></code>.
+Néanmoins, l’objet bénéficie de l’ajout de fonctionnalités <em>ex post
+facto</em> à la classe.</p>
+<p>Tout au long de l’itération, nous obtenons des mini-lots distincts
+jusqu’à ce que l’ensemble du jeu de données ait été épuisé (essayez
+ceci). Bien que l’itération implémentée ci-dessus soit bonne à des fins
+didactiques, elle est inefficace d’une manière qui pourrait nous poser
+des problèmes avec des cas réels. Par exemple, elle nécessite que nous
+chargions toutes les données en mémoire et que nous effectuions de
+nombreux accès aléatoires à la mémoire. Les itérateurs intégrés
+implémentés dans un framework de deep learning sont considérablement
+plus efficaces et ils peuvent gérer des sources telles que des données
+stockées dans des fichiers, données reçues via un flux, et données
+générées ou traitées à la volée. Ensuite, essayons d’implémenter la même
+méthode en utilisant des itérateurs intégrés.</p>
+</section>
+<section id="implementation-concise-du-chargeur-de-donnees">
+<h2><span class="section-number">3.3.3. </span>Implémentation concise du chargeur de données<a class="headerlink" href="#implementation-concise-du-chargeur-de-donnees" title="Permalink to this heading">¶</a></h2>
+<p>Plutôt que d’écrire notre propre itérateur, nous pouvons appeler l’API
+existante d’un framework pour charger des données. Comme précédemment,
+nous avons besoin d’un jeu de données avec des caractéristiques <code class="docutils literal notranslate"><span class="pre">X</span></code> et
+des étiquettes <code class="docutils literal notranslate"><span class="pre">y</span></code>. Au-delà de cela, nous définissons <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>
+dans le chargeur de données intégré et le laissons s’occuper du mélange
+efficace des exemples.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@d2l</span><span class="o">.</span><span class="n">add_to_class</span><span class="p">(</span><span class="n">d2l</span><span class="o">.</span><span class="n">DataModule</span><span class="p">)</span>  <span class="c1">#@save</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_tensorloader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensors</span><span class="p">,</span> <span class="n">train</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)):</span>
+    <span class="n">tensors</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">tensors</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@d2l</span><span class="o">.</span><span class="n">add_to_class</span><span class="p">(</span><span class="n">SyntheticRegressionData</span><span class="p">)</span>  <span class="c1">#@save</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train</span><span class="p">):</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_train</span><span class="p">)</span> <span class="k">if</span> <span class="n">train</span> <span class="k">else</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_train</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_tensorloader</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="n">train</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Le nouveau chargeur de données se comporte exactement comme le
+précédent, sauf qu’il est plus efficace et possède des fonctionnalités
+supplémentaires.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;X shape:&#39;</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">y shape:&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Par exemple, le chargeur de données fourni par l’API du framework prend
+en charge la méthode intégrée <code class="docutils literal notranslate"><span class="pre">__len__</span></code>, nous pouvons donc interroger
+sa longueur, c’est-à-dire le nombre de lots.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+<section id="resume">
+<h2><span class="section-number">3.3.4. </span>Résumé<a class="headerlink" href="#resume" title="Permalink to this heading">¶</a></h2>
+<p>Les chargeurs de données sont un moyen pratique d’abstraire le processus
+de chargement et de manipulation des données. De cette façon, le même
+<em>algorithme</em> d’apprentissage automatique est capable de traiter de
+nombreux types et sources de données différents sans nécessiter de
+modification. L’un des aspects intéressants des chargeurs de données est
+qu’ils peuvent être composés. Par exemple, nous pourrions charger des
+images puis avoir un filtre de post-traitement qui les recadre ou les
+modifie d’une autre manière. En tant que tels, les chargeurs de données
+peuvent être utilisés pour décrire un pipeline complet de traitement de
+données.</p>
+<p>Quant au modèle lui-même, le modèle linéaire bidimensionnel est à peu
+près le plus simple que nous puissions rencontrer. Il nous permet de
+tester la précision des modèles de régression sans nous soucier d’avoir
+des quantités insuffisantes de données ou un système d’équations
+sous-déterminé. Nous en ferons bon usage dans la section suivante.</p>
+</section>
+<section id="exercices">
+<h2><span class="section-number">3.3.5. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Que se passera-t-il si le nombre d’exemples ne peut pas être divisé
+par la taille du lot ? Comment changeriez-vous ce comportement en
+spécifiant un argument différent à l’aide de l’API du framework ?</p></li>
+<li><p>Supposons que nous voulions générer un énorme jeu de données, où à la
+fois la taille du vecteur de paramètres <code class="docutils literal notranslate"><span class="pre">w</span></code> et le nombre d’exemples
+<code class="docutils literal notranslate"><span class="pre">num_examples</span></code> sont grands.</p>
+<ol class="arabic simple">
+<li><p>Que se passe-t-il si nous ne pouvons pas conserver toutes les
+données en mémoire ?</p></li>
+<li><p>Comment mélangeriez-vous les données si elles sont stockées sur
+disque ? Votre tâche consiste à concevoir un algorithme <em>efficace</em>
+qui ne nécessite pas trop de lectures ou d’écritures aléatoires.
+Indice : les <a class="reference external" href="https://en.wikipedia.org/wiki/Pseudorandom_permutation">générateurs de permutations
+pseudonymes</a>
+vous permettent de concevoir un remélange sans avoir besoin de
+stocker explicitement la table de permutation
+<span id="id1">()</span>.</p></li>
+</ol>
+</li>
+<li><p>Implémentez un générateur de données qui produit de nouvelles données
+à la volée, chaque fois que l’itérateur est appelé.</p></li>
+<li><p>Comment concevriez-vous un générateur de données aléatoires qui
+génère <em>les mêmes</em> données chaque fois qu’il est appelé ?</p></li>
+</ol>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">3.3. Données de régression synthétiques</a><ul>
+<li><a class="reference internal" href="#generation-du-jeu-de-donnees">3.3.1. Génération du jeu de données</a></li>
+<li><a class="reference internal" href="#lecture-du-jeu-de-donnees">3.3.2. Lecture du jeu de données</a></li>
+<li><a class="reference internal" href="#implementation-concise-du-chargeur-de-donnees">3.3.3. Implémentation concise du chargeur de données</a></li>
+<li><a class="reference internal" href="#resume">3.3.4. Résumé</a></li>
+<li><a class="reference internal" href="#exercices">3.3.5. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="oo-design.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>3.2. Conception orientée objet pour l’implémentation</div>
+         </div>
+     </a>
+     <a id="button-next" href="linear-regression-scratch.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>3.4. Implémentation de la régression linéaire à partir de zéro</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

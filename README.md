@@ -16,6 +16,7 @@ Traduit en français :
 - Installation (`chapter_installation/index.md`)
 - Notation (`chapter_notation/index.md`)
 - Préliminaires (`chapter_preliminaries/*.md`)
+- Régression linéaire (`chapter_linear-regression/*.md`)
 
 La traduction complète reste à poursuivre chapitre par chapitre avec des agents Gemini, en conservant le code, les équations, les labels, les références internes et la structure D2L-Book.
 
@@ -33,12 +34,10 @@ d2lbook build eval --tab all
 d2lbook build rst --tab all
 install -m 0644 frontpage.html _build/rst_all/frontpage.html
 sphinx-build -b html _build/rst_all _build/html
-rm -rf docs
-cp -RX _build/html docs
 touch docs/.nojekyll
-rm -rf notebooks
-cp -RX _build/ipynb notebooks
 ```
+
+GitHub Pages sert le dossier `docs/` depuis la branche `main`.
 
 ## Attribution
 

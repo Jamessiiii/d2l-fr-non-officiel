@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>3.6. Généralisation &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3.7. Décroissance des poids" href="weight-decay.html" />
+    <link rel="prev" title="3.5. Implémentation concise de la régression linéaire" href="linear-regression-concise.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">3. </span>Réseaux de neurones linéaires pour la régression</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">3.6. </span>Généralisation</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_linear-regression/generalization.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weight-decay.html">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weight-decay.html">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="generalisation">
+<span id="sec-generalization-basics"></span><h1><span class="section-number">3.6. </span>Généralisation<a class="headerlink" href="#generalisation" title="Permalink to this heading">¶</a></h1>
+<p>Considérez deux étudiants universitaires se préparant assidûment pour
+leur examen final. Couramment, cette préparation consistera à
+s’entraîner et à tester leurs capacités en passant des examens
+administrés les années précédentes. Néanmoins, réussir les examens
+passés ne garantit pas qu’ils excelleront le moment venu. Par exemple,
+imaginez une étudiante, Ellie l’Extraordinaire, dont la préparation
+consistait entièrement à mémoriser les réponses aux questions des
+examens des années précédentes. Même si Ellie était dotée d’une mémoire
+extraordinaire, et pouvait ainsi se rappeler parfaitement la réponse à
+toute question <em>déjà vue</em>, elle pourrait néanmoins se figer face à une
+nouvelle question (<em>jamais vue auparavant</em>). En comparaison, imaginez
+une autre étudiante, Irene l’Inductive, avec des capacités de
+mémorisation comparativement médiocres, mais un don pour déceler des
+motifs. Notez que si l’examen consistait réellement en des questions
+recyclées d’une année précédente, Ellie surpasserait Irene haut la main.
+Même si les motifs inférés par Irene produisaient des prédictions
+précises à 90 %, ils ne pourraient jamais rivaliser avec le rappel à 100
+% d’Ellie. Cependant, même si l’examen consistait entièrement en de
+nouvelles questions, Irene pourrait maintenir sa moyenne de 90 %.</p>
+<p>En tant que scientifiques de l’apprentissage automatique, notre objectif
+est de découvrir des <em>motifs</em>. Mais comment pouvons-nous être sûrs que
+nous avons véritablement découvert un motif <em>général</em> et non simplement
+mémorisé nos données ? La plupart du temps, nos prédictions ne sont
+utiles que si notre modèle découvre un tel motif. Nous ne voulons pas
+prédire les cours de la bourse d’hier, mais ceux de demain. Nous n’avons
+pas besoin de reconnaître des maladies déjà diagnostiquées pour des
+patients déjà vus, mais plutôt des affections non diagnostiquées
+auparavant chez des patients jamais vus. Ce problème — comment découvrir
+des motifs qui se <em>généralisent</em> — est le problème fondamental de
+l’apprentissage automatique, et sans doute de toutes les statistiques.
+Nous pourrions considérer ce problème comme n’étant qu’une partie d’une
+question bien plus vaste qui englobe toute la science : quand
+sommes-nous jamais justifiés à faire le saut d’observations
+particulières à des énoncés plus généraux ?</p>
+<p>Dans la vie réelle, nous devons ajuster nos modèles en utilisant une
+collection finie de données. Les échelles typiques de ces données
+varient énormément selon les domaines. Pour de nombreux problèmes
+médicaux importants, nous ne pouvons accéder qu’à quelques milliers de
+points de données. Lors de l’étude de maladies rares, nous pourrions
+avoir de la chance d’en accéder à des centaines. En revanche, les plus
+grands jeux de données publics composés de photographies étiquetées, par
+exemple ImageNet <span id="id1">()</span>, contiennent des
+millions d’images. Et certaines collections d’images non étiquetées
+telles que le jeu de données Flickr YFC100M peuvent être encore plus
+vastes, contenant plus de 100 millions d’images
+<span id="id2">()</span>. Cependant, même à cette échelle extrême,
+le nombre de points de données disponibles reste infinitésimal par
+rapport à l’espace de toutes les images possibles à une résolution d’un
+mégapixel. Chaque fois que nous travaillons avec des échantillons finis,
+nous devons garder à l’esprit le risque que nous puissions ajuster nos
+données d’entraînement, pour découvrir finalement que nous avons échoué
+à découvrir un motif généralisable.</p>
+<p>Le phénomène d’ajustement plus proche de nos données d’entraînement que
+de la distribution sous-jacente est appelé <em>surapprentissage</em>
+(overfitting), et les techniques pour lutter contre le surapprentissage
+sont souvent appelées méthodes de <em>régularisation</em>. Bien que cela ne
+remplace pas une véritable introduction à la théorie de l’apprentissage
+statistique (voir <span id="id3"></span>), nous vous
+donnerons juste assez d’intuition pour commencer. Nous reviendrons sur
+la généralisation dans de nombreux chapitres tout au long du livre, en
+explorant à la fois ce qui est connu sur les principes sous-jacents à la
+généralisation dans divers modèles, ainsi que les techniques
+heuristiques qui ont été trouvées (empiriquement) pour produire une
+meilleure généralisation sur des tâches d’intérêt pratique.</p>
+<section id="erreur-dentrainement-et-erreur-de-generalisation">
+<h2><span class="section-number">3.6.1. </span>Erreur d’entraînement et erreur de généralisation<a class="headerlink" href="#erreur-dentrainement-et-erreur-de-generalisation" title="Permalink to this heading">¶</a></h2>
+<p>Dans le cadre standard de l’apprentissage supervisé, nous supposons que
+les données d’entraînement et les données de test sont tirées de manière
+<em>indépendante</em> à partir de distributions <em>identiques</em>. C’est ce qu’on
+appelle communément l’ <em>hypothèse IID</em>. Bien que cette hypothèse soit
+forte, il convient de noter que, sans une telle hypothèse, nous serions
+dans l’impasse. Pourquoi devrions-nous croire que des données
+d’entraînement échantillonnées à partir de la distribution
+<span class="math notranslate nohighlight">\(P(X,Y)\)</span> devraient nous dire comment faire des prédictions sur des
+données de test générées par une <em>distribution différente</em>
+<span class="math notranslate nohighlight">\(Q(X,Y)\)</span> ? Faire de tels sauts s’avère nécessiter des hypothèses
+fortes sur la manière dont <span class="math notranslate nohighlight">\(P\)</span> et <span class="math notranslate nohighlight">\(Q\)</span> sont liées. Plus tard,
+nous discuterons de certaines hypothèses qui permettent des décalages de
+distribution, mais nous devons d’abord comprendre le cas IID, où
+<span class="math notranslate nohighlight">\(P(\cdot) = Q(\cdot)\)</span>.</p>
+<p>Pour commencer, nous devons différencier l’ <em>erreur d’entraînement</em>
+<span class="math notranslate nohighlight">\(R_\textrm{emp}\)</span>, qui est une <em>statistique</em> calculée sur le jeu de
+données d’entraînement, de l’ <em>erreur de généralisation</em> <span class="math notranslate nohighlight">\(R\)</span>, qui
+est une <em>espérance</em> prise par rapport à la distribution sous-jacente.
+Vous pouvez considérer l’erreur de généralisation comme ce que vous
+verriez si vous appliquiez votre modèle à un flux infini d’exemples de
+données supplémentaires tirés de la même distribution de données
+sous-jacente. Formellement, l’erreur d’entraînement est exprimée sous
+forme d’une <em>somme</em> (avec la même notation que dans la
+<a class="reference internal" href="linear-regression.html#sec-linear-regression"><span class="std std-numref">Section 3.1</span></a>) :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-generalization-0">
+<span class="eqno">(3.6.1)<a class="headerlink" href="#equation-chapter-linear-regression-generalization-0" title="Permalink to this equation">¶</a></span>\[R_\textrm{emp}[\mathbf{X}, \mathbf{y}, f] = \frac{1}{n} \sum_{i=1}^n l(\mathbf{x}^{(i)}, y^{(i)}, f(\mathbf{x}^{(i)})),\]</div>
+<p>tandis que l’erreur de généralisation est exprimée sous forme d’une
+intégrale :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-generalization-1">
+<span class="eqno">(3.6.2)<a class="headerlink" href="#equation-chapter-linear-regression-generalization-1" title="Permalink to this equation">¶</a></span>\[R[p, f] = E_{(\mathbf{x}, y) \sim P} [l(\mathbf{x}, y, f(\mathbf{x}))] =
+\int \int l(\mathbf{x}, y, f(\mathbf{x})) p(\mathbf{x}, y) \;d\mathbf{x} dy.\]</div>
+<p>Problématiquement, we can never calculate exactement l’erreur de
+généralisation <span class="math notranslate nohighlight">\(R\)</span>. Personne ne nous donne jamais la forme précise
+de la fonction de densité <span class="math notranslate nohighlight">\(p(\mathbf{x}, y)\)</span>. De plus, nous ne
+pouvons pas échantillonner un flux infini de points de données. Ainsi,
+en pratique, nous devons <em>estimer</em> l’erreur de généralisation en
+appliquant notre modèle à un jeu de test indépendant constitué d’une
+sélection aléatoire d’exemples <span class="math notranslate nohighlight">\(\mathbf{X}'\)</span> et d’étiquettes
+<span class="math notranslate nohighlight">\(\mathbf{y}'\)</span> qui ont été écartés de notre jeu d’entraînement.
+Cela consiste à appliquer la même formule que celle utilisée pour
+calculer l’erreur d’entraînement empirique, mais à un jeu de test
+<span class="math notranslate nohighlight">\(\mathbf{X}', \mathbf{y}'\)</span>.</p>
+<p>Crucialement, lorsque nous évaluons notre classifieur sur le jeu de
+test, nous travaillons avec un classifieur <em>fixe</em> (il ne dépend pas de
+l’échantillon du jeu de test), et ainsi l’estimation de son erreur est
+simplement le problème de l’estimation de la moyenne. Cependant, on ne
+peut pas en dire autant pour le jeu d’entraînement. Notez que le modèle
+avec lequel nous finissons dépend explicitement de la sélection du jeu
+d’entraînement, et ainsi l’erreur d’entraînement sera en général une
+estimation biaisée de l’erreur réelle sur la population sous-jacente. La
+question centrale de la généralisation est alors de savoir quand nous
+devrions nous attendre à ce que notre erreur d’entraînement soit proche
+de l’erreur de la population (et donc de l’erreur de généralisation).</p>
+<section id="complexite-du-modele">
+<h3><span class="section-number">3.6.1.1. </span>Complexité du modèle<a class="headerlink" href="#complexite-du-modele" title="Permalink to this heading">¶</a></h3>
+<p>Dans la théorie classique, lorsque nous avons des modèles simples et des
+données abondantes, les erreurs d’entraînement et de généralisation ont
+tendance à être proches. Cependant, lorsque nous travaillons avec des
+modèles plus complexes et/ou moins d’exemples, nous nous attendons à ce
+que l’erreur d’entraînement diminue mais que l’écart de généralisation
+augmente. Cela ne devrait pas être surprenant. Imaginez une classe de
+modèles si expressive que pour n’importe quel jeu de données de
+<span class="math notranslate nohighlight">\(n\)</span> exemples, nous puissions trouver un ensemble de paramètres
+capables d’ajuster parfaitement des étiquettes arbitraires, même
+assignées de manière aléatoire. Dans ce cas, même si nous ajustons
+parfaitement nos données d’entraînement, comment pouvons-nous conclure
+quoi que ce soit sur l’erreur de généralisation ? Pour tout ce que nous
+en savons, notre erreur de généralisation pourrait n’être pas meilleure
+qu’une supposition aléatoire.</p>
+<p>En général, en l’absence de toute restriction sur notre classe de
+modèles, nous ne pouvons pas conclure, sur la seule base de l’ajustement
+des données d’entraînement, que notre modèle a découvert un motif
+généralisable <span id="id4">()</span>. D’un autre côté, si notre
+classe de modèles n’était pas capable d’ajuster des étiquettes
+arbitraires, alors elle doit avoir découvert un motif. Les idées de la
+théorie de l’apprentissage sur la complexité des modèles se sont
+inspirées en partie des idées de Karl Popper, un philosophe des sciences
+influent, qui a formalisé le critère de réfutation (falsifiabilité).
+Selon Popper, une théorie qui peut expliquer n’importe quelle
+observation n’est pas du tout une théorie scientifique ! Après tout, que
+nous a-t-elle dit sur le monde si elle n’a exclu aucune possibilité ? En
+résumé, ce que nous voulons, c’est une hypothèse qui <em>ne pourrait pas</em>
+expliquer n’importe quelle observation que nous pourrions concevoir et
+qui, pourtant, se trouve être compatible avec les observations que nous
+faisons <em>en fait</em>.</p>
+<p>Maintenant, ce qui constitue précisément une notion appropriée de
+complexité de modèle est une question complexe. Souvent, les modèles
+ayant plus de paramètres sont capables d’ajuster un plus grand nombre
+d’étiquettes assignées arbitrairement. Cependant, ce n’est pas
+nécessairement vrai. Par exemple, les méthodes à noyau opèrent dans des
+espaces avec un nombre infini de paramètres, pourtant leur complexité
+est contrôlée par d’autres moyens <span id="id5">()</span>. Une
+notion de complexité qui s’avère souvent utile est la plage de valeurs
+que les paramètres peuvent prendre. Ici, un modèle dont les paramètres
+sont autorisés à prendre des valeurs arbitraires serait plus complexe.
+Nous reviendrons sur cette idée dans la section suivante, lorsque nous
+introduirons la <em>décroissance des poids</em> (weight decay), votre première
+technique pratique de régularisation. Notamment, il peut être difficile
+de comparer la complexité entre les membres de classes de modèles
+sensiblement différentes (par exemple, les arbres de décision par
+rapport aux réseaux de neurones).</p>
+<p>À ce stade, nous devons souligner un autre point important sur lequel
+nous reviendrons lors de l’introduction des réseaux de neurones
+profonds. Lorsqu’un modèle est capable d’ajuster des étiquettes
+arbitraires, une faible erreur d’entraînement n’implique pas
+nécessairement une faible erreur de généralisation. <em>Cependant, elle
+n’implique pas nécessairement non plus une erreur de généralisation
+élevée !</em> Tout ce que nous pouvons dire avec certitude est qu’une faible
+erreur d’entraînement seule ne suffit pas à certifier une faible erreur
+de généralisation. Les réseaux de neurones profonds s’avèrent être
+justement de tels modèles : bien qu’ils se généralisent bien en
+pratique, ils sont trop puissants pour nous permettre de conclure
+grand-chose sur la seule base de l’erreur d’entraînement. Dans ces cas,
+nous devons nous appuyer plus lourdement sur nos données de réserve pour
+certifier la généralisation après coup. L’erreur sur les données de
+réserve, c’est-à-dire le jeu de validation, est appelée l’ <em>erreur de
+validation</em>.</p>
+</section>
+</section>
+<section id="sous-apprentissage-ou-surapprentissage">
+<h2><span class="section-number">3.6.2. </span>Sous-apprentissage ou surapprentissage ?<a class="headerlink" href="#sous-apprentissage-ou-surapprentissage" title="Permalink to this heading">¶</a></h2>
+<p>Lorsque nous comparons les erreurs d’entraînement et de validation, nous
+voulons être attentifs à deux situations courantes. Premièrement, nous
+voulons surveiller les cas où notre erreur d’entraînement et notre
+erreur de validation sont toutes deux substantielles, mais avec un
+faible écart entre elles. Si le modèle est incapable de réduire l’erreur
+d’entraînement, cela pourrait signifier que notre modèle est trop simple
+(c’est-à-dire insuffisamment expressif) pour capturer le motif que nous
+essayons de modéliser. De plus, puisque l’ <em>écart de généralisation</em>
+(<span class="math notranslate nohighlight">\(R_\textrm{emp} - R\)</span>) entre nos erreurs d’entraînement et de
+généralisation est faible, nous avons des raisons de croire que nous
+pourrions nous en sortir avec un modèle plus complexe. Ce phénomène est
+connu sous le nom de <em>sous-apprentissage</em> (underfitting).</p>
+<p>D’un autre côté, comme nous l’avons discuté plus haut, nous voulons
+surveiller les cas où notre erreur d’entraînement est nettement
+inférieure à notre erreur de validation, ce qui indique un
+<em>surapprentissage</em> (overfitting) sévère. Notez que le surapprentissage
+n’est pas toujours une mauvaise chose. Dans l’apprentissage profond en
+particulier, les meilleurs modèles prédictifs sont souvent bien plus
+performants sur les données d’entraînement que sur les données de
+réserve. En fin de compte, nous nous soucions généralement de réduire
+l’erreur de généralisation, et nous ne nous soucions de l’écart que dans
+la mesure où il devient un obstacle à cette fin. Notez que si l’erreur
+d’entraînement est nulle, alors l’écart de généralisation est
+précisément égal à l’erreur de généralisation et nous ne pouvons
+progresser qu’en réduisant l’écart.</p>
+<section id="ajustement-de-courbe-polynomiale">
+<span id="subsec-polynomial-curve-fitting"></span><h3><span class="section-number">3.6.2.1. </span>Ajustement de courbe polynomiale<a class="headerlink" href="#ajustement-de-courbe-polynomiale" title="Permalink to this heading">¶</a></h3>
+<p>Pour illustrer une certaine intuition classique sur le surapprentissage
+et la complexité des modèles, considérez ce qui suit : étant donné des
+données d’entraînement composées d’une seule caractéristique <span class="math notranslate nohighlight">\(x\)</span>
+et d’une étiquette à valeur réelle correspondante <span class="math notranslate nohighlight">\(y\)</span>, nous
+essayons de trouver le polynôme de degré <span class="math notranslate nohighlight">\(d\)</span></p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-generalization-2">
+<span class="eqno">(3.6.3)<a class="headerlink" href="#equation-chapter-linear-regression-generalization-2" title="Permalink to this equation">¶</a></span>\[\hat{y}= \sum_{i=0}^d x^i w_i\]</div>
+<p>pour estimer l’étiquette <span class="math notranslate nohighlight">\(y\)</span>. Il s’agit simplement d’un problème
+de régression linéaire où nos caractéristiques sont données par les
+puissances de <span class="math notranslate nohighlight">\(x\)</span>, les poids du modèle sont donnés par
+<span class="math notranslate nohighlight">\(w_i\)</span>, et le biais est donné par <span class="math notranslate nohighlight">\(w_0\)</span> puisque
+<span class="math notranslate nohighlight">\(x^0 = 1\)</span> pour tout <span class="math notranslate nohighlight">\(x\)</span>. Puisqu’il s’agit simplement d’un
+problème de régression linéaire, nous pouvons utiliser l’erreur
+quadratique comme fonction de perte.</p>
+<p>Une fonction polynomiale d’ordre supérieur est plus complexe qu’une
+fonction polynomiale d’ordre inférieur, car le polynôme d’ordre
+supérieur a plus de paramètres et la plage de sélection de la fonction
+du modèle est plus large. En fixant le jeu de données d’entraînement,
+les fonctions polynomiales d’ordre supérieur devraient toujours
+atteindre une erreur d’entraînement inférieure (au pire, égale) par
+rapport aux polynômes de degré inférieur. En fait, chaque fois que
+chaque exemple de données a une valeur distincte de <span class="math notranslate nohighlight">\(x\)</span>, une
+fonction polynomiale de degré égal au nombre d’exemples de données peut
+ajuster parfaitement le jeu d’entraînement. Nous comparons la relation
+entre le degré polynomial (complexité du modèle) et à la fois le
+sous-apprentissage et le surapprentissage dans la
+<a class="reference internal" href="#fig-capacity-vs-error"><span class="std std-numref">Fig. 3.6.1</span></a>.</p>
+<figure class="align-default" id="id7">
+<span id="fig-capacity-vs-error"></span><img alt="img/capacity-vs-error.svg" src="img/capacity-vs-error.svg" /><figcaption>
+<p><span class="caption-number">Fig. 3.6.1 </span><span class="caption-text">Influence de la complexité du modèle sur le sous-apprentissage et le
+surapprentissage.</span><a class="headerlink" href="#id7" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+</section>
+<section id="taille-du-jeu-de-donnees">
+<h3><span class="section-number">3.6.2.2. </span>Taille du jeu de données<a class="headerlink" href="#taille-du-jeu-de-donnees" title="Permalink to this heading">¶</a></h3>
+<p>Comme l’indique déjà la borne ci-dessus, une autre considération
+importante à garder à l’esprit est la taille du jeu de données. En
+fixant notre modèle, moins nous avons d’échantillons dans le jeu de
+données d’entraînement, plus nous sommes susceptibles (et plus
+sévèrement) de rencontrer du surapprentissage. À mesure que nous
+augmentons la quantité de données d’entraînement, l’erreur de
+généralisation diminue généralement. De plus, en général, plus de
+données ne font jamais de mal. Pour une tâche et une distribution de
+données fixées, la complexité du modèle ne devrait pas augmenter plus
+rapidement que la quantité de données. Avec plus de données, nous
+pourrions essayer d’ajuster un modèle plus complexe. En l’absence de
+données suffisantes, les modèles plus simples peuvent être plus
+difficiles à battre. Pour de nombreuses tâches, l’apprentissage profond
+ne surpasse les modèles linéaires que lorsque plusieurs milliers
+d’exemples d’entraînement sont disponibles. En partie, le succès actuel
+de l’apprentissage profond doit beaucoup à l’abondance de jeux de
+données massifs provenant des entreprises Internet, du stockage bon
+marché, des appareils connectés et de la numérisation généralisée de
+l’économie.</p>
+</section>
+</section>
+<section id="selection-de-modele">
+<span id="subsec-generalization-model-selection"></span><h2><span class="section-number">3.6.3. </span>Sélection de modèle<a class="headerlink" href="#selection-de-modele" title="Permalink to this heading">¶</a></h2>
+<p>Typiquement, nous sélectionnons notre modèle final seulement après avoir
+évalué plusieurs modèles qui diffèrent de diverses manières (différentes
+architectures, objectifs d’entraînement, caractéristiques sélectionnées,
+prétraitement des données, taux d’apprentissage, etc.). Choisir parmi de
+nombreux modèles est appelé à juste titre la <em>sélection de modèle</em>.</p>
+<p>En principe, we should not touch our test set avant d’avoir choisi tous
+nos hyperparamètres. Si nous devions utiliser les données de test dans
+le processus de sélection de modèle, il y aurait un risque que nous
+fassions du surapprentissage sur les données de test. Nous serions alors
+dans de sérieux ennuis. Si nous faisons du surapprentissage sur nos
+données d’entraînement, il y a toujours l’évaluation sur les données de
+test pour nous garder honêtes. Mais si nous faisons du surapprentissage
+sur les données de test, comment le saurions-nous jamais ? Voir
+<span id="id6"></span> pour un exemple de la manière dont cela peut
+conduire à des résultats absurdes même pour des modèles dont la
+complexité peut être étroitement contrôlée.</p>
+<p>Ainsi, nous ne devrions jamais nous fier aux données de test pour la
+sélection de modèle. Et pourtant, nous ne pouvons pas non plus nous fier
+uniquement aux données d’entraînement pour la sélection de modèle, car
+nous ne pouvons pas estimer l’erreur de généralisation sur les données
+mêmes que nous utilisons pour entraîner le modèle.</p>
+<p>Dans les applications pratiques, le tableau devient plus trouble. Bien
+qu’idéalement nous ne devrions toucher aux données de test qu’une seule
+fois, pour évaluer le tout meilleur modèle ou pour comparer un petit
+nombre de modèles entre eux, les données de test du monde réel sont
+rarement jetées après une seule utilisation. Nous pouvons rarement nous
+permettre un nouveau jeu de test pour chaque série d’expériences. En
+fait, le recyclage des données de référence (benchmark) pendant des
+décennies peut avoir un impact significatif sur le développement des
+algorithmes, par exemple pour la <a class="reference external" href="https://paperswithcode.com/sota/image-classification-on-imagenet">classification
+d’images</a>
+et la <a class="reference external" href="https://paperswithcode.com/sota/image-classification-on-mnist">reconnaissance optique de
+caractères</a>.</p>
+<p>La pratique courante pour aborder le problème de l’ <em>entraînement sur le
+jeu de test</em> consiste à diviser nos données en trois parties, en
+incorporant un <em>jeu de validation</em> en plus des jeux de données
+d’entraînement et de test. Le résultat est une affaire trouble où les
+frontières entre les données de validation et de test sont d’une
+ambiguïté inquiétante. Sauf indication contraire explicite, dans les
+expériences de ce livre, nous travaillons réellement avec ce qui devrait
+être appelé à juste titre des données d’entraînement et des données de
+validation, sans véritable jeu de test. Par conséquent, la précision
+rapportée dans chaque expérience du livre est réellement la précision de
+validation et non une véritable précision sur jeu de test.</p>
+<section id="validation-croisee">
+<h3><span class="section-number">3.6.3.1. </span>Validation croisée<a class="headerlink" href="#validation-croisee" title="Permalink to this heading">¶</a></h3>
+<p>Lorsque les données d’entraînement sont rares, nous pourrions ne même
+pas être en mesure de nous permettre de mettre de côté suffisamment de
+données pour constituer un jeu de validation approprié. Une solution
+populaire à ce problème consiste à employer la <em>validation croisée à
+:math:`K` blocs</em> (<span class="math notranslate nohighlight">\(K\)</span>-fold cross-validation). Ici, les données
+d’entraînement originales sont divisées en <span class="math notranslate nohighlight">\(K\)</span> sous-ensembles non
+chevauchants. Ensuite, l’entraînement et la validation du modèle sont
+exécutés <span class="math notranslate nohighlight">\(K\)</span> fois, chaque fois en s’entraînant sur <span class="math notranslate nohighlight">\(K-1\)</span>
+sous-ensembles et en validant sur un sous-ensemble différent (celui qui
+n’a pas été utilisé pour l’entraînement lors de ce tour). Enfin, les
+erreurs d’entraînement et de validation sont estimées en faisant la
+moyenne des résultats des <span class="math notranslate nohighlight">\(K\)</span> expériences.</p>
+</section>
+</section>
+<section id="resume">
+<h2><span class="section-number">3.6.4. </span>Résumé<a class="headerlink" href="#resume" title="Permalink to this heading">¶</a></h2>
+<p>Cette section a exploré certains des fondements de la généralisation
+dans l’apprentissage automatique. Certaines de ces idées deviennent
+compliquées et contre-intuitives lorsque nous passons à des modèles plus
+profonds ; ici, les modèles sont capables de faire un surapprentissage
+sévère sur les données, et les notions de complexité pertinentes peuvent
+être à la fois implicites et contre-intuitives (par exemple, des
+architectures plus grandes avec plus de paramètres se généralisant
+mieux). Nous vous laissons avec quelques règles empiriques :</p>
+<ol class="arabic simple">
+<li><p>Utilisez des jeux de validation (ou la <em>validation croisée à
+:math:`K` blocs</em>) pour la sélection de modèle ;</p></li>
+<li><p>Les modèles plus complexes nécessitent souvent plus de données ;</p></li>
+<li><p>Les notions de complexité pertinentes incluent à la fois le nombre de
+paramètres et la plage de valeurs qu’ils sont autorisés à prendre ;</p></li>
+<li><p>Toutes choses étant égales par ailleurs, plus de données conduisent
+presque toujours à une meilleure généralisation ;</p></li>
+<li><p>Tout ce discours sur la généralisation est fondé sur l’hypothèse IID.
+Si nous assouplissons cette hypothèse, en permettant aux
+distributions de se décaler entre les périodes d’entraînement et de
+test, alors nous ne pouvons rien dire sur la généralisation sans une
+hypothèse supplémentaire (peut-être plus légère).</p></li>
+</ol>
+</section>
+<section id="exercices">
+<h2><span class="section-number">3.6.5. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Quand pouvez-vous résoudre exactement le problème de la régression
+polynomiale ?</p></li>
+<li><p>Donnez au moins cinq exemples où des variables aléatoires dépendantes
+font qu’il est déconseillé de traiter le problème comme des données
+IID.</p></li>
+<li><p>Pouvez-vous espérer voir un jour une erreur d’entraînement nulle ?
+Dans quelles circonstances verriez-vous une erreur de généralisation
+nulle ?</p></li>
+<li><p>Pourquoi la validation croisée à <span class="math notranslate nohighlight">\(K\)</span> blocs est-elle très
+coûteuse à calculer ?</p></li>
+<li><p>Pourquoi l’estimation de l’erreur par validation croisée à <span class="math notranslate nohighlight">\(K\)</span>
+blocs est-elle biaisée ?</p></li>
+<li><p>La dimension VC est définie comme le nombre maximum de points pouvant
+être classés avec des étiquettes arbitraires <span class="math notranslate nohighlight">\(\{\pm 1\}\)</span> par
+une fonction d’une classe de fonctions. Pourquoi cela pourrait-il ne
+pas être une bonne idée pour mesurer la complexité de la classe de
+fonctions ? Indice : considérez l’amplitude des fonctions.</p></li>
+<li><p>Votre responsable vous donne un jeu de données difficile sur lequel
+votre algorithme actuel ne fonctionne pas très bien. Comment lui
+justifieriez-vous que vous avez besoin de plus de données ? Indice :
+vous ne pouvez pas augmenter les données, mais vous pouvez les
+réduire.</p></li>
+</ol>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">3.6. Généralisation</a><ul>
+<li><a class="reference internal" href="#erreur-dentrainement-et-erreur-de-generalisation">3.6.1. Erreur d’entraînement et erreur de généralisation</a><ul>
+<li><a class="reference internal" href="#complexite-du-modele">3.6.1.1. Complexité du modèle</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sous-apprentissage-ou-surapprentissage">3.6.2. Sous-apprentissage ou surapprentissage ?</a><ul>
+<li><a class="reference internal" href="#ajustement-de-courbe-polynomiale">3.6.2.1. Ajustement de courbe polynomiale</a></li>
+<li><a class="reference internal" href="#taille-du-jeu-de-donnees">3.6.2.2. Taille du jeu de données</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#selection-de-modele">3.6.3. Sélection de modèle</a><ul>
+<li><a class="reference internal" href="#validation-croisee">3.6.3.1. Validation croisée</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#resume">3.6.4. Résumé</a></li>
+<li><a class="reference internal" href="#exercices">3.6.5. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="linear-regression-concise.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>3.5. Implémentation concise de la régression linéaire</div>
+         </div>
+     </a>
+     <a id="button-next" href="weight-decay.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>3.7. Décroissance des poids</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

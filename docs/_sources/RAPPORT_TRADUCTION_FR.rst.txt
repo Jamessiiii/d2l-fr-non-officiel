@@ -2,7 +2,7 @@
 Rapport de traduction française D2L
 ===================================
 
-Date : 2026-06-10
+Date : 2026-06-11
 
 Artefacts produits
 ------------------
@@ -203,9 +203,8 @@ Le dépôt local est initialisé sur ``main``, avec le remote :
 
    origin  https://github.com/Jamessiiii/d2l-fr-non-officiel.git
 
-Le push n’a pas pu être terminé dans cette session : GitHub CLI est
-authentifié localement comme ``Ggboy179``, tandis que le dépôt créé
-appartient à ``Jamessiiii``. Le push échoue donc avec :
+GitHub CLI a ensuite été réauthentifié comme ``Jamessiiii``. GitHub
+Pages est configuré pour servir le site depuis ``main`` / ``docs`` :
 
 .. raw:: latex
 
@@ -213,11 +212,8 @@ appartient à ``Jamessiiii``. Le push échoue donc avec :
 
 .. code:: text
 
-   remote: Permission to Jamessiiii/d2l-fr-non-officiel.git denied to Ggboy179.
-   fatal: unable to access 'https://github.com/Jamessiiii/d2l-fr-non-officiel.git/': The requested URL returned error: 403
+   https://jamessiiii.github.io/d2l-fr-non-officiel/
 
-Une tentative d’authentification GitHub CLI comme ``Jamessiiii`` a
-atteint l’écran OAuth, mais le bouton ``Authorize github`` est resté
-désactivé dans le navigateur intégré. GitHub Pages n’a donc pas été
-activé. Le projet est toutefois prêt pour un push puis une activation
-Pages depuis ``main`` / ``docs``.
+Le site public doit être revérifié après chaque nouveau push : page
+d'accueil, navigation, équations MathJax, figures, liens internes et
+attribution.

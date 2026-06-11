@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>3.7. Décroissance des poids &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="3.6. Généralisation" href="generalization.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">3. </span>Réseaux de neurones linéaires pour la régression</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">3.7. </span>Décroissance des poids</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_linear-regression/weight-decay.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="decroissance-des-poids">
+<span id="sec-weight-decay"></span><h1><span class="section-number">3.7. </span>Décroissance des poids<a class="headerlink" href="#decroissance-des-poids" title="Permalink to this heading">¶</a></h1>
+<p>Maintenant que nous avons caractérisé le problème du surapprentissage,
+nous pouvons introduire notre première technique de <em>régularisation</em>.
+Rappelez-vous que nous pouvons toujours atténuer le surapprentissage en
+collectant davantage de données d’entraînement. Cependant, cela peut
+être coûteux, chronophage, ou entièrement hors de notre contrôle, ce qui
+le rend impossible à court terme. Pour l’instant, nous pouvons supposer
+que nous disposons déjà d’autant de données de haute qualité que nos
+ressources le permettent et nous concentrer sur les outils à notre
+disposition lorsque le jeu de données est considéré comme une donnée.</p>
+<p>Rappelez-vous que dans notre exemple de régression polynomiale
+(<a class="reference internal" href="generalization.html#subsec-polynomial-curve-fitting"><span class="std std-numref">Section 3.6.2.1</span></a>), nous pouvions limiter la
+capacité de notre modèle en ajustant le degré du polynôme ajusté. En
+effet, limiter le nombre de caractéristiques est une technique populaire
+pour atténuer le surapprentissage. Cependant, le simple fait d’écarter
+des caractéristiques peut être un instrument trop brutal. En restant sur
+l’exemple de la régression polynomiale, considérez ce qui pourrait
+arriver avec une entrée de haute dimension. Les extensions naturelles
+des polynômes aux données multivariées sont appelées <em>monômes</em>, qui sont
+simplement des produits de puissances de variables. Le degré d’un monôme
+est la somme des puissances. Par exemple, <span class="math notranslate nohighlight">\(x_1^2 x_2\)</span> et
+<span class="math notranslate nohighlight">\(x_3 x_5^2\)</span> sont tous deux des monômes de degré 3.</p>
+<p>Notez que le nombre de termes de degré <span class="math notranslate nohighlight">\(d\)</span> explose rapidement à
+mesure que <span class="math notranslate nohighlight">\(d\)</span> augmente. Étant donné <span class="math notranslate nohighlight">\(k\)</span> variables, le
+nombre de monômes de degré <span class="math notranslate nohighlight">\(d\)</span> est
+<span class="math notranslate nohighlight">\({k - 1 + d} \choose {k - 1}\)</span>. Même de petits changements de
+degré, disons de <span class="math notranslate nohighlight">\(2\)</span> à <span class="math notranslate nohighlight">\(3\)</span>, augmentent considérablement la
+complexité de notre modèle. Par conséquent, nous avons souvent besoin
+d’un outil plus précis pour ajuster la complexité de la fonction.</p>
+<section id="normes-et-decroissance-des-poids">
+<h2><span class="section-number">3.7.1. </span>Normes et décroissance des poids<a class="headerlink" href="#normes-et-decroissance-des-poids" title="Permalink to this heading">¶</a></h2>
+<p>Plutôt que de manipuler directement le nombre de paramètres, la
+<em>décroissance des poids</em> fonctionne en restreignant les valeurs que les
+paramètres peuvent prendre. Plus communément appelée régularisation
+<span class="math notranslate nohighlight">\(\ell_2\)</span> en dehors des cercles de l’apprentissage profond
+lorsqu’elle est optimisée par la descente de gradient stochastique par
+mini-lots, la décroissance des poids est peut-être la technique la plus
+largement utilisée pour régulariser les modèles d’apprentissage
+automatique paramétriques. La technique est motivée par l’intuition de
+base que parmi toutes les fonctions <span class="math notranslate nohighlight">\(f\)</span>, la fonction <span class="math notranslate nohighlight">\(f = 0\)</span>
+(attribuant la valeur <span class="math notranslate nohighlight">\(0\)</span> à toutes les entrées) est en quelque
+sorte la plus <em>simple</em>, et que nous pouvons mesurer la complexité d’une
+fonction par la distance de ses paramètres par rapport à zéro. Mais
+comment mesurer précisément la distance entre une fonction et zéro ? Il
+n’y a pas de réponse unique correcte. En fait, des branches entières des
+mathématiques, notamment certaines parties de l’analyse fonctionnelle et
+de la théorie des espaces de Banach, sont consacrées à l’étude de ces
+questions.</p>
+<p>Une interprétation simple pourrait être de mesurer la complexité d’une
+fonction linéaire <span class="math notranslate nohighlight">\(f(\mathbf{x}) = \mathbf{w}^\top \mathbf{x}\)</span> par
+une certaine norme de son vecteur de poids, par exemple,
+<span class="math notranslate nohighlight">\(\| \mathbf{w} \|^2\)</span>. Rappelez-vous que nous avons introduit la
+norme <span class="math notranslate nohighlight">\(\ell_2\)</span> et la norme <span class="math notranslate nohighlight">\(\ell_1\)</span>, qui sont des cas
+particuliers de la norme plus générale <span class="math notranslate nohighlight">\(\ell_p\)</span>, dans
+<a class="reference internal" href="../chapter_preliminaries/linear-algebra.html#subsec-lin-algebra-norms"><span class="std std-numref">Section 2.3.11</span></a>. La méthode la plus courante pour
+garantir un petit vecteur de poids consiste à ajouter sa norme comme
+terme de pénalité au problème de minimisation de la perte. Ainsi, nous
+remplaçons notre objectif initial, <em>minimiser la perte de prédiction sur
+les étiquettes d’entraînement</em>, par un nouvel objectif, <em>minimiser la
+somme de la perte de prédiction et du terme de pénalité</em>. Désormais, si
+notre vecteur de poids devient trop grand, notre algorithme
+d’apprentissage pourrait se concentrer sur la minimisation de la norme
+des poids <span class="math notranslate nohighlight">\(\| \mathbf{w} \|^2\)</span> plutôt que sur la minimisation de
+l’erreur d’entraînement. C’est exactement ce que nous voulons. Pour
+illustrer cela par du code, nous reprenons notre exemple précédent de
+<a class="reference internal" href="linear-regression.html#sec-linear-regression"><span class="std std-numref">Section 3.1</span></a> pour la régression linéaire. Là, notre
+perte était donnée par</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-weight-decay-0">
+<span class="eqno">(3.7.1)<a class="headerlink" href="#equation-chapter-linear-regression-weight-decay-0" title="Permalink to this equation">¶</a></span>\[L(\mathbf{w}, b) = \frac{1}{n}\sum_{i=1}^n \frac{1}{2}\left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right)^2.\]</div>
+<p>Rappelez-vous que <span class="math notranslate nohighlight">\(\mathbf{x}^{(i)}\)</span> sont les caractéristiques,
+<span class="math notranslate nohighlight">\(y^{(i)}\)</span> est l’étiquette pour tout exemple de données <span class="math notranslate nohighlight">\(i\)</span>,
+et <span class="math notranslate nohighlight">\((\mathbf{w}, b)\)</span> sont respectivement les paramètres de poids
+et de biais. Pour pénaliser la taille du vecteur de poids, nous devons
+d’une manière ou d’une autre ajouter <span class="math notranslate nohighlight">\(\| \mathbf{w} \|^2\)</span> à la
+fonction de perte, mais comment le modèle doit-il arbitrer entre la
+perte standard et cette nouvelle pénalité additive ? En pratique, nous
+caractérisons cet arbitrage via la <em>constante de régularisation</em>
+<span class="math notranslate nohighlight">\(\lambda\)</span>, un hyperparamètre non négatif que nous ajustons à
+l’aide des données de validation :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-weight-decay-1">
+<span class="eqno">(3.7.2)<a class="headerlink" href="#equation-chapter-linear-regression-weight-decay-1" title="Permalink to this equation">¶</a></span>\[L(\mathbf{w}, b) + \frac{\lambda}{2} \|\mathbf{w}\|^2.\]</div>
+<p>Pour <span class="math notranslate nohighlight">\(\lambda = 0\)</span>, nous retrouvons notre fonction de perte
+d’origine. Pour <span class="math notranslate nohighlight">\(\lambda &gt; 0\)</span>, nous restreignons la taille de
+<span class="math notranslate nohighlight">\(\| \mathbf{w} \|\)</span>. Nous divisons par <span class="math notranslate nohighlight">\(2\)</span> par convention :
+lorsque nous prenons la dérivée d’une fonction quadratique, le <span class="math notranslate nohighlight">\(2\)</span>
+et le <span class="math notranslate nohighlight">\(1/2\)</span> s’annulent, garantissant que l’expression de la mise à
+jour soit simple et élégante. Le lecteur attentif pourrait se demander
+pourquoi nous travaillons avec le carré de la norme et non la norme
+standard (c’est-à-dire la distance euclidienne). Nous faisons cela pour
+des raisons de commodité de calcul. En élevant la norme <span class="math notranslate nohighlight">\(\ell_2\)</span>
+au carré, nous supprimons la racine carrée, laissant la somme des carrés
+de chaque composante du vecteur de poids. Cela rend la dérivée de la
+pénalité facile à calculer : la somme des dérivées est égale à la
+dérivée de la somme.</p>
+<p>De plus, vous pourriez vous demander pourquoi nous travaillons avec la
+norme <span class="math notranslate nohighlight">\(\ell_2\)</span> en premier lieu et non, par exemple, avec la norme
+<span class="math notranslate nohighlight">\(\ell_1\)</span>. En fait, d’autres choix sont valables et populaires en
+statistiques. Alors que les modèles linéaires régularisés par
+<span class="math notranslate nohighlight">\(\ell_2\)</span> constituent l’algorithme classique de la <em>régression
+ridge</em>, la régression linéaire régularisée par <span class="math notranslate nohighlight">\(\ell_1\)</span> est une
+méthode tout aussi fondamentale en statistiques, populairement connue
+sous le nom de <em>régression lasso</em>. Une raison de travailler avec la
+norme <span class="math notranslate nohighlight">\(\ell_2\)</span> est qu’elle impose une pénalité démesurée sur les
+grandes composantes du vecteur de poids. Cela oriente notre algorithme
+d’apprentissage vers des modèles qui répartissent le poids uniformément
+sur un plus grand nombre de caractéristiques. En pratique, cela peut les
+rendre plus robustes aux erreurs de mesure dans une seule variable. En
+revanche, les pénalités <span class="math notranslate nohighlight">\(\ell_1\)</span> conduisent à des modèles qui
+concentrent les poids sur un petit ensemble de caractéristiques en
+annulant les autres poids. Cela nous donne une méthode efficace pour la
+<em>sélection de caractéristiques</em>, ce qui peut être souhaitable pour
+d’autres raisons. Par exemple, si notre modèle ne repose que sur
+quelques caractéristiques, alors nous n’aurons peut-être pas besoin de
+collecter, stocker ou transmettre des données pour les autres
+caractéristiques (abandonnées).</p>
+<p>En utilisant la même notation que dans
+<a class="reference internal" href="linear-regression.html#equation-eq-linreg-batch-update">(3.1.11)</a>, les mises à jour de la descente de
+gradient stochastique par mini-lots pour la régression régularisée par
+<span class="math notranslate nohighlight">\(\ell_2\)</span> sont les suivantes :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-weight-decay-2">
+<span class="eqno">(3.7.3)<a class="headerlink" href="#equation-chapter-linear-regression-weight-decay-2" title="Permalink to this equation">¶</a></span>\[\begin{aligned}
+\mathbf{w} &amp; \leftarrow \left(1- \eta\lambda \right) \mathbf{w} - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} \mathbf{x}^{(i)} \left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right).
+\end{aligned}\]</div>
+<p>Comme précédemment, nous mettons à jour <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> en fonction
+de la quantité dont notre estimation diffère de l’observation.
+Cependant, nous réduisons également la taille de <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> vers
+zéro. C’est pourquoi la méthode est parfois appelée « décroissance des
+poids » : compte tenu du seul terme de pénalité, notre algorithme
+d’optimisation fait <em>décroître</em> le poids à chaque étape de
+l’entraînement. Contrairement à la sélection de caractéristiques, la
+décroissance des poids nous offre un mécanisme pour ajuster
+continuellement la complexité d’une fonction. Des valeurs plus petites
+de <span class="math notranslate nohighlight">\(\lambda\)</span> correspondent à un <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> moins
+contraint, tandis que des valeurs plus grandes de <span class="math notranslate nohighlight">\(\lambda\)</span>
+contraignent <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> de manière plus considérable. Le fait
+d’inclure une pénalité de biais correspondante <span class="math notranslate nohighlight">\(b^2\)</span> peut varier
+selon les implémentations, et peut varier selon les couches d’un réseau
+de neurones. Souvent, nous ne régularisons pas le terme de biais. Par
+ailleurs, bien que la régularisation <span class="math notranslate nohighlight">\(\ell_2\)</span> puisse ne pas être
+équivalente à la décroissance des poids pour d’autres algorithmes
+d’optimisation, l’idée de régularisation par la réduction de la taille
+des poids reste vraie.</p>
+</section>
+<section id="regression-lineaire-en-haute-dimension">
+<h2><span class="section-number">3.7.2. </span>Régression linéaire en haute dimension<a class="headerlink" href="#regression-lineaire-en-haute-dimension" title="Permalink to this heading">¶</a></h2>
+<p>Nous pouvons illustrer les avantages de la décroissance des poids à
+travers un exemple synthétique simple.</p>
+<p>Tout d’abord, nous générons des données comme auparavant :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-weight-decay-3">
+<span class="eqno">(3.7.4)<a class="headerlink" href="#equation-chapter-linear-regression-weight-decay-3" title="Permalink to this equation">¶</a></span>\[y = 0.05 + \sum_{i = 1}^d 0.01 x_i + \epsilon \textrm{ où }
+\epsilon \sim \mathcal{N}(0, 0.01^2).\]</div>
+<p>Dans ce jeu de données synthétique, notre étiquette est donnée par une
+fonction linéaire sous-jacente de nos entrées, corrompue par un bruit
+gaussien de moyenne nulle et d’écart type 0,01. À des fins
+d’illustration, nous pouvons rendre les effets du surapprentissage
+prononcés, en augmentant la dimensionnalité de notre problème à
+<span class="math notranslate nohighlight">\(d = 200\)</span> et en travaillant avec un petit ensemble d’entraînement
+de seulement 20 exemples.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Data</span><span class="p">(</span><span class="n">d2l</span><span class="o">.</span><span class="n">DataModule</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_train</span><span class="p">,</span> <span class="n">num_val</span><span class="p">,</span> <span class="n">num_inputs</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_hyperparameters</span><span class="p">()</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">num_train</span> <span class="o">+</span> <span class="n">num_val</span>
+        <span class="n">w</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">d2l</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">num_inputs</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="o">*</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.05</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">d2l</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span> <span class="o">+</span> <span class="n">noise</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_train</span><span class="p">)</span> <span class="k">if</span> <span class="n">train</span> <span class="k">else</span> <span class="nb">slice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_train</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_tensorloader</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">],</span> <span class="n">train</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="implementation-a-partir-de-zero">
+<h2><span class="section-number">3.7.3. </span>Implémentation à partir de zéro<a class="headerlink" href="#implementation-a-partir-de-zero" title="Permalink to this heading">¶</a></h2>
+<p>Maintenant, essayons d’implémenter la décroissance des poids à partir de
+zéro. Puisque la descente de gradient stochastique par mini-lots est
+notre optimiseur, il nous suffit d’ajouter la pénalité <span class="math notranslate nohighlight">\(\ell_2\)</span> au
+carré à la fonction de perte d’origine.</p>
+<section id="definition-de-la-penalite-de-norme-ell-2">
+<h3><span class="section-number">3.7.3.1. </span>Définition de la pénalité de norme <span class="math notranslate nohighlight">\(\ell_2\)</span><a class="headerlink" href="#definition-de-la-penalite-de-norme-ell-2" title="Permalink to this heading">¶</a></h3>
+<p>La façon la plus pratique d’implémenter cette pénalité est peut-être
+d’élever tous les termes au carré sur place et d’en faire la somme.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">l2_penalty</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">d2l</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">w</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+</pre></div>
+</div>
+</section>
+<section id="definition-du-modele">
+<h3><span class="section-number">3.7.3.2. </span>Définition du modèle<a class="headerlink" href="#definition-du-modele" title="Permalink to this heading">¶</a></h3>
+<p>Dans le modèle final, la régression linéaire et la perte quadratique
+n’ont pas changé depuis <a class="reference internal" href="linear-regression-scratch.html#sec-linear-scratch"><span class="std std-numref">Section 3.4</span></a>, nous allons donc
+simplement définir une sous-classe de <code class="docutils literal notranslate"><span class="pre">d2l.LinearRegressionScratch</span></code>.
+Le seul changement ici est que notre perte inclut désormais le terme de
+pénalité.</p>
+<p>Le code suivant ajuste notre modèle sur l’ensemble d’entraînement avec
+20 exemples et l’évalue sur l’ensemble de validation avec 100 exemples.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">num_train</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">num_val</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">num_inputs</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">d2l</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">max_epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">train_scratch</span><span class="p">(</span><span class="n">lambd</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">WeightDecayScratch</span><span class="p">(</span><span class="n">num_inputs</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">lambd</span><span class="o">=</span><span class="n">lambd</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">board</span><span class="o">.</span><span class="n">yscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span>
+    <span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="entrainement-sans-regularisation">
+<h3><span class="section-number">3.7.3.3. </span>Entraînement sans régularisation<a class="headerlink" href="#entrainement-sans-regularisation" title="Permalink to this heading">¶</a></h3>
+<p>Nous exécutons maintenant ce code avec <code class="docutils literal notranslate"><span class="pre">lambd</span> <span class="pre">=</span> <span class="pre">0</span></code>, en désactivant la
+décroissance des poids. Notez que nous surapprenons gravement, en
+diminuant l’erreur d’entraînement mais pas l’erreur de validation — un
+cas d’école de surapprentissage.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">train_scratch</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="utilisation-de-la-decroissance-des-poids">
+<h3><span class="section-number">3.7.3.4. </span>Utilisation de la décroissance des poids<a class="headerlink" href="#utilisation-de-la-decroissance-des-poids" title="Permalink to this heading">¶</a></h3>
+<p>Ci-dessous, nous exécutons le code avec une décroissance des poids
+substantielle. Notez que l’erreur d’entraînement augmente mais que
+l’erreur de validation diminue. C’est précisément l’effet que nous
+attendons de la régularisation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">train_scratch</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="implementation-concise">
+<h2><span class="section-number">3.7.4. </span>Implémentation concise<a class="headerlink" href="#implementation-concise" title="Permalink to this heading">¶</a></h2>
+<p>Parce que la décroissance des poids est omniprésente dans l’optimisation
+des réseaux de neurones, le framework d’apprentissage profond la rend
+particulièrement pratique, en intégrant la décroissance des poids dans
+l’algorithme d’optimisation lui-même pour une utilisation facile en
+combinaison avec n’importe quelle fonction de perte. De plus, cette
+intégration présente un avantage informatique, permettant des astuces
+d’implémentation pour ajouter la décroissance des poids à l’algorithme,
+sans aucun surcoût informatique supplémentaire. Comme la partie
+décroissance des poids de la mise à jour ne dépend que de la valeur
+actuelle de chaque paramètre, l’optimiseur doit de toute façon toucher
+chaque paramètre une fois.</p>
+<p>Le graphique ressemble à celui obtenu lorsque nous avons implémenté la
+décroissance des poids à partir de zéro. Cependant, cette version
+s’exécute plus rapidement et est plus facile à implémenter, des
+avantages qui deviendront plus marqués à mesure que vous aborderez des
+problèmes plus importants et que ce travail deviendra plus routinier.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">WeightDecay</span><span class="p">(</span><span class="n">wd</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">board</span><span class="o">.</span><span class="n">yscale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Jusqu’à présent, nous avons abordé une notion de ce qui constitue une
+fonction linéaire simple. Cependant, même pour des fonctions non
+linéaires simples, la situation peut être beaucoup plus complexe. Pour
+voir cela, le concept d’<a class="reference external" href="https://en.wikipedia.org/wiki/Reproducing_kernel_Hilbert_space">espace de Hilbert à noyau reproduisant
+(RKHS)</a>
+permet d’appliquer les outils introduits pour les fonctions linéaires
+dans un contexte non linéaire. Malheureusement, les algorithmes basés
+sur le RKHS ont tendance à mal passer à l’échelle pour des données
+volumineuses et de haute dimension. Dans ce livre, nous adopterons
+souvent l’heuristique commune selon laquelle la décroissance des poids
+est appliquée à toutes les couches d’un réseau profond.</p>
+</section>
+<section id="resume">
+<h2><span class="section-number">3.7.5. </span>Résumé<a class="headerlink" href="#resume" title="Permalink to this heading">¶</a></h2>
+<p>La régularisation est une méthode courante pour traiter le
+surapprentissage. Les techniques de régularisation classiques ajoutent
+un terme de pénalité à la fonction de perte (pendant l’entraînement)
+pour réduire la complexité du modèle appris. Un choix particulier pour
+garder le modèle simple consiste à utiliser une pénalité <span class="math notranslate nohighlight">\(\ell_2\)</span>.
+Cela conduit à une décroissance des poids dans les étapes de mise à jour
+de l’algorithme de descente de gradient stochastique par mini-lots. En
+pratique, la fonctionnalité de décroissance des poids est fournie dans
+les optimiseurs des frameworks d’apprentissage profond. Différents
+ensembles de paramètres peuvent avoir des comportements de mise à jour
+différents au sein de la même boucle d’entraînement.</p>
+</section>
+<section id="exercices">
+<h2><span class="section-number">3.7.6. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Expérimentez avec la valeur de <span class="math notranslate nohighlight">\(\lambda\)</span> dans le problème
+d’estimation de cette section. Tracez la précision d’entraînement et
+de validation en fonction de <span class="math notranslate nohighlight">\(\lambda\)</span>. Qu’observez-vous ?</p></li>
+<li><p>Utilisez un ensemble de validation pour trouver la valeur optimale de
+<span class="math notranslate nohighlight">\(\lambda\)</span>. Est-ce vraiment la valeur optimale ? Est-ce
+important ?</p></li>
+<li><p>À quoi ressembleraient les équations de mise à jour si, au lieu de
+<span class="math notranslate nohighlight">\(\|\mathbf{w}\|^2\)</span>, nous utilisions <span class="math notranslate nohighlight">\(\sum_i |w_i|\)</span> comme
+pénalité de choix (régularisation <span class="math notranslate nohighlight">\(\ell_1\)</span>) ?</p></li>
+<li><p>Nous savons que
+<span class="math notranslate nohighlight">\(\|\mathbf{w}\|^2 = \mathbf{w}^\top \mathbf{w}\)</span>. Pouvez-vous
+trouver une équation similaire pour les matrices (voir la norme de
+Frobenius dans <a class="reference internal" href="../chapter_preliminaries/linear-algebra.html#subsec-lin-algebra-norms"><span class="std std-numref">Section 2.3.11</span></a>) ?</p></li>
+<li><p>Revoyez la relation entre l’erreur d’entraînement et l’erreur de
+généralisation. En plus de la décroissance des poids, de
+l’augmentation de l’entraînement et de l’utilisation d’un modèle de
+complexité appropriée, quels autres moyens pourraient nous aider à
+faire face au surapprentissage ?</p></li>
+<li><p>En statistiques bayésiennes, nous utilisons le produit de la priorité
+et de la vraisemblance pour arriver à une postériorité via
+<span class="math notranslate nohighlight">\(P(w \mid x) \propto P(x \mid w) P(w)\)</span>. Comment pouvez-vous
+identifier <span class="math notranslate nohighlight">\(P(w)\)</span> avec la régularisation ?</p></li>
+</ol>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">3.7. Décroissance des poids</a><ul>
+<li><a class="reference internal" href="#normes-et-decroissance-des-poids">3.7.1. Normes et décroissance des poids</a></li>
+<li><a class="reference internal" href="#regression-lineaire-en-haute-dimension">3.7.2. Régression linéaire en haute dimension</a></li>
+<li><a class="reference internal" href="#implementation-a-partir-de-zero">3.7.3. Implémentation à partir de zéro</a><ul>
+<li><a class="reference internal" href="#definition-de-la-penalite-de-norme-ell-2">3.7.3.1. Définition de la pénalité de norme <span class="math notranslate nohighlight">\(\ell_2\)</span></a></li>
+<li><a class="reference internal" href="#definition-du-modele">3.7.3.2. Définition du modèle</a></li>
+<li><a class="reference internal" href="#entrainement-sans-regularisation">3.7.3.3. Entraînement sans régularisation</a></li>
+<li><a class="reference internal" href="#utilisation-de-la-decroissance-des-poids">3.7.3.4. Utilisation de la décroissance des poids</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#implementation-concise">3.7.4. Implémentation concise</a></li>
+<li><a class="reference internal" href="#resume">3.7.5. Résumé</a></li>
+<li><a class="reference internal" href="#exercices">3.7.6. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="generalization.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>3.6. Généralisation</div>
+         </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,299 @@
+
+.. _sec_oo-design:
+
+Conception orientée objet pour l’implémentation
+===============================================
+
+
+Dans notre introduction à la régression linéaire, nous avons passé en
+revue divers composants, notamment les données, le modèle, la fonction
+de perte, et l’algorithme d’optimisation. En effet, la régression
+linéaire est l’un des modèles d’apprentissage automatique les plus
+simples. Son entraînement, cependant, utilise un grand nombre des mêmes
+composants que ceux requis par les autres modèles de ce livre. Par
+conséquent, avant de plonger dans les détails de l’implémentation, il
+est utile de concevoir certaines des API que nous utiliserons tout au
+long de l’ouvrage. En traitant les composants du deep learning comme des
+objets, nous pouvons commencer par définir des classes pour ces objets
+et leurs interactions. Cette conception orientée objet pour
+l’implémentation simplifiera grandement la présentation et vous pourriez
+même vouloir l’utiliser dans vos propres projets.
+
+Inspirés par des bibliothèques open-source telles que `PyTorch
+Lightning <https://www.pytorchlightning.ai/>`__, à haut niveau, nous
+souhaitons avoir trois classes : (i) ``Module`` contient les modèles,
+les pertes et les méthodes d’optimisation ; (ii) ``DataModule`` fournit
+des chargeurs de données pour l’entraînement et la validation ; (iii)
+les deux classes sont combinées à l’aide de la classe ``Trainer``, qui
+nous permet d’entraîner des modèles sur une variété de plateformes
+matérielles. La plupart du code de ce livre adapte ``Module`` et
+``DataModule``. Nous n’aborderons la classe ``Trainer`` que lorsque nous
+discuterons des GPU, des CPU, de l’entraînement parallèle et des
+algorithmes d’optimisation.
+
+.. _oo-design-utilities:
+
+Utilitaires
+-----------
+
+
+Nous avons besoin de quelques utilitaires pour simplifier la
+programmation orientée objet dans les notebooks Jupyter. L’un des défis
+est que les définitions de classes ont tendance à être d’assez longs
+blocs de code. La lisibilité des notebooks exige des fragments de code
+courts, entrecoupés d’explications, une exigence incompatible avec le
+style de programmation courant pour les bibliothèques Python. La
+première fonction utilitaire nous permet d’enregistrer des fonctions en
+tant que méthodes dans une classe *après* que la classe a été créée. En
+fait, nous pouvons le faire *même après* avoir créé des instances de la
+classe ! Cela nous permet de diviser l’implémentation d’une classe en
+plusieurs blocs de code.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    def add_to_class(Class):  #@save
+        """Register functions as methods in created class."""
+        def wrapper(obj):
+            setattr(Class, obj.__name__, obj)
+        return wrapper
+
+Jetons un coup d’œil rapide à la façon de l’utiliser. Nous prévoyons
+d’implémenter une classe ``A`` avec une méthode ``do``. Au lieu d’avoir
+le code pour ``A`` et ``do`` dans le même bloc de code, nous pouvons
+d’abord déclarer la classe ``A`` et créer une instance ``a``.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    class A:
+        def __init__(self):
+            self.b = 1
+    
+    a = A()
+
+Ensuite, nous définissons la méthode ``do`` comme nous le ferions
+normalement, mais pas dans la portée de la classe ``A``. Au lieu de
+cela, nous décorons cette méthode par ``add_to_class`` avec la classe
+``A`` comme argument. Ce faisant, la méthode est capable d’accéder aux
+variables membres de ``A`` exactement comme nous nous y attendrions si
+elle avait été incluse dans la définition de ``A``. Voyons ce qui se
+passe quand nous l’invoquons pour l’instance ``a``.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    @add_to_class(A)
+    def do(self):
+        print('Class attribute "b" is', self.b)
+    
+    a.do()
+
+La seconde est une classe utilitaire qui enregistre tous les arguments
+de la méthode ``__init__`` d’une classe en tant qu’attributs de classe.
+Cela nous permet d’étendre implicitement les signatures d’appel des
+constructeurs sans code supplémentaire.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    class HyperParameters:  #@save
+        """The base class of hyperparameters."""
+        def save_hyperparameters(self, ignore=[]):
+            raise NotImplemented
+
+Nous reportons son implémentation dans le :numref:`sec_utils`. Pour
+l’utiliser, nous définissons notre classe qui hérite de
+``HyperParameters`` et appelle ``save_hyperparameters`` dans la méthode
+``__init__``.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    # Call the fully implemented HyperParameters class saved in d2l
+    class B(d2l.HyperParameters):
+        def __init__(self, a, b, c):
+            self.save_hyperparameters(ignore=['c'])
+            print('self.a =', self.a, 'self.b =', self.b)
+            print('There is no self.c =', not hasattr(self, 'c'))
+    
+    b = B(a=1, b=2, c=3)
+
+Le dernier utilitaire nous permet de tracer la progression de
+l’expérience de manière interactive pendant qu’elle se déroule. Par
+déférence pour le bien plus puissant (et complexe)
+`TensorBoard <https://www.tensorflow.org/tensorboard>`__, nous le
+nommons ``ProgressBoard``. L’implémentation est reportée au
+:numref:`sec_utils`. Pour l’instant, voyons-le simplement en action.
+
+La méthode ``draw`` trace un point ``(x, y)`` dans la figure, avec le
+``label`` spécifié dans la légende. Le paramètre optionnel ``every_n``
+lisse la ligne en n’affichant que :math:`1/n` points dans la figure.
+Leurs valeurs sont la moyenne des :math:`n` points voisins de la figure
+originale.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    class ProgressBoard(d2l.HyperParameters):  #@save
+        """The board that plots data points in animation."""
+        def __init__(self, xlabel=None, ylabel=None, xlim=None,
+                     ylim=None, xscale='linear', yscale='linear',
+                     ls=['-', '--', '-.', ':'], colors=['C0', 'C1', 'C2', 'C3'],
+                     fig=None, axes=None, figsize=(3.5, 2.5), display=True):
+            self.save_hyperparameters()
+    
+        def draw(self, x, y, label, every_n=1):
+            raise NotImplemented
+
+Dans l’exemple suivant, nous dessinons ``sin`` et ``cos`` avec un
+lissage différent. Si vous exécutez ce bloc de code, vous verrez les
+lignes s’allonger en animation.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    board = d2l.ProgressBoard('x')
+    for x in np.arange(0, 10, 0.1):
+        board.draw(x, np.sin(x), 'sin', every_n=2)
+        board.draw(x, np.cos(x), 'cos', every_n=10)
+
+.. _subsec_oo-design-models:
+
+Modèles
+-------
+
+
+La classe ``Module`` est la classe de base de tous les modèles que nous
+implémenterons. Nous avons besoin au minimum de trois méthodes. La
+première, ``__init__``, stocke les paramètres apprenables, la méthode
+``training_step`` accepte un lot de données pour renvoyer la valeur de
+la perte, et enfin, ``configure_optimizers`` renvoie la méthode
+d’optimisation, ou une liste d’entre elles, qui est utilisée pour mettre
+à jour les paramètres apprenables. En option, nous pouvons définir
+``validation_step`` pour rapporter les mesures d’évaluation. Parfois,
+nous plaçons le code de calcul de la sortie dans une méthode ``forward``
+séparée pour le rendre plus réutilisable.
+
+.. _oo-design-data:
+
+Données
+-------
+
+
+La classe ``DataModule`` est la classe de base pour les données. Très
+fréquemment, la méthode ``__init__`` est utilisée pour préparer les
+données. Cela inclut le téléchargement et le prétraitement si
+nécessaire. La méthode ``train_dataloader`` renvoie le chargeur de
+données pour le jeu de données d’entraînement. Un chargeur de données
+est un générateur (Python) qui produit un lot de données à chaque fois
+qu’il est utilisé. Ce lot est ensuite transmis à la méthode
+``training_step`` de ``Module`` pour calculer la perte. Il existe une
+méthode optionnelle ``val_dataloader`` pour renvoyer le chargeur du jeu
+de données de validation. Elle se comporte de la même manière, si ce
+n’est qu’elle produit des lots de données pour la méthode
+``validation_step`` de ``Module``.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    class DataModule(d2l.HyperParameters):  #@save
+        """The base class of data."""
+        def get_dataloader(self, train):
+            raise NotImplementedError
+    
+        def train_dataloader(self):
+            return self.get_dataloader(train=True)
+    
+        def val_dataloader(self):
+            return self.get_dataloader(train=False)
+
+.. _oo-design-training:
+
+Entraînement
+------------
+
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    class Trainer(d2l.HyperParameters):  #@save
+        """The base class for training models with data."""
+        def __init__(self, max_epochs, num_gpus=0, gradient_clip_val=0):
+            self.save_hyperparameters()
+            assert num_gpus == 0, 'No GPU support yet'
+    
+        def prepare_data(self, data):
+            self.train_dataloader = data.train_dataloader()
+            self.val_dataloader = data.val_dataloader()
+            self.num_train_batches = len(self.train_dataloader)
+            self.num_val_batches = (len(self.val_dataloader)
+                                    if self.val_dataloader is not None else 0)
+    
+        def prepare_model(self, model):
+            model.trainer = self
+            model.board.xlim = [0, self.max_epochs]
+            self.model = model
+    
+        def fit_epoch(self):
+            raise NotImplementedError
+
+Résumé
+------
+
+Pour mettre en évidence la conception orientée objet de nos futures
+implémentations de deep learning, les classes ci-dessus montrent
+simplement comment leurs objets stockent les données et interagissent
+entre eux. Nous continuerons à enrichir les implémentations de ces
+classes, par exemple via ``@add_to_class``, dans le reste du livre. De
+plus, ces classes entièrement implémentées sont enregistrées dans la
+`bibliothèque D2L <https://github.com/d2l-ai/d2l-en/tree/master/d2l>`__,
+une *boîte à outils légère* qui facilite la modélisation structurée pour
+le deep learning. En particulier, elle facilite la réutilisation de
+nombreux composants entre les projets sans avoir à changer grand-chose.
+Par exemple, nous pouvons remplacer uniquement l’optimiseur, uniquement
+le modèle, uniquement le jeu de données, etc. ; ce degré de modularité
+porte ses fruits tout au long du livre en termes de concision et de
+simplicité (c’est pourquoi nous l’avons ajouté) et il peut en faire de
+même pour vos propres projets.
+
+Exercices
+---------
+
+1. Localisez les implémentations complètes des classes ci-dessus qui
+   sont enregistrées dans la `bibliothèque
+   D2L <https://github.com/d2l-ai/d2l-en/tree/master/d2l>`__. Nous vous
+   recommandons vivement d’examiner l’implémentation en détail une fois
+   que vous aurez acquis un peu plus de familiarité avec la modélisation
+   en deep learning.
+2. Supprimez l’instruction ``save_hyperparameters`` dans la classe
+   ``B``. Pouvez-vous toujours afficher ``self.a`` et ``self.b`` ?
+   Facultatif : si vous avez plongé dans l’implémentation complète de la
+   classe ``HyperParameters``, pouvez-vous expliquer pourquoi ?

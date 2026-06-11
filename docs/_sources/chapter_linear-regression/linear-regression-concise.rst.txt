@@ -1,0 +1,162 @@
+
+.. _sec_linear_concise:
+
+Implémentation concise de la régression linéaire
+================================================
+
+
+L’apprentissage profond a connu une sorte d’explosion cambrienne au
+cours de la dernière décennie. Le nombre impressionnant de techniques,
+d’applications et d’algorithmes dépasse de loin les progrès des
+décennies précédentes. Cela est dû à une combinaison fortuite de
+multiples facteurs, dont l’un est la puissance des outils gratuits
+offerts par un certain nombre de frameworks d’apprentissage profond en
+open-source. Theano :cite:`Bergstra.Breuleux.Bastien.ea.2010`,
+DistBelief :cite:`Dean.Corrado.Monga.ea.2012`, et Caffe
+:cite:`Jia.Shelhamer.Donahue.ea.2014` représentent sans doute la
+première génération de tels modèles ayant connu une adoption
+généralisée. Contrairement aux travaux plus anciens (fondateurs) comme
+SN2 (Simulateur Neuristique) :cite:`Bottou.Le-Cun.1988`, qui offrait
+une expérience de programmation de type Lisp, les frameworks modernes
+proposent la différenciation automatique et la commodité de Python. Ces
+frameworks nous permettent d’automatiser et de modulariser le travail
+répétitif de mise en œuvre des algorithmes d’apprentissage basés sur le
+gradient.
+
+Dans la :numref:`sec_linear_scratch`, nous nous sommes appuyés
+uniquement sur (i) des tenseurs pour le stockage des données et
+l’algèbre linéaire ; et (ii) la différenciation automatique pour le
+calcul des gradients. En pratique, comme les itérateurs de données, les
+fonctions de perte, les optimiseurs et les couches de réseaux neuronaux
+sont très courants, les bibliothèques modernes implémentent également
+ces composants pour nous. Dans cette section, nous allons vous montrer
+comment implémenter le modèle de régression linéaire de la
+:numref:`sec_linear_scratch` de manière concise en utilisant les API
+de haut niveau des frameworks d’apprentissage profond.
+
+Définition du modèle
+--------------------
+
+Lorsque nous avons implémenté la régression linéaire à partir de zéro
+dans la :numref:`sec_linear_scratch`, nous avons défini les paramètres
+de notre modèle explicitement et codé les calculs pour produire des
+sorties en utilisant des opérations d’algèbre linéaire de base. Vous
+*devriez* savoir comment faire cela. Mais une fois que vos modèles
+deviennent plus complexes, et que vous devez le faire presque tous les
+jours, vous serez heureux de recevoir de l’aide. La situation est
+similaire à celle de la création de votre propre blog à partir de zéro.
+Le faire une ou deux fois est gratifiant et instructif, mais vous seriez
+un piètre développeur web si vous passiez un mois à réinventer la roue.
+
+Pour les opérations standard, nous pouvons utiliser les couches
+prédéfinies d’un framework, ce qui nous permet de nous concentrer sur
+les couches utilisées pour construire le modèle plutôt que de nous
+soucier de leur implémentation. Rappelez-vous de l’architecture d’un
+réseau à une seule couche telle que décrite dans la
+:numref:`fig_single_neuron`. La couche est appelée *complètement
+connectée* (ou *fully connected*), car chacune de ses entrées est
+connectée à chacune de ses sorties au moyen d’une multiplication
+matrice-vecteur.
+
+Dans la méthode ``forward``, nous invoquons simplement la méthode
+intégrée ``__call__`` des couches prédéfinies pour calculer les sorties.
+
+Définition de la fonction de perte
+----------------------------------
+
+Définition de l’algorithme d’optimisation
+-----------------------------------------
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    @d2l.add_to_class(LinearRegression)  #@save
+    def configure_optimizers(self):
+
+Entraînement
+------------
+
+Vous avez peut-être remarqué que l’expression de notre modèle via les
+API de haut niveau d’un framework d’apprentissage profond nécessite
+moins de lignes de code. Nous n’avons pas eu à allouer les paramètres
+individuellement, à définir notre fonction de perte ou à implémenter le
+SGD par mini-lot. Une fois que nous commencerons à travailler avec des
+modèles beaucoup plus complexes, les avantages de l’API de haut niveau
+augmenteront considérablement.
+
+Maintenant que nous avons toutes les pièces de base en place, la boucle
+d’entraînement elle-même est la même que celle que nous avons
+implémentée à partir de zéro. Nous appelons donc simplement la méthode
+``fit`` (introduite dans la :numref:`oo-design-training`), qui
+s’appuie sur l’implémentation de la méthode ``fit_epoch`` de la
+:numref:`sec_linear_scratch`, pour entraîner notre modèle.
+
+.. raw:: latex
+
+   \diilbookstyleinputcell
+
+.. code:: python
+
+    model = LinearRegression(lr=0.03)
+    data = d2l.SyntheticRegressionData(w=d2l.tensor([2, -3.4]), b=4.2)
+    trainer = d2l.Trainer(max_epochs=3)
+    trainer.fit(model, data)
+
+Ci-dessous, nous comparons les paramètres du modèle appris par
+l’entraînement sur des données finies et les paramètres réels qui ont
+généré notre jeu de données. Pour accéder aux paramètres, nous accédons
+aux poids et au biais de la couche dont nous avons besoin. Comme dans
+notre implémentation à partir de zéro, notez que nos paramètres estimés
+sont proches de leurs homologues réels.
+
+Résumé
+------
+
+Cette section contient la première implémentation d’un réseau profond
+(dans ce livre) pour tirer parti des commodités offertes par les
+frameworks modernes d’apprentissage profond, tels que MXNet
+:cite:`Chen.Li.Li.ea.2015`, JAX :cite:`Frostig.Johnson.Leary.2018`,
+PyTorch :cite:`Paszke.Gross.Massa.ea.2019`, et TensorFlow
+:cite:`Abadi.Barham.Chen.ea.2016`. Nous avons utilisé les paramètres
+par défaut du framework pour charger les données, définir une couche,
+une fonction de perte, un optimiseur et une boucle d’entraînement.
+Chaque fois que le framework fournit toutes les fonctionnalités
+nécessaires, c’est généralement une bonne idée de les utiliser, car les
+implémentations de ces composants dans les bibliothèques ont tendance à
+être fortement optimisées pour la performance et correctement testées
+pour la fiabilité. En même temps, essayez de ne pas oublier que ces
+modules *peuvent* être implémentés directement. Ceci est
+particulièrement important pour les chercheurs en herbe qui souhaitent
+se situer à la pointe du développement de modèles, où vous inventerez de
+nouveaux composants qui ne peuvent pas encore exister dans une
+bibliothèque actuelle.
+
+Exercices
+---------
+
+1. Comment devriez-vous modifier le taux d’apprentissage si vous
+   remplacez la perte agrégée sur le mini-lot par une moyenne de la
+   perte sur le mini-lot ?
+2. Consultez la documentation du framework pour voir quelles fonctions
+   de perte sont proposées. En particulier, remplacez la perte
+   quadratique par la fonction de perte robuste de Huber. C’est-à-dire,
+   utilisez la fonction de perte
+
+   .. math:: l(y,y') = \begin{cases}|y-y'| -\frac{\sigma}{2} & \textrm{ si } |y-y'| > \sigma \\ \frac{1}{2 \sigma} (y-y')^2 & \textrm{ sinon}\end{cases}
+3. Comment accède-t-index au gradient des poids du modèle ?
+4. Quel est l’effet sur la solution si vous modifiez le taux
+   d’apprentissage et le nombre d’époques ? Est-ce qu’elle continue à
+   s’améliorer ?
+5. Comment la solution change-t-elle à mesure que vous faites varier la
+   quantité de données générées ?
+
+   1. Tracez l’erreur d’estimation pour
+      :math:`\hat{\mathbf{w}} - \mathbf{w}` et :math:`\hat{b} - b` en
+      fonction de la quantité de données. Conseil : augmentez la
+      quantité de données de manière logarithmique plutôt que linéaire,
+      c’est-à-dire 5, 10, 20, 50, …, 10 000 plutôt que 1 000, 2 000, …,
+      10 000.
+   2. Pourquoi la suggestion du conseil est-elle appropriée ?

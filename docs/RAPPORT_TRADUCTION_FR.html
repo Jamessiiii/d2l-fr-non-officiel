@@ -139,15 +139,16 @@ Show Source
 <li class="toctree-l2"><a class="reference internal" href="chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="chapter_linear-regression/index.html">3. Réseaux de neurones linéaires pour la régression</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/weight-decay.html">3.7. Décroissance des poids</a></li>
 </ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="chapter_preface/index.html">Préface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="chapter_installation/index.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="chapter_notation/index.html">Notation</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="chapter_introduction/index.html">1. Introduction</a></li>
+</li>
 </ul>
 
             </nav>
@@ -192,15 +193,16 @@ Show Source
 <li class="toctree-l2"><a class="reference internal" href="chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="chapter_linear-regression/index.html">3. Réseaux de neurones linéaires pour la régression</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/linear-regression.html">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chapter_linear-regression/weight-decay.html">3.7. Décroissance des poids</a></li>
 </ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="chapter_preface/index.html">Préface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="chapter_installation/index.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="chapter_notation/index.html">Notation</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="chapter_introduction/index.html">1. Introduction</a></li>
+</li>
 </ul>
 
             </nav>
@@ -214,7 +216,7 @@ Show Source
         
   <section id="rapport-de-traduction-francaise-d2l">
 <h1>Rapport de traduction française D2L<a class="headerlink" href="#rapport-de-traduction-francaise-d2l" title="Permalink to this heading">¶</a></h1>
-<p>Date : 2026-06-10</p>
+<p>Date : 2026-06-11</p>
 <section id="artefacts-produits">
 <h2>Artefacts produits<a class="headerlink" href="#artefacts-produits" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
@@ -388,18 +390,15 @@ navigateur intégré, sans modifier le dépôt original <code class="docutils li
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>origin<span class="w">  </span>https://github.com/Jamessiiii/d2l-fr-non-officiel.git
 </pre></div>
 </div>
-<p>Le push n’a pas pu être terminé dans cette session : GitHub CLI est
-authentifié localement comme <code class="docutils literal notranslate"><span class="pre">Ggboy179</span></code>, tandis que le dépôt créé
-appartient à <code class="docutils literal notranslate"><span class="pre">Jamessiiii</span></code>. Le push échoue donc avec :</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>remote: Permission to Jamessiiii/d2l-fr-non-officiel.git denied to Ggboy179.
-fatal: unable to access &#39;https://github.com/Jamessiiii/d2l-fr-non-officiel.git/&#39;: The requested URL returned error: 403
+<p>GitHub CLI a ensuite été réauthentifié comme <code class="docutils literal notranslate"><span class="pre">Jamessiiii</span></code>.
+GitHub Pages est configuré pour servir le site depuis <code class="docutils literal notranslate"><span class="pre">main</span></code> /
+<code class="docutils literal notranslate"><span class="pre">docs</span></code> :</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>https://jamessiiii.github.io/d2l-fr-non-officiel/
 </pre></div>
 </div>
-<p>Une tentative d’authentification GitHub CLI comme <code class="docutils literal notranslate"><span class="pre">Jamessiiii</span></code> a
-atteint l’écran OAuth, mais le bouton <code class="docutils literal notranslate"><span class="pre">Authorize</span> <span class="pre">github</span></code> est resté
-désactivé dans le navigateur intégré. GitHub Pages n’a donc pas été
-activé. Le projet est toutefois prêt pour un push puis une activation
-Pages depuis <code class="docutils literal notranslate"><span class="pre">main</span></code> / <code class="docutils literal notranslate"><span class="pre">docs</span></code>.</p>
+<p>Le site public doit être revérifié après chaque nouveau push : page
+d’accueil, navigation, équations MathJax, figures, liens internes et
+attribution.</p>
 </section>
 </section>
 

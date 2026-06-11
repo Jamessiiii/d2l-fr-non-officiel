@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>3.1. Régression linéaire &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="3.2. Conception orientée objet pour l’implémentation" href="oo-design.html" />
+    <link rel="prev" title="3. Réseaux de neurones linéaires pour la régression" href="index.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link" href="index.html"><span class="section-number">3. </span>Réseaux de neurones linéaires pour la régression</a><i class="material-icons">navigate_next</i>
+            <a class="mdl-navigation__link is-active"><span class="section-number">3.1. </span>Régression linéaire</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_linear-regression/linear-regression.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weight-decay.html">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_notation/index.html">Notation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preliminaries/index.html">2. Préliminaires</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/ndarray.html">2.1. Manipulation de données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/pandas.html">2.2. Prétraitement des données</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/linear-algebra.html">2.3. Algèbre linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/calculus.html">2.4. Calcul</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/autograd.html">2.5. Différentiation automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/probability.html">2.6. Probabilités et statistiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../chapter_preliminaries/lookup-api.html">2.7. Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">3. Réseaux de neurones linéaires pour la régression</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">3.1. Régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oo-design.html">3.2. Conception orientée objet pour l’implémentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synthetic-regression-data.html">3.3. Données de régression synthétiques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-scratch.html">3.4. Implémentation de la régression linéaire à partir de zéro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="linear-regression-concise.html">3.5. Implémentation concise de la régression linéaire</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generalization.html">3.6. Généralisation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="weight-decay.html">3.7. Décroissance des poids</a></li>
+</ul>
+</li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="regression-lineaire">
+<span id="sec-linear-regression"></span><h1><span class="section-number">3.1. </span>Régression linéaire<a class="headerlink" href="#regression-lineaire" title="Permalink to this heading">¶</a></h1>
+<p>Les problèmes de <em>régression</em> surviennent chaque fois que nous voulons
+prédire une valeur numérique. Les exemples courants incluent la
+prédiction de prix (de maisons, d’actions, etc.), la prédiction de la
+durée de séjour (pour les patients à l’hôpital), la prévision de la
+demande (pour les ventes au détail), parmi de nombreux autres. Tous les
+problèmes de prédiction ne sont pas des problèmes de régression
+classique. Plus tard, nous introduirons des problèmes de classification,
+où l’objectif est de prédire l’appartenance à un ensemble de catégories.</p>
+<p>Comme exemple fil rouge, supposons que nous souhaitions estimer le prix
+de maisons (en dollars) en fonction de leur superficie (en pieds carrés)
+et de leur âge (en années). Pour développer un modèle de prédiction du
+prix des maisons, nous avons besoin de données, notamment le prix de
+vente, la superficie et l’âge de chaque maison. Dans la terminologie de
+l’apprentissage automatique, le jeu de données est appelé un <em>jeu de
+données d’entraînement</em> ou <em>ensemble d’entraînement</em>, et chaque ligne
+(contenant les données correspondant à une vente) est appelée un
+<em>exemple</em> (ou <em>point de données</em>, <em>instance</em>, <em>échantillon</em>). La chose
+que nous essayons de prédire (le prix) est appelée une <em>étiquette</em> (ou
+<em>cible</em>). Les variables (âge et superficie) sur lesquelles reposent les
+prédictions sont appelées des <em>caractéristiques</em> (ou <em>covariables</em>).</p>
+<section id="bases">
+<h2><span class="section-number">3.1.1. </span>Bases<a class="headerlink" href="#bases" title="Permalink to this heading">¶</a></h2>
+<p>La <em>régression linéaire</em> est à la fois l’outil le plus simple et le plus
+populaire parmi les outils standards pour aborder les problèmes de
+régression. Remontant à l’aube du XIXe siècle
+<span id="id1">()</span>, la régression linéaire découle de
+quelques hypothèses simples. Premièrement, nous supposons que la
+relation entre les caractéristiques <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> et la cible
+<span class="math notranslate nohighlight">\(y\)</span> est approximativement linéaire, c’est-à-dire que l’espérance
+conditionnelle <span class="math notranslate nohighlight">\(E[Y \mid X=\mathbf{x}]\)</span> peut être exprimée comme
+une somme pondérée des caractéristiques <span class="math notranslate nohighlight">\(\mathbf{x}\)</span>. Cette
+configuration permet que la valeur cible puisse encore s’écarter de sa
+valeur attendue en raison du bruit d’observation. Ensuite, nous pouvons
+imposer l’hypothèse que tout bruit de ce type est bien comporté, suivant
+une distribution gaussienne. Généralement, nous utiliserons <span class="math notranslate nohighlight">\(n\)</span>
+pour désigner le nombre d’exemples dans notre jeu de données. Nous
+utilisons des exposants pour énumérer les échantillons et les cibles, et
+des indices pour indexer les coordonnées. Plus concrètement,
+<span class="math notranslate nohighlight">\(\mathbf{x}^{(i)}\)</span> désigne le <span class="math notranslate nohighlight">\(i^{\textrm{ème}}\)</span> échantillon
+et <span class="math notranslate nohighlight">\(x_j^{(i)}\)</span> désigne sa <span class="math notranslate nohighlight">\(j^{\textrm{ème}}\)</span> coordonnée.</p>
+<section id="modele">
+<span id="subsec-linear-model"></span><h3><span class="section-number">3.1.1.1. </span>Modèle<a class="headerlink" href="#modele" title="Permalink to this heading">¶</a></h3>
+<p>Au cœur de chaque solution se trouve un modèle qui décrit comment les
+caractéristiques peuvent être transformées en une estimation de la
+cible. L’hypothèse de linéarité signifie que la valeur attendue de la
+cible (le prix) peut être exprimée comme une somme pondérée des
+caractéristiques (superficie et âge) :</p>
+<div class="math notranslate nohighlight" id="equation-eq-price-area">
+<span class="eqno">(3.1.1)<a class="headerlink" href="#equation-eq-price-area" title="Permalink to this equation">¶</a></span>\[\textrm{price} = w_{\textrm{area}} \cdot \textrm{area} + w_{\textrm{age}} \cdot \textrm{age} + b.\]</div>
+<p>Ici, <span class="math notranslate nohighlight">\(w_{\textrm{area}}\)</span> et <span class="math notranslate nohighlight">\(w_{\textrm{age}}\)</span> sont appelés
+des <em>poids</em>, et <span class="math notranslate nohighlight">\(b\)</span> est appelé un <em>biais</em> (ou <em>décalage</em> ou
+<em>ordonnée à l’origine</em>). Les poids déterminent l’influence de chaque
+caractéristique sur notre prédiction. Le biais détermine la valeur de
+l’estimation lorsque toutes les caractéristiques sont nulles. Même si
+nous ne verrons jamais de maisons neuves avec une superficie précisément
+nulle, nous avons toujours besoin du biais car il nous permet d’exprimer
+toutes les fonctions linéaires de nos caractéristiques (plutôt que de
+nous restreindre aux droites passant par l’origine). À proprement
+parler, <a class="reference internal" href="#equation-eq-price-area">(3.1.1)</a> est une <em>transformation affine</em> des
+caractéristiques d’entrée, qui se caractérise par une <em>transformation
+linéaire</em> des caractéristiques via une somme pondérée, combinée à une
+<em>translation</em> via le biais ajouté. Étant donné un jeu de données, notre
+objectif est de choisir les poids <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> et le biais
+<span class="math notranslate nohighlight">\(b\)</span> qui, en moyenne, font en sorte que les prédictions de notre
+modèle correspondent aux prix réels observés dans les données aussi
+étroitement que possible.</p>
+<p>Dans les disciplines où il est courant de se concentrer sur des jeux de
+données comportant seulement quelques caractéristiques, exprimer
+explicitement les modèles sous leur forme longue, comme dans
+<a class="reference internal" href="#equation-eq-price-area">(3.1.1)</a>, est courant. Dans l’apprentissage automatique,
+nous travaillons généralement avec des jeux de données à haute
+dimension, où il est plus pratique d’employer la notation compacte de
+l’algèbre linéaire. Lorsque nos entrées sont constituées de <span class="math notranslate nohighlight">\(d\)</span>
+caractéristiques, nous pouvons assigner à chacune un indice (entre
+<span class="math notranslate nohighlight">\(1\)</span> et <span class="math notranslate nohighlight">\(d\)</span>) et exprimer notre prédiction <span class="math notranslate nohighlight">\(\hat{y}\)</span> (en
+général, le symbole “chapeau” désigne une estimation) comme</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-linear-regression-0">
+<span class="eqno">(3.1.2)<a class="headerlink" href="#equation-chapter-linear-regression-linear-regression-0" title="Permalink to this equation">¶</a></span>\[\hat{y} = w_1  x_1 + \cdots + w_d  x_d + b.\]</div>
+<p>En rassemblant toutes les caractéristiques dans un vecteur
+<span class="math notranslate nohighlight">\(\mathbf{x} \in \mathbb{R}^d\)</span> et tous les poids dans un vecteur
+<span class="math notranslate nohighlight">\(\mathbf{w} \in \mathbb{R}^d\)</span>, nous pouvons exprimer notre modèle
+de manière compacte via le produit scalaire entre <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> et
+<span class="math notranslate nohighlight">\(\mathbf{x}\)</span> :</p>
+<div class="math notranslate nohighlight" id="equation-eq-linreg-y">
+<span class="eqno">(3.1.3)<a class="headerlink" href="#equation-eq-linreg-y" title="Permalink to this equation">¶</a></span>\[\hat{y} = \mathbf{w}^\top \mathbf{x} + b.\]</div>
+<p>Dans <a class="reference internal" href="#equation-eq-linreg-y">(3.1.3)</a>, le vecteur <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> correspond
+aux caractéristiques d’un seul exemple. Nous trouverons souvent pratique
+de nous référer aux caractéristiques de l’ensemble de notre jeu de
+données de <span class="math notranslate nohighlight">\(n\)</span> exemples via la <em>matrice de conception</em>
+<span class="math notranslate nohighlight">\(\mathbf{X} \in \mathbb{R}^{n \times d}\)</span>. Ici, <span class="math notranslate nohighlight">\(\mathbf{X}\)</span>
+contient une ligne pour chaque exemple et une colonne pour chaque
+caractéristique. Pour une collection de caractéristiques
+<span class="math notranslate nohighlight">\(\mathbf{X}\)</span>, les prédictions
+<span class="math notranslate nohighlight">\(\hat{\mathbf{y}} \in \mathbb{R}^n\)</span> peuvent être exprimées via le
+produit matrice-vecteur :</p>
+<div class="math notranslate nohighlight" id="equation-eq-linreg-y-vec">
+<span class="eqno">(3.1.4)<a class="headerlink" href="#equation-eq-linreg-y-vec" title="Permalink to this equation">¶</a></span>\[{\hat{\mathbf{y}}} = \mathbf{X} \mathbf{w} + b,\]</div>
+<p>où la diffusion (<a class="reference internal" href="../chapter_preliminaries/ndarray.html#subsec-broadcasting"><span class="std std-numref">Section 2.1.4</span></a>) est appliquée lors de
+la sommation. Étant donné les caractéristiques d’un jeu de données
+d’entraînement <span class="math notranslate nohighlight">\(\mathbf{X}\)</span> et les étiquettes correspondantes
+(connues) <span class="math notranslate nohighlight">\(\mathbf{y}\)</span>, l’objectif de la régression linéaire est
+de trouver le vecteur de poids <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> et le terme de biais
+<span class="math notranslate nohighlight">\(b\)</span> tels que, étant donné les caractéristiques d’un nouvel exemple
+de données échantillonné à partir de la même distribution que
+<span class="math notranslate nohighlight">\(\mathbf{X}\)</span>, l’étiquette du nouvel exemple sera (en espérance)
+prédite avec l’erreur la plus faible.</p>
+<p>Même si nous pensons que le meilleur modèle pour prédire <span class="math notranslate nohighlight">\(y\)</span> étant
+donné <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> est linéaire, nous ne nous attendrions pas à
+trouver un jeu de données réel de <span class="math notranslate nohighlight">\(n\)</span> exemples où <span class="math notranslate nohighlight">\(y^{(i)}\)</span>
+est exactement égal à <span class="math notranslate nohighlight">\(\mathbf{w}^\top \mathbf{x}^{(i)}+b\)</span> pour
+tout <span class="math notranslate nohighlight">\(1 \leq i \leq n\)</span>. Par exemple, quels que soient les
+instruments que nous utilisons pour observer les caractéristiques
+<span class="math notranslate nohighlight">\(\mathbf{X}\)</span> et les étiquettes <span class="math notranslate nohighlight">\(\mathbf{y}\)</span>, il peut y avoir
+une petite quantité d’erreur de mesure. Ainsi, même lorsque nous sommes
+convaincus que la relation sous-jacente est linéaire, nous incorporerons
+un terme de bruit pour tenir compte de ces erreurs.</p>
+<p>Avant de pouvoir chercher les meilleurs <em>paramètres</em> (ou <em>paramètres du
+modèle</em>) <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> et <span class="math notranslate nohighlight">\(b\)</span>, nous aurons besoin de deux
+choses supplémentaires : (i) une mesure de la qualité d’un modèle donné
+; et (ii) une procédure de mise à jour du modèle pour améliorer sa
+qualité.</p>
+</section>
+<section id="fonction-de-perte">
+<span id="subsec-linear-regression-loss-function"></span><h3><span class="section-number">3.1.1.2. </span>Fonction de perte<a class="headerlink" href="#fonction-de-perte" title="Permalink to this heading">¶</a></h3>
+<p>Naturellement, l’ajustement de notre modèle aux données exige que nous
+nous accordions sur une mesure de l’<em>adéquation</em> (ou, de manière
+équivalente, de l’<em>inadéquation</em>). Les <em>fonctions de perte</em>
+quantifient la distance entre les valeurs <em>réelles</em> et <em>prédites</em> de la
+cible. La perte sera généralement un nombre non négatif où des valeurs
+plus petites sont meilleures et des prédictions parfaites entraînent une
+perte de 0. Pour les problèmes de régression, la fonction de perte la
+plus courante est l’erreur quadratique. Lorsque notre prédiction pour un
+exemple <span class="math notranslate nohighlight">\(i\)</span> est <span class="math notranslate nohighlight">\(\hat{y}^{(i)}\)</span> et que l’étiquette réelle
+correspondante est <span class="math notranslate nohighlight">\(y^{(i)}\)</span>, l’<em>erreur quadratique</em> est donnée
+par :</p>
+<div class="math notranslate nohighlight" id="equation-eq-mse">
+<span class="eqno">(3.1.5)<a class="headerlink" href="#equation-eq-mse" title="Permalink to this equation">¶</a></span>\[l^{(i)}(\mathbf{w}, b) = \frac{1}{2} \left(\hat{y}^{(i)} - y^{(i)}\right)^2.\]</div>
+<p>La constante <span class="math notranslate nohighlight">\(\frac{1}{2}\)</span> ne fait aucune réelle différence mais
+s’avère pratique pour la notation, puisqu’elle s’annule lorsque nous
+prenons la dérivée de la perte. Parce que le jeu de données
+d’entraînement nous est donné, et qu’il échappe donc à notre contrôle,
+l’erreur empirique n’est qu’une fonction des paramètres du modèle. Dans
+la <a class="reference internal" href="#fig-fit-linreg"><span class="std std-numref">Fig. 3.1.1</span></a>, nous visualisons l’ajustement d’un modèle
+de régression linéaire dans un problème avec des entrées
+unidimensionnelles.</p>
+<figure class="align-default" id="id10">
+<span id="fig-fit-linreg"></span><img alt="img/fit-linreg.svg" src="img/fit-linreg.svg" /><figcaption>
+<p><span class="caption-number">Fig. 3.1.1 </span><span class="caption-text">Ajustement d’un modèle de régression linéaire à des données
+unidimensionnelles.</span><a class="headerlink" href="#id10" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Notez que de grandes différences entre les estimations
+<span class="math notranslate nohighlight">\(\hat{y}^{(i)}\)</span> et les cibles <span class="math notranslate nohighlight">\(y^{(i)}\)</span> entraînent des
+contributions encore plus importantes à la perte, en raison de sa forme
+quadratique (cette quadraticité peut être une épée à double tranchant ;
+bien qu’elle encourage le modèle à éviter les erreurs importantes, elle
+peut également entraîner une sensibilité excessive aux données
+anormales). Pour mesurer la qualité d’un modèle sur l’ensemble du jeu de
+données de <span class="math notranslate nohighlight">\(n\)</span> exemples, nous calculons simplement la moyenne (ou,
+de manière équivalente, la somme) des pertes sur l’ensemble
+d’entraînement :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-linear-regression-1">
+<span class="eqno">(3.1.6)<a class="headerlink" href="#equation-chapter-linear-regression-linear-regression-1" title="Permalink to this equation">¶</a></span>\[L(\mathbf{w}, b) =\frac{1}{n}\sum_{i=1}^n l^{(i)}(\mathbf{w}, b) =\frac{1}{n} \sum_{i=1}^n \frac{1}{2}\left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right)^2.\]</div>
+<p>Lors de l’entraînement du modèle, nous cherchons les paramètres
+(<span class="math notranslate nohighlight">\(\mathbf{w}^*, b^*\)</span>) qui minimisent la perte totale sur tous les
+exemples d’entraînement :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-linear-regression-2">
+<span class="eqno">(3.1.7)<a class="headerlink" href="#equation-chapter-linear-regression-linear-regression-2" title="Permalink to this equation">¶</a></span>\[\mathbf{w}^*, b^* = \operatorname*{argmin}_{\mathbf{w}, b}\  L(\mathbf{w}, b).\]</div>
+</section>
+<section id="solution-analytique">
+<h3><span class="section-number">3.1.1.3. </span>Solution analytique<a class="headerlink" href="#solution-analytique" title="Permalink to this heading">¶</a></h3>
+<p>Contrairement à la plupart des modèles que nous aborderons, la
+régression linéaire nous présente un problème d’optimisation étonnamment
+facile. En particulier, nous pouvons trouver les paramètres optimaux
+(tels qu’évalués sur les données d’entraînement) analytiquement en
+appliquant une formule simple comme suit. Premièrement, nous pouvons
+intégrer le biais <span class="math notranslate nohighlight">\(b\)</span> dans le paramètre <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> en
+ajoutant une colonne à la matrice de conception composée uniquement de
+1. Notre problème de prédiction consiste alors à minimiser
+<span class="math notranslate nohighlight">\(\|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2\)</span>. Tant que la matrice de
+conception <span class="math notranslate nohighlight">\(\mathbf{X}\)</span> est de plein rang (aucune caractéristique
+n’est linéairement dépendante des autres), il n’y aura qu’un seul point
+critique sur la surface de perte et il correspond au minimum de la perte
+sur l’ensemble du domaine. En prenant la dérivée de la perte par rapport
+à <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> et en l’égalisant à zéro, on obtient :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-linear-regression-3">
+<span class="eqno">(3.1.8)<a class="headerlink" href="#equation-chapter-linear-regression-linear-regression-3" title="Permalink to this equation">¶</a></span>\[\begin{aligned}
+    \partial_{\mathbf{w}} \|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2 =
+    2 \mathbf{X}^\top (\mathbf{X} \mathbf{w} - \mathbf{y}) = 0
+    \textrm{ et par conséquent }
+    \mathbf{X}^\top \mathbf{y} = \mathbf{X}^\top \mathbf{X} \mathbf{w}.
+\end{aligned}\]</div>
+<p>La résolution pour <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> nous fournit la solution optimale
+pour le problème d’optimisation. Notez que cette solution</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-linear-regression-4">
+<span class="eqno">(3.1.9)<a class="headerlink" href="#equation-chapter-linear-regression-linear-regression-4" title="Permalink to this equation">¶</a></span>\[\mathbf{w}^* = (\mathbf X^\top \mathbf X)^{-1}\mathbf X^\top \mathbf{y}\]</div>
+<p>ne sera unique que lorsque la matrice <span class="math notranslate nohighlight">\(\mathbf X^\top \mathbf X\)</span>
+est inversible, c’est-à-dire lorsque les colonnes de la matrice de
+conception sont linéairement indépendantes
+<span id="id2">()</span>.</p>
+<p>Bien que des problèmes simples comme la régression linéaire puissent
+admettre des solutions analytiques, vous ne devriez pas vous habituer à
+une telle chance. Bien que les solutions analytiques permettent une
+belle analyse mathématique, l’exigence d’une solution analytique est si
+restrictive qu’elle exclurait presque tous les aspects passionnants de
+l’apprentissage profond.</p>
+</section>
+<section id="descente-de-gradient-stochastique-par-mini-lots">
+<h3><span class="section-number">3.1.1.4. </span>Descente de gradient stochastique par mini-lots<a class="headerlink" href="#descente-de-gradient-stochastique-par-mini-lots" title="Permalink to this heading">¶</a></h3>
+<p>Heureusement, même dans les cas où nous ne pouvons pas résoudre les
+modèles analytiquement, nous pouvons encore souvent entraîner les
+modèles efficacement en pratique. De plus, pour de nombreuses tâches,
+ces modèles difficiles à optimiser s’avèrent tellement meilleurs que
+comprendre comment les entraîner finit par en valoir largement la peine.</p>
+<p>La technique clé pour optimiser presque tous les modèles d’apprentissage
+profond, et à laquelle nous ferons appel tout au long de ce livre,
+consiste à réduire itérativement l’erreur en mettant à jour les
+paramètres dans la direction qui diminue progressivement la fonction de
+perte. Cet algorithme est appelé la <em>descente de gradient</em>.</p>
+<p>L’application la plus naïve de la descente de gradient consiste à
+prendre la dérivée de la fonction de perte, qui est une moyenne des
+pertes calculées sur chaque exemple du jeu de données. En pratique, cela
+peut être extrêmement lent : nous devons parcourir l’ensemble du jeu de
+données avant d’effectuer une seule mise à jour, même si les étapes de
+mise à jour peuvent être très puissantes <span id="id3">()</span>.
+Pire encore, s’il y a beaucoup de redondance dans les données
+d’entraînement, le bénéfice d’une mise à jour complète est limité.</p>
+<p>L’autre extrême consiste à ne considérer qu’un seul exemple à la fois et
+à effectuer des étapes de mise à jour basées sur une seule observation à
+la fois. L’algorithme résultant, la <em>descente de gradient stochastique</em>
+(SGD), peut être une stratégie efficace <span id="id4">()</span>, même pour
+de grands jeux de données. Malheureusement, la SGD présente des
+inconvénients, tant informatiques que statistiques. Un problème vient du
+fait que les processeurs sont beaucoup plus rapides pour multiplier et
+additionner des nombres qu’ils ne le sont pour déplacer des données de
+la mémoire principale vers le cache du processeur. Il est jusqu’à un
+ordre de grandeur plus efficace d’effectuer une multiplication
+matrice-vecteur qu’un nombre correspondant d’opérations vecteur-vecteur.
+Cela signifie que le traitement d’un échantillon à la fois peut prendre
+beaucoup plus de temps qu’un lot complet. Un second problème est que
+certaines couches, telles que la normalisation par lots (qui sera
+décrite dans la <code class="xref std std-numref docutils literal notranslate"><span class="pre">sec_batch_norm</span></code>), ne fonctionnent bien que
+lorsque nous avons accès à plus d’une observation à la fois.</p>
+<p>La solution aux deux problèmes est de choisir une stratégie
+intermédiaire : plutôt que de prendre un lot complet ou un seul
+échantillon à la fois, nous prenons un <em>mini-lot</em> d’observations
+<span id="id5">()</span>. Le choix spécifique de la taille dudit
+mini-lot dépend de nombreux facteurs, tels que la quantité de mémoire,
+le nombre d’accélérateurs, le choix des couches et la taille totale du
+jeu de données. Malgré tout cela, un nombre compris entre 32 et 256, de
+préférence un multiple d’une grande puissance de <span class="math notranslate nohighlight">\(2\)</span>, est un bon
+début. Cela nous amène à la <em>descente de gradient stochastique par
+mini-lots</em>.</p>
+<p>Dans sa forme la plus basique, à chaque itération <span class="math notranslate nohighlight">\(t\)</span>, nous
+échantillonnons d’abord au hasard un mini-lot <span class="math notranslate nohighlight">\(\mathcal{B}_t\)</span>
+composé d’un nombre fixe <span class="math notranslate nohighlight">\(|\mathcal{B}|\)</span> d’exemples
+d’entraînement. Nous calculons ensuite la dérivée (gradient) de la perte
+moyenne sur le mini-lot par rapport aux paramètres du modèle. Enfin,
+nous multiplions le gradient par une petite valeur positive
+prédéterminée <span class="math notranslate nohighlight">\(\eta\)</span>, appelée le <em>taux d’apprentissage</em>, et
+soustrayons le terme résultant des valeurs actuelles des paramètres.
+Nous pouvons exprimer la mise à jour comme suit :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-linear-regression-5">
+<span class="eqno">(3.1.10)<a class="headerlink" href="#equation-chapter-linear-regression-linear-regression-5" title="Permalink to this equation">¶</a></span>\[(\mathbf{w},b) \leftarrow (\mathbf{w},b) - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \partial_{(\mathbf{w},b)} l^{(i)}(\mathbf{w},b).\]</div>
+<p>En résumé, la SGD par mini-lots procède comme suit : (i) initialiser les
+valeurs des paramètres du modèle, généralement au hasard ; (ii)
+échantillonner de manière itérative des mini-lots aléatoires à partir
+des données, en mettant à jour les paramètres dans la direction du
+gradient négatif. Pour les pertes quadratiques et les transformations
+affines, cela a un développement analytique :</p>
+<div class="math notranslate nohighlight" id="equation-eq-linreg-batch-update">
+<span class="eqno">(3.1.11)<a class="headerlink" href="#equation-eq-linreg-batch-update" title="Permalink to this equation">¶</a></span>\[\begin{split}\begin{aligned} \mathbf{w} &amp; \leftarrow \mathbf{w} - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \partial_{\mathbf{w}} l^{(i)}(\mathbf{w}, b) &amp;&amp; = \mathbf{w} - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \mathbf{x}^{(i)} \left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right)\\ b &amp;\leftarrow b -  \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \partial_b l^{(i)}(\mathbf{w}, b) &amp;&amp;  = b - \frac{\eta}{|\mathcal{B}|} \sum_{i \in \mathcal{B}_t} \left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right). \end{aligned}\end{split}\]</div>
+<p>Puisque nous choisissons un mini-lot <span class="math notranslate nohighlight">\(\mathcal{B}\)</span>, nous devons
+normaliser par sa taille <span class="math notranslate nohighlight">\(|\mathcal{B}|\)</span>. Fréquemment, la taille
+du mini-lot et le taux d’apprentissage sont définis par l’utilisateur.
+Ces paramètres ajustables qui ne sont pas mis à jour dans la boucle
+d’entraînement sont appelés <em>hyperparamètres</em>. Ils peuvent être réglés
+automatiquement par un certain nombre de techniques, telles que
+l’optimisation bayésienne <span id="id6">()</span>. En fin de compte, la
+qualité de la solution est généralement évaluée sur un <em>jeu de données
+de validation</em> (ou <em>ensemble de validation</em>) séparé.</p>
+<p>Après un entraînement pendant un nombre prédéterminé d’itérations (ou
+jusqu’à ce qu’un autre critère d’arrêt soit rempli), nous enregistrons
+les paramètres estimés du modèle, notés
+<span class="math notranslate nohighlight">\(\hat{\mathbf{w}}, \hat{b}\)</span>. Notez que même si notre fonction est
+véritablement linéaire et sans bruit, ces paramètres ne seront pas les
+minimiseurs exacts de la perte, ni même déterministes. Bien que
+l’algorithme converge lentement vers les minimiseurs, il ne les trouvera
+généralement pas exactement en un nombre fini d’étapes. De plus, les
+mini-lots <span class="math notranslate nohighlight">\(\mathcal{B}\)</span> utilisés pour mettre à jour les paramètres
+sont choisis au hasard. Cela brise le déterminisme.</p>
+<p>La régression linéaire se trouve être un problème d’apprentissage avec
+un minimum global (chaque fois que <span class="math notranslate nohighlight">\(\mathbf{X}\)</span> est de plein rang,
+ou de manière équivalente, chaque fois que
+<span class="math notranslate nohighlight">\(\mathbf{X}^\top \mathbf{X}\)</span> est inversible). Cependant, les
+surfaces de perte pour les réseaux profonds contiennent de nombreux
+points de selle et minima. Heureusement, nous ne nous soucions
+généralement pas de trouver un ensemble exact de paramètres, mais
+simplement n’importe quel ensemble de paramètres qui conduit à des
+prédictions précises (et donc à une faible perte). En pratique, les
+praticiens de l’apprentissage profond luttent rarement pour trouver des
+paramètres qui minimisent la perte <em>sur les jeux d’entraînement</em>
+<span id="id7">()</span>. La
+tâche la plus redoutable est de trouver des paramètres qui conduisent à
+des prédictions précises sur des données jamais vues auparavant, un défi
+appelé la <em>généralisation</em>. Nous reviendrons sur ces sujets tout au long
+du livre.</p>
+</section>
+<section id="predictions">
+<h3><span class="section-number">3.1.1.5. </span>Prédictions<a class="headerlink" href="#predictions" title="Permalink to this heading">¶</a></h3>
+<p>Étant donné le modèle
+<span class="math notranslate nohighlight">\(\hat{\mathbf{w}}^\top \mathbf{x} + \hat{b}\)</span>, nous pouvons
+maintenant faire des <em>prédictions</em> pour un nouvel exemple, par exemple,
+prédire le prix de vente d’une maison jamais vue auparavant étant donné
+sa superficie <span class="math notranslate nohighlight">\(x_1\)</span> et son âge <span class="math notranslate nohighlight">\(x_2\)</span>. Les praticiens de
+l’apprentissage profond ont pris l’habitude d’appeler la phase de
+prédiction <em>inférence</em>, mais c’est un peu un abus de langage :
+l’<em>inférence</em> se réfère largement à toute conclusion tirée sur la base
+de preuves, incluant à la fois les valeurs des paramètres et l’étiquette
+probable pour une instance non vue. Au contraire, dans la littérature
+statistique, l’<em>inférence</em> désigne plus souvent l’inférence de
+paramètres et cette surcharge terminologique crée une confusion inutile
+lorsque les praticiens de l’apprentissage profond discutent avec des
+statisticiens. Dans la suite, nous nous en tiendrons à <em>prédiction</em>
+chaque fois que possible.</p>
+</section>
+</section>
+<section id="vectorisation-pour-la-rapidite">
+<h2><span class="section-number">3.1.2. </span>Vectorisation pour la rapidité<a class="headerlink" href="#vectorisation-pour-la-rapidite" title="Permalink to this heading">¶</a></h2>
+<p>Lors de l’entraînement de nos modèles, nous voulons généralement traiter
+des mini-lots entiers d’exemples simultanément. Pour le faire
+efficacement, nous devons vectoriser les calculs et exploiter des
+bibliothèques d’algèbre linéaire rapides plutôt que d’écrire des boucles
+for coûteuses en Python.</p>
+<p>Pour comprendre pourquoi cela importe tant, considérons deux méthodes
+pour additionner des vecteurs. Pour commencer, nous instancions deux
+vecteurs de dimension 10 000 contenant uniquement des 1. Dans la
+première méthode, nous parcourons les vecteurs avec une boucle for
+Python. Dans la seconde, nous nous appuyons sur un seul appel à <code class="docutils literal notranslate"><span class="pre">+</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">n</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">d2l</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">d2l</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Maintenant, nous pouvons évaluer les performances des charges de
+travail. Tout d’abord, nous les additionnons, une coordonnée à la fois,
+en utilisant une boucle for.</p>
+<p>Alternativement, nous nous appuyons sur l’opérateur <code class="docutils literal notranslate"><span class="pre">+</span></code> surchargé pour
+calculer la somme élément par élément.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+<span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t</span><span class="si">:</span><span class="s1">.5f</span><span class="si">}</span><span class="s1"> sec&#39;</span>
+</pre></div>
+</div>
+<p>La seconde méthode est considérablement plus rapide que la première. La
+vectorisation du code permet souvent des gains de vitesse d’un ordre de
+grandeur. De plus, nous déléguons davantage de mathématiques à la
+bibliothèque, de sorte que nous n’avons pas à écrire autant de calculs
+nous-mêmes, ce qui réduit le risque d’erreurs et augmente la portabilité
+du code.</p>
+</section>
+<section id="la-distribution-normale-et-la-perte-quadratique">
+<span id="subsec-normal-distribution-and-squared-loss"></span><h2><span class="section-number">3.1.3. </span>La distribution normale et la perte quadratique<a class="headerlink" href="#la-distribution-normale-et-la-perte-quadratique" title="Permalink to this heading">¶</a></h2>
+<p>Jusqu’à présent, nous avons donné une motivation assez fonctionnelle de
+l’objectif de perte quadratique : les paramètres optimaux renvoient
+l’espérance conditionnelle <span class="math notranslate nohighlight">\(E[Y\mid X]\)</span> chaque fois que le modèle
+sous-jacent est véritablement linéaire, et la perte assigne des
+pénalités importantes pour les valeurs aberrantes. Nous pouvons
+également fournir une motivation plus formelle pour l’objectif de perte
+quadratique en faisant des hypothèses probabilistes sur la distribution
+du bruit.</p>
+<p>La régression linéaire a été inventée au tournant du XIXe siècle. Alors
+qu’on a longtemps débattu pour savoir si Gauss ou Legendre avait le
+premier imaginé l’idée, c’est Gauss qui a également découvert la
+distribution normale (également appelée <em>gaussienne</em>). Il s’avère que la
+distribution normale et la régression linéaire avec perte quadratique
+partagent un lien plus profond qu’une parenté commune.</p>
+<p>Pour commencer, rappelons qu’une distribution normale de moyenne
+<span class="math notranslate nohighlight">\(\mu\)</span> et de variance <span class="math notranslate nohighlight">\(\sigma^2\)</span> (écart-type <span class="math notranslate nohighlight">\(\sigma\)</span>)
+est donnée par</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-linear-regression-6">
+<span class="eqno">(3.1.12)<a class="headerlink" href="#equation-chapter-linear-regression-linear-regression-6" title="Permalink to this equation">¶</a></span>\[p(x) = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp\left(-\frac{1}{2 \sigma^2} (x - \mu)^2\right).\]</div>
+<p>Ci-dessous, nous définissons une fonction pour calculer la distribution
+normale.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">normal</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Nous pouvons maintenant visualiser les distributions normales.</p>
+<p>Notez que le changement de la moyenne correspond à un décalage le long
+de l’axe des <span class="math notranslate nohighlight">\(x\)</span>, et que l’augmentation de la variance étale la
+distribution, abaissant son sommet.</p>
+<p>Une façon de motiver la régression linéaire avec la perte quadratique
+est de supposer que les observations proviennent de mesures bruitées, où
+le bruit <span class="math notranslate nohighlight">\(\epsilon\)</span> suit la distribution normale
+<span class="math notranslate nohighlight">\(\mathcal{N}(0, \sigma^2)\)</span> :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-linear-regression-7">
+<span class="eqno">(3.1.13)<a class="headerlink" href="#equation-chapter-linear-regression-linear-regression-7" title="Permalink to this equation">¶</a></span>\[y = \mathbf{w}^\top \mathbf{x} + b + \epsilon \textrm{ où } \epsilon \sim \mathcal{N}(0, \sigma^2).\]</div>
+<p>Ainsi, nous pouvons maintenant écrire la <em>vraisemblance</em> de voir un
+<span class="math notranslate nohighlight">\(y\)</span> particulier pour un <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> donné via</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-linear-regression-8">
+<span class="eqno">(3.1.14)<a class="headerlink" href="#equation-chapter-linear-regression-linear-regression-8" title="Permalink to this equation">¶</a></span>\[P(y \mid \mathbf{x}) = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp\left(-\frac{1}{2 \sigma^2} (y - \mathbf{w}^\top \mathbf{x} - b)^2\right).\]</div>
+<p>En tant que telle, la vraisemblance se factorise. Selon <em>le principe du
+maximum de vraisemblance</em>, les meilleures valeurs des paramètres
+<span class="math notranslate nohighlight">\(\mathbf{w}\)</span> et <span class="math notranslate nohighlight">\(b\)</span> sont celles qui maximisent la
+<em>vraisemblance</em> de l’ensemble du jeu de données :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-linear-regression-9">
+<span class="eqno">(3.1.15)<a class="headerlink" href="#equation-chapter-linear-regression-linear-regression-9" title="Permalink to this equation">¶</a></span>\[P(\mathbf y \mid \mathbf X) = \prod_{i=1}^{n} p(y^{(i)} \mid \mathbf{x}^{(i)}).\]</div>
+<p>L’égalité suit puisque toutes les paires
+<span class="math notranslate nohighlight">\((\mathbf{x}^{(i)}, y^{(i)})\)</span> ont été tirées indépendamment les
+unes des autres. Les estimateurs choisis selon le principe du maximum de
+vraisemblance sont appelés <em>estimateurs du maximum de vraisemblance</em>.
+Bien que maximiser le produit de nombreuses fonctions exponentielles
+puisse paraître difficile, nous pouvons simplifier considérablement les
+choses, sans changer l’objectif, en maximisant le logarithme de la
+vraisemblance à la place. Pour des raisons historiques, les
+optimisations sont plus souvent exprimées comme une minimisation plutôt
+qu’une maximisation. Ainsi, sans rien changer, nous pouvons <em>minimiser</em>
+la <em>log-vraisemblance négative</em>, que nous pouvons exprimer comme suit :</p>
+<div class="math notranslate nohighlight" id="equation-chapter-linear-regression-linear-regression-10">
+<span class="eqno">(3.1.16)<a class="headerlink" href="#equation-chapter-linear-regression-linear-regression-10" title="Permalink to this equation">¶</a></span>\[-\log P(\mathbf y \mid \mathbf X) = \sum_{i=1}^n \frac{1}{2} \log(2 \pi \sigma^2) + \frac{1}{2 \sigma^2} \left(y^{(i)} - \mathbf{w}^\top \mathbf{x}^{(i)} - b\right)^2.\]</div>
+<p>Si nous supposons que <span class="math notranslate nohighlight">\(\sigma\)</span> est fixe, nous pouvons ignorer le
+premier terme, car il ne dépend pas de <span class="math notranslate nohighlight">\(\mathbf{w}\)</span> ni de
+<span class="math notranslate nohighlight">\(b\)</span>. Le second terme est identique à la perte par erreur
+quadratique introduite précédemment, à l’exception de la constante
+multiplicative <span class="math notranslate nohighlight">\(\frac{1}{\sigma^2}\)</span>. Heureusement, la solution ne
+dépend pas non plus de <span class="math notranslate nohighlight">\(\sigma\)</span>. Il s’ensuit que la minimisation
+de l’erreur quadratique moyenne est équivalente à l’estimation du
+maximum de vraisemblance d’un modèle linéaire sous l’hypothèse d’un
+bruit gaussien additif.</p>
+</section>
+<section id="la-regression-lineaire-comme-un-reseau-de-neurones">
+<h2><span class="section-number">3.1.4. </span>La régression linéaire comme un réseau de neurones<a class="headerlink" href="#la-regression-lineaire-comme-un-reseau-de-neurones" title="Permalink to this heading">¶</a></h2>
+<p>Bien que les modèles linéaires ne soient pas suffisamment riches pour
+exprimer les nombreux réseaux complexes que nous introduirons dans ce
+livre, les réseaux de neurones (artificiels) sont suffisamment riches
+pour inclure les modèles linéaires comme des réseaux dans lesquels
+chaque caractéristique est représentée par un neurone d’entrée, lesquels
+sont tous connectés directement à la sortie.</p>
+<p>La <a class="reference internal" href="#fig-single-neuron"><span class="std std-numref">Fig. 3.1.2</span></a> illustre la régression linéaire en tant
+que réseau de neurones. Le diagramme met en évidence le schéma de
+connectivité, comme la façon dont chaque entrée est connectée à la
+sortie, mais pas les valeurs spécifiques prises par les poids ou les
+biais.</p>
+<figure class="align-default" id="id11">
+<span id="fig-single-neuron"></span><img alt="img/singleneuron.svg" src="img/singleneuron.svg" /><figcaption>
+<p><span class="caption-number">Fig. 3.1.2 </span><span class="caption-text">La régression linéaire est un réseau de neurones à une seule couche.</span><a class="headerlink" href="#id11" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Les entrées sont <span class="math notranslate nohighlight">\(x_1, \ldots, x_d\)</span>. Nous appelons <span class="math notranslate nohighlight">\(d\)</span> le
+<em>nombre d’entrées</em> ou la <em>dimensionnalité des caractéristiques</em> dans la
+couche d’entrée. La sortie du réseau est <span class="math notranslate nohighlight">\(o_1\)</span>. Comme nous
+essayons simplement de prédire une seule valeur numérique, nous n’avons
+qu’un seul neurone de sortie. Notez que les valeurs d’entrée sont toutes
+<em>données</em>. Il n’y a qu’un seul neurone <em>calculé</em>. In résumé, nous
+pouvons considérer la régression linéaire comme un réseau de neurones
+entièrement connecté à une seule couche. Nous rencontrerons des réseaux
+avec beaucoup plus de couches dans les chapitres suivants.</p>
+<section id="biologie">
+<h3><span class="section-number">3.1.4.1. </span>Biologie<a class="headerlink" href="#biologie" title="Permalink to this heading">¶</a></h3>
+<p>Parce que la régression linéaire précède les neurosciences
+computationnelles, il peut sembler anachronique de décrire la régression
+linéaire en termes de réseaux de neurones. Néanmoins, ils constituaient
+un point de départ naturel lorsque les cybernéticiens et
+neurophysiologistes Warren McCulloch et Walter Pitts ont commencé à
+développer des modèles de neurones artificiels. Considérez l’image
+schématique d’un neurone biologique dans la <a class="reference internal" href="#fig-neuron"><span class="std std-numref">Fig. 3.1.3</span></a>,
+composé de <em>dendrites</em> (terminaisons d’entrée), du <em>noyau</em> (processeur),
+de l’<em>axone</em> (fil de sortie) et des <em>terminaisons axonales</em>
+(terminaisons de sortie), permettant des connexions avec d’autres
+neurones via des <em>synapses</em>.</p>
+<figure class="align-default" id="id12">
+<span id="fig-neuron"></span><img alt="img/neuron.svg" src="img/neuron.svg" /><figcaption>
+<p><span class="caption-number">Fig. 3.1.3 </span><span class="caption-text">Le vrai neurone (source : “Anatomy and Physiology” par le programme
+Surveillance, Epidemiology and End Results (SEER) de l’Institut
+national du cancer des États-Unis).</span><a class="headerlink" href="#id12" title="Permalink to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>L’information <span class="math notranslate nohighlight">\(x_i\)</span> arrivant d’autres neurones (ou de capteurs
+environnementaux) est reçue dans les dendrites. En particulier, cette
+information est pondérée par des <em>poids synaptiques</em> <span class="math notranslate nohighlight">\(w_i\)</span>,
+déterminant l’effet des entrées, par exemple, l’activation ou
+l’inhibition via le produit <span class="math notranslate nohighlight">\(x_i w_i\)</span>. Les entrées pondérées
+arrivant de multiples sources sont agrégées dans le noyau sous forme
+d’une somme pondérée <span class="math notranslate nohighlight">\(y = \sum_i x_i w_i + b\)</span>, éventuellement
+soumise à un post-traitement non linéaire via une fonction
+<span class="math notranslate nohighlight">\(\sigma(y)\)</span>. Cette information est ensuite envoyée via l’axone aux
+terminaisons axonales, où elle atteint sa destination (par exemple, un
+actionneur tel qu’un muscle) ou est transmise à un autre neurone via ses
+dendrites.</p>
+<p>Certes, l’idée de haut niveau selon laquelle de nombreuses unités de ce
+type pourraient être combinées, à condition d’avoir la connectivité et
+l’algorithme d’apprentissage appropriés, pour produire un comportement
+beaucoup plus intéressant et complexe que ce qu’un seul neurone pourrait
+exprimer, provient de notre étude des systèmes neuronaux biologiques
+réels. Dans le même temps, la plupart des recherches en apprentissage
+profond aujourd’hui puisent leur inspiration dans une source beaucoup
+plus large. Nous invoquons <span id="id8"></span> qui a souligné
+que même si les avions ont pu être <em>inspirés</em> par les oiseaux,
+l’ornithologie n’a pas été le principal moteur de l’innovation
+aéronautique depuis quelques siècles. De même, l’inspiration dans
+l’apprentissage profond de nos jours vient dans une mesure égale ou
+supérieure des mathématiques, de la linguistique, de la psychologie, des
+statistiques, de l’informatique et de bien d’autres domaines.</p>
+</section>
+</section>
+<section id="resume">
+<h2><span class="section-number">3.1.5. </span>Résumé<a class="headerlink" href="#resume" title="Permalink to this heading">¶</a></h2>
+<p>Dans cette section, nous avons présenté la régression linéaire
+traditionnelle, où les paramètres d’une fonction linéaire sont choisis
+pour minimiser la perte quadratique sur le jeu d’entraînement. Nous
+avons également motivé ce choix d’objectif à la fois par des
+considérations pratiques et par une interprétation de la régression
+linéaire comme une estimation du maximum de vraisemblance sous une
+hypothèse de linéarité et de bruit gaussien. Après avoir discuté des
+considérations computationnelles et des liens avec les statistiques,
+nous avons montré comment de tels modèles linéaires pouvaient être
+exprimés sous forme de réseaux de neurones simples où les entrées sont
+directement reliées à la ou aux sorties. Bien que nous allions bientôt
+dépasser les modèles linéaires, ils sont suffisants pour introduire la
+plupart des composants exigés par tous nos modèles : formes
+paramétriques, objectifs dérivables, optimisation via la descente de
+gradient stochastique par mini-lots, et enfin, évaluation sur des
+données jamais vues auparavant.</p>
+</section>
+<section id="exercices">
+<h2><span class="section-number">3.1.6. </span>Exercices<a class="headerlink" href="#exercices" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Supposons que nous ayons des données
+<span class="math notranslate nohighlight">\(x_1, \ldots, x_n \in \mathbb{R}\)</span>. Notre objectif est de
+trouver une constante <span class="math notranslate nohighlight">\(b\)</span> telle que <span class="math notranslate nohighlight">\(\sum_i (x_i - b)^2\)</span>
+soit minimisée.</p>
+<ol class="arabic simple">
+<li><p>Trouvez une solution analytique pour la valeur optimale de
+<span class="math notranslate nohighlight">\(b\)</span>.</p></li>
+<li><p>Comment ce problème et sa solution se rapportent-ils à la
+distribution normale ?</p></li>
+<li><p>Que se passe-t-il si nous changeons la perte de
+<span class="math notranslate nohighlight">\(\sum_i (x_i - b)^2\)</span> à <span class="math notranslate nohighlight">\(\sum_i |x_i-b|\)</span> ? Pouvez-vous
+trouver la solution optimale pour <span class="math notranslate nohighlight">\(b\)</span> ?</p></li>
+</ol>
+</li>
+<li><p>Prouvez que les fonctions affines qui peuvent être exprimées par
+<span class="math notranslate nohighlight">\(\mathbf{x}^\top \mathbf{w} + b\)</span> sont équivalentes aux
+fonctions linéaires sur <span class="math notranslate nohighlight">\((\mathbf{x}, 1)\)</span>.</p></li>
+<li><p>Supposons que vous vouliez trouver des fonctions quadratiques de
+<span class="math notranslate nohighlight">\(\mathbf{x}\)</span>, c’est-à-dire
+<span class="math notranslate nohighlight">\(f(\mathbf{x}) = b + \sum_i w_i x_i + \sum_{j \leq i} w_{ij} x_{i} x_{j}\)</span>.
+Comment formuleriez-vous cela dans un réseau profond ?</p></li>
+<li><p>Rappelons que l’une des conditions pour que le problème de régression
+linéaire soit soluble était que la matrice de conception
+<span class="math notranslate nohighlight">\(\mathbf{X}^\top \mathbf{X}\)</span> soit de plein rang.</p>
+<ol class="arabic simple">
+<li><p>Que se passe-t-il si ce n’est pas le cas ?</p></li>
+<li><p>Comment pourriez-vous y remédier ? Que se passe-t-il si vous
+ajoutez une petite quantité de bruit gaussien indépendant par
+coordonnée à toutes les entrées de <span class="math notranslate nohighlight">\(\mathbf{X}\)</span> ?</p></li>
+<li><p>Quelle est l’espérance de la matrice de conception
+<span class="math notranslate nohighlight">\(\mathbf{X}^\top \mathbf{X}\)</span> dans ce cas ?</p></li>
+<li><p>Que se passe-t-il avec la descente de gradient stochastique
+lorsque <span class="math notranslate nohighlight">\(\mathbf{X}^\top \mathbf{X}\)</span> n’est pas de plein rang
+?</p></li>
+</ol>
+</li>
+<li><p>Supposons que le modèle de bruit régissant le bruit additif
+<span class="math notranslate nohighlight">\(\epsilon\)</span> soit la distribution exponentielle. C’est-à-dire
+<span class="math notranslate nohighlight">\(p(\epsilon) = \frac{1}{2} \exp(-|\epsilon|)\)</span>.</p>
+<ol class="arabic simple">
+<li><p>Écrivez la log-vraisemblance négative des données sous le modèle
+<span class="math notranslate nohighlight">\(-\log P(\mathbf y \mid \mathbf X)\)</span>.</p></li>
+<li><p>Pouvez-vous trouver une solution de forme analytique ?</p></li>
+<li><p>Suggérez un algorithme de descente de gradient stochastique par
+mini-lots pour résoudre ce problème. Qu’est-ce qui pourrait mal se
+passer (indice : que se passe-t-il près du point stationnaire
+alors que nous continuons à mettre à jour les paramètres) ?
+Pouvez-vous corriger cela ?</p></li>
+</ol>
+</li>
+<li><p>Supposons que nous voulions concevoir un réseau de neurones à deux
+couches en composant deux couches linéaires. C’est-à-dire que la
+sortie de la première couche devient l’entrée de la seconde. Pourquoi
+une telle composition naïve ne fonctionnerait-elle pas ?</p></li>
+<li><p>Que se passe-t-il si vous voulez utiliser la régression pour une
+estimation réaliste du prix de maisons ou du cours d’actions ?</p>
+<ol class="arabic simple">
+<li><p>Montrez que l’hypothèse de bruit gaussien additif n’est pas
+appropriée. Indice : peut-on avoir des prix négatifs ? Qu’en
+est-il des fluctuations ?</p></li>
+<li><p>Pourquoi la régression sur le logarithme du prix serait-elle bien
+meilleure, c’est-à-dire <span class="math notranslate nohighlight">\(y = \log \textrm{price}\)</span> ?</p></li>
+<li><p>De quoi devez-vous vous soucier lorsque vous traitez des
+“pennystocks”, c’est-à-dire des actions avec des prix très bas ?
+Indice : pouvez-vous échanger à tous les prix possibles ? Pourquoi
+est-ce un problème plus important pour les actions bon marché ?
+Pour plus d’informations, consultez le célèbre modèle
+Black-Scholes pour l’évaluation des options
+<span id="id9">()</span>.</p></li>
+</ol>
+</li>
+<li><p>Supposons que nous voulions utiliser la régression pour estimer le
+<em>nombre</em> de pommes vendues dans une épicerie.</p>
+<ol class="arabic simple">
+<li><p>Quels sont les problèmes avec un modèle de bruit additif gaussien
+? Indice : vous vendez des pommes, pas du pétrole.</p></li>
+<li><p>La <a class="reference external" href="https://fr.wikipedia.org/wiki/Loi_de_Poisson">distribution de
+Poisson</a> capture
+les distributions sur les décomptes. Elle est donnée par
+<span class="math notranslate nohighlight">\(p(k \mid \lambda) = \lambda^k e^{-\lambda}/k!\)</span>. Ici
+<span class="math notranslate nohighlight">\(\lambda\)</span> est la fonction de taux et <span class="math notranslate nohighlight">\(k\)</span> est le nombre
+d’événements que vous observez. Prouvez que <span class="math notranslate nohighlight">\(\lambda\)</span> est
+l’espérance des décomptes <span class="math notranslate nohighlight">\(k\)</span>.</p></li>
+<li><p>Concevez une fonction de perte associée à la distribution de
+Poisson.</p></li>
+<li><p>Concevez une fonction de perte pour estimer <span class="math notranslate nohighlight">\(\log \lambda\)</span> à
+la place.</p></li>
+</ol>
+</li>
+</ol>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">3.1. Régression linéaire</a><ul>
+<li><a class="reference internal" href="#bases">3.1.1. Bases</a><ul>
+<li><a class="reference internal" href="#modele">3.1.1.1. Modèle</a></li>
+<li><a class="reference internal" href="#fonction-de-perte">3.1.1.2. Fonction de perte</a></li>
+<li><a class="reference internal" href="#solution-analytique">3.1.1.3. Solution analytique</a></li>
+<li><a class="reference internal" href="#descente-de-gradient-stochastique-par-mini-lots">3.1.1.4. Descente de gradient stochastique par mini-lots</a></li>
+<li><a class="reference internal" href="#predictions">3.1.1.5. Prédictions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#vectorisation-pour-la-rapidite">3.1.2. Vectorisation pour la rapidité</a></li>
+<li><a class="reference internal" href="#la-distribution-normale-et-la-perte-quadratique">3.1.3. La distribution normale et la perte quadratique</a></li>
+<li><a class="reference internal" href="#la-regression-lineaire-comme-un-reseau-de-neurones">3.1.4. La régression linéaire comme un réseau de neurones</a><ul>
+<li><a class="reference internal" href="#biologie">3.1.4.1. Biologie</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#resume">3.1.5. Résumé</a></li>
+<li><a class="reference internal" href="#exercices">3.1.6. Exercices</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="index.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>3. Réseaux de neurones linéaires pour la régression</div>
+         </div>
+     </a>
+     <a id="button-next" href="oo-design.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>3.2. Conception orientée objet pour l’implémentation</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

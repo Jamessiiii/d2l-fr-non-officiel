@@ -1,6 +1,6 @@
 # Rapport de traduction française D2L
 
-Date : 2026-06-10
+Date : 2026-06-11
 
 ## Artefacts produits
 
@@ -36,6 +36,8 @@ Le build HTML final a réussi et produit notamment :
 - `_build/html/chapter_installation/index.html`
 - `_build/html/chapter_introduction/index.html`
 - `_build/html/chapter_notation/index.html`
+- `_build/html/chapter_preliminaries/index.html`
+- `_build/html/chapter_linear-regression/index.html`
 
 Vérifications locales effectuées sur `http://localhost:4173` :
 
@@ -62,6 +64,14 @@ Traduction réalisée par agent Gemini :
 - `chapter_preliminaries/autograd.md` : traduit en français par `preliminaries_autograd.txt`.
 - `chapter_preliminaries/probability.md` : traduit en français par `preliminaries_probability.txt`.
 - `chapter_preliminaries/lookup-api.md` : traduit en français par `preliminaries_lookup_api.txt`.
+- `chapter_linear-regression/index.md` : traduit en français par `linear_regression_index.txt`.
+- `chapter_linear-regression/synthetic-regression-data.md` : traduit en français par `linear_regression_synthetic_regression_data.txt`.
+- `chapter_linear-regression/oo-design.md` : traduit en français par `linear_regression_oo_design.txt`.
+- `chapter_linear-regression/linear-regression.md` : traduit en français par `linear_regression_linear_regression.txt`.
+- `chapter_linear-regression/linear-regression-scratch.md` : traduit en français par `linear_regression_linear_regression_scratch.txt`.
+- `chapter_linear-regression/linear-regression-concise.md` : traduit en français par `linear_regression_linear_regression_concise.txt`.
+- `chapter_linear-regression/generalization.md` : traduit en français par `linear_regression_generalization.txt`.
+- `chapter_linear-regression/weight-decay.md` : traduit en français par `linear_regression_weight_decay.txt`.
 
 Ajouts manuels de structure française :
 
@@ -72,6 +82,7 @@ Ajouts manuels de structure française :
 - `docs/` : copie du site HTML prête pour GitHub Pages.
 - `notebooks/` : notebooks générés à partir du build partiel.
 - `img/polygon-circle.svg` : figure utilisée par `chapter_preliminaries/calculus.md`.
+- `img/capacity-vs-error.svg`, `img/fit-linreg.svg`, `img/singleneuron.svg`, `img/neuron.svg` : figures utilisées par `chapter_linear-regression`.
 
 ## Non traduit / restant à faire
 
@@ -103,6 +114,8 @@ Lors de la traduction de `chapter_preliminaries`, deux agents ont d'abord rencon
 
 Après traduction, les blocs de code fenced de `chapter_preliminaries` ont été restaurés depuis le dépôt original anglais afin de préserver exactement le code, les commentaires de code, les directives tabulaires et les sorties techniques.
 
+Pour `chapter_linear-regression`, huit agents Gemini ont été lancés en deux vagues. Les blocs de code fenced ont ensuite été restaurés depuis le dépôt original anglais afin de préserver le code, les commentaires de code, les directives tabulaires et les sorties techniques. Une erreur de balisage D2L produite par la traduction dans `synthetic-regression-data.md` a été corrigée avant génération RST.
+
 ## Limites du build partiel
 
 Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un build complet précédent du même état avait listé 88 avertissements attendus pour une version partielle :
@@ -112,10 +125,11 @@ Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un build complet 
 
 Pour le build complet, il faudra restaurer une copie complète ou des liens robustes vers toutes les images et tous les chapitres, puis rétablir `resources` dans `config.ini` pour se rapprocher du dépôt officiel.
 
-Note technique : l'ancien environnement `.venv-build` placé dans la racine du dépôt a fini par bloquer `pkg_resources`/`notedown`. Le build courant utilise un environnement virtuel frais hors dépôt :
+Note technique : l'ancien environnement `.venv-build` placé dans la racine du dépôt a fini par bloquer `pkg_resources`/`notedown`. Les builds courants utilisent des environnements virtuels frais hors dépôt, notamment :
 
 ```bash
 /Users/janslou/Desktop/livre IA/d2l-fr-venv-build-fresh
+/Users/janslou/Desktop/livre IA/d2l-fr-venv-build-run2
 ```
 
 Le HTML a été produit en lançant directement Sphinx sur `_build/rst_all` après génération des notebooks/RST, afin d'éviter la réécriture de deux notebooks `eval_all` vides observée pendant un run interrompu.
@@ -130,11 +144,10 @@ Le dépôt local est initialisé sur `main`, avec le remote :
 origin  https://github.com/Jamessiiii/d2l-fr-non-officiel.git
 ```
 
-Le push n'a pas pu être terminé dans cette session : GitHub CLI est authentifié localement comme `Ggboy179`, tandis que le dépôt créé appartient à `Jamessiiii`. Le push échoue donc avec :
+GitHub CLI a ensuite été réauthentifié comme `Jamessiiii`. GitHub Pages est configuré pour servir le site depuis `main` / `docs` :
 
 ```text
-remote: Permission to Jamessiiii/d2l-fr-non-officiel.git denied to Ggboy179.
-fatal: unable to access 'https://github.com/Jamessiiii/d2l-fr-non-officiel.git/': The requested URL returned error: 403
+https://jamessiiii.github.io/d2l-fr-non-officiel/
 ```
 
-Une tentative d'authentification GitHub CLI comme `Jamessiiii` a atteint l'écran OAuth, mais le bouton `Authorize github` est resté désactivé dans le navigateur intégré. GitHub Pages n'a donc pas été activé. Le projet est toutefois prêt pour un push puis une activation Pages depuis `main` / `docs`.
+Le site public doit être revérifié après chaque nouveau push : page d'accueil, navigation, équations MathJax, figures, liens internes et attribution.
