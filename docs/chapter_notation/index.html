@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    
+    <title>Notation &#8212; Plonger au coeur du Deep Learning 1.0.3 documentation</title>
+
+    <link rel="stylesheet" href="../_static/material-design-lite-1.3.0/material.blue-deep_orange.min.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/sphinx_materialdesign_theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fontawesome/all.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/fonts.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2l.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/d2l.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="1. Introduction" href="../chapter_introduction/index.html" />
+    <link rel="prev" title="Installation" href="../chapter_installation/index.html" /> 
+  </head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer"><header class="mdl-layout__header mdl-layout__header--waterfall ">
+    <div class="mdl-layout__header-row">
+        
+        <nav class="mdl-navigation breadcrumb">
+            <a class="mdl-navigation__link is-active">Notation</a>
+        </nav>
+        <div class="mdl-layout-spacer"></div>
+        <nav class="mdl-navigation">
+        
+<form class="form-inline pull-sm-right" action="../search.html" method="get">
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable mdl-textfield--floating-label mdl-textfield--align-right">
+        <label id="quick-search-icon" class="mdl-button mdl-js-button mdl-button--icon"  for="waterfall-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="q"  id="waterfall-exp" placeholder="Search" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </div>
+      </div>
+      <div class="mdl-tooltip" data-mdl-for="quick-search-icon">
+      Quick search
+      </div>
+</form>
+        
+<a id="button-show-source"
+    class="mdl-button mdl-js-button mdl-button--icon"
+    href="../_sources/chapter_notation/index.rst.txt" rel="nofollow">
+  <i class="material-icons">code</i>
+</a>
+<div class="mdl-tooltip" data-mdl-for="button-show-source">
+Show Source
+</div>
+        </nav>
+    </div>
+    <div class="mdl-layout__header-row header-links">
+      <div class="mdl-layout-spacer"></div>
+      <nav class="mdl-navigation">
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai">
+                  <i class="fas fa-book"></i>
+                  Version originale
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  PyTorch
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en-mxnet.pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  MXNet
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://d2l.ai/d2l-en.zip">
+                  <i class="fab fa-python"></i>
+                  Notebooks
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://courses.d2l.ai">
+                  <i class="fas fa-user-graduate"></i>
+                  Courses
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://github.com/d2l-ai/d2l-en">
+                  <i class="fab fa-github"></i>
+                  GitHub original
+              </a>
+          
+              <a  class="mdl-navigation__link" href="https://zh.d2l.ai">
+                  <i class="fas fa-external-link-alt"></i>
+                  中文版
+              </a>
+      </nav>
+    </div>
+</header><header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+        <main class="mdl-layout__content" tabIndex="0">
+
+	<script type="text/javascript" src="../_static/sphinx_materialdesign_theme.js"></script>
+    <header class="mdl-layout__drawer">
+    
+          <!-- Title -->
+      <span class="mdl-layout-title">
+          <a class="title" href="../index.html">
+              <img class="logo" src="../_static/logo-with-text.png" alt="Plonger au coeur du Deep Learning"/>
+          </a>
+      </span>
+    
+    
+      <div class="globaltoc">
+        <span class="mdl-layout-title toc">Table Of Contents</span>
+        
+        
+            
+            <nav class="mdl-navigation">
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/index.html">Préface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_preface/translation-attribution.html">Attribution de la traduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_installation/index.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Notation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../chapter_introduction/index.html">1. Introduction</a></li>
+</ul>
+
+            </nav>
+        
+        </div>
+    
+</header>
+
+    <div class="document">
+        <div class="page-content" role="main">
+        
+  <section id="notation">
+<span id="chap-notation"></span><h1>Notation<a class="headerlink" href="#notation" title="Permalink to this heading">¶</a></h1>
+<p>Throughout this book, we adhere to the following notational conventions.
+Note that some of these symbols are placeholders, while others refer to
+specific objects. As a general rule of thumb, the indefinite article “a”
+often indicates that the symbol is a placeholder and that similarly
+formatted symbols can denote other objects of the same type. For
+example, “<span class="math notranslate nohighlight">\(x\)</span>: a scalar” means that lowercased letters generally
+represent scalar values, but “<span class="math notranslate nohighlight">\(\mathbb{Z}\)</span>: the set of integers”
+refers specifically to the symbol <span class="math notranslate nohighlight">\(\mathbb{Z}\)</span>.</p>
+<section id="numerical-objects">
+<h2>Numerical Objects<a class="headerlink" href="#numerical-objects" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(x\)</span>: a scalar</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{x}\)</span>: a vector</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{X}\)</span>: a matrix</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathsf{X}\)</span>: a general tensor</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{I}\)</span>: the identity matrix (of some given dimension),
+i.e., a square matrix with <span class="math notranslate nohighlight">\(1\)</span> on all diagonal entries and
+<span class="math notranslate nohighlight">\(0\)</span> on all off-diagonals</p></li>
+<li><p><span class="math notranslate nohighlight">\(x_i\)</span>, <span class="math notranslate nohighlight">\([\mathbf{x}]_i\)</span>: the <span class="math notranslate nohighlight">\(i^\textrm{th}\)</span> element
+of vector <span class="math notranslate nohighlight">\(\mathbf{x}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(x_{ij}\)</span>, <span class="math notranslate nohighlight">\(x_{i,j}\)</span>,<span class="math notranslate nohighlight">\([\mathbf{X}]_{ij}\)</span>,
+<span class="math notranslate nohighlight">\([\mathbf{X}]_{i,j}\)</span>: the element of matrix <span class="math notranslate nohighlight">\(\mathbf{X}\)</span>
+at row <span class="math notranslate nohighlight">\(i\)</span> and column <span class="math notranslate nohighlight">\(j\)</span>.</p></li>
+</ul>
+</section>
+<section id="set-theory">
+<h2>Set Theory<a class="headerlink" href="#set-theory" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\mathcal{X}\)</span>: a set</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbb{Z}\)</span>: the set of integers</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbb{Z}^+\)</span>: the set of positive integers</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbb{R}\)</span>: the set of real numbers</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbb{R}^n\)</span>: the set of <span class="math notranslate nohighlight">\(n\)</span>-dimensional vectors of real
+numbers</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbb{R}^{a\times b}\)</span>: The set of matrices of real numbers
+with <span class="math notranslate nohighlight">\(a\)</span> rows and <span class="math notranslate nohighlight">\(b\)</span> columns</p></li>
+<li><p><span class="math notranslate nohighlight">\(|\mathcal{X}|\)</span>: cardinality (number of elements) of set
+<span class="math notranslate nohighlight">\(\mathcal{X}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathcal{A}\cup\mathcal{B}\)</span>: union of sets <span class="math notranslate nohighlight">\(\mathcal{A}\)</span>
+and <span class="math notranslate nohighlight">\(\mathcal{B}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathcal{A}\cap\mathcal{B}\)</span>: intersection of sets
+<span class="math notranslate nohighlight">\(\mathcal{A}\)</span> and <span class="math notranslate nohighlight">\(\mathcal{B}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathcal{A}\setminus\mathcal{B}\)</span>: set subtraction of
+<span class="math notranslate nohighlight">\(\mathcal{B}\)</span> from <span class="math notranslate nohighlight">\(\mathcal{A}\)</span> (contains only those
+elements of <span class="math notranslate nohighlight">\(\mathcal{A}\)</span> that do not belong to
+<span class="math notranslate nohighlight">\(\mathcal{B}\)</span>)</p></li>
+</ul>
+</section>
+<section id="functions-and-operators">
+<h2>Functions and Operators<a class="headerlink" href="#functions-and-operators" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(f(\cdot)\)</span>: a function</p></li>
+<li><p><span class="math notranslate nohighlight">\(\log(\cdot)\)</span>: the natural logarithm (base <span class="math notranslate nohighlight">\(e\)</span>)</p></li>
+<li><p><span class="math notranslate nohighlight">\(\log_2(\cdot)\)</span>: logarithm to base <span class="math notranslate nohighlight">\(2\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\exp(\cdot)\)</span>: the exponential function</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{1}(\cdot)\)</span>: the indicator function; evaluates to
+<span class="math notranslate nohighlight">\(1\)</span> if the boolean argument is true, and <span class="math notranslate nohighlight">\(0\)</span> otherwise</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{1}_{\mathcal{X}}(z)\)</span>: the set-membership indicator
+function; evaluates to <span class="math notranslate nohighlight">\(1\)</span> if the element <span class="math notranslate nohighlight">\(z\)</span> belongs to
+the set <span class="math notranslate nohighlight">\(\mathcal{X}\)</span> and <span class="math notranslate nohighlight">\(0\)</span> otherwise</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{(\cdot)}^\top\)</span>: transpose of a vector or a matrix</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{X}^{-1}\)</span>: inverse of matrix <span class="math notranslate nohighlight">\(\mathbf{X}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\odot\)</span>: Hadamard (elementwise) product</p></li>
+<li><p><span class="math notranslate nohighlight">\([\cdot, \cdot]\)</span>: concatenation</p></li>
+<li><p><span class="math notranslate nohighlight">\(\|\cdot\|_p\)</span>: <span class="math notranslate nohighlight">\(\ell_p\)</span> norm</p></li>
+<li><p><span class="math notranslate nohighlight">\(\|\cdot\|\)</span>: <span class="math notranslate nohighlight">\(\ell_2\)</span> norm</p></li>
+<li><p><span class="math notranslate nohighlight">\(\langle \mathbf{x}, \mathbf{y} \rangle\)</span>: inner (dot) product of
+vectors <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{y}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\sum\)</span>: summation over a collection of elements</p></li>
+<li><p><span class="math notranslate nohighlight">\(\prod\)</span>: product over a collection of elements</p></li>
+<li><p><span class="math notranslate nohighlight">\(\stackrel{\textrm{def}}{=}\)</span>: an equality asserted as a
+definition of the symbol on the left-hand side</p></li>
+</ul>
+</section>
+<section id="calculus">
+<h2>Calculus<a class="headerlink" href="#calculus" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\frac{dy}{dx}\)</span>: derivative of <span class="math notranslate nohighlight">\(y\)</span> with respect to
+<span class="math notranslate nohighlight">\(x\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\frac{\partial y}{\partial x}\)</span>: partial derivative of <span class="math notranslate nohighlight">\(y\)</span>
+with respect to <span class="math notranslate nohighlight">\(x\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\nabla_{\mathbf{x}} y\)</span>: gradient of <span class="math notranslate nohighlight">\(y\)</span> with respect to
+<span class="math notranslate nohighlight">\(\mathbf{x}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\int_a^b f(x) \;dx\)</span>: definite integral of <span class="math notranslate nohighlight">\(f\)</span> from
+<span class="math notranslate nohighlight">\(a\)</span> to <span class="math notranslate nohighlight">\(b\)</span> with respect to <span class="math notranslate nohighlight">\(x\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\int f(x) \;dx\)</span>: indefinite integral of <span class="math notranslate nohighlight">\(f\)</span> with respect
+to <span class="math notranslate nohighlight">\(x\)</span></p></li>
+</ul>
+</section>
+<section id="probability-and-information-theory">
+<h2>Probability and Information Theory<a class="headerlink" href="#probability-and-information-theory" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(X\)</span>: a random variable</p></li>
+<li><p><span class="math notranslate nohighlight">\(P\)</span>: a probability distribution</p></li>
+<li><p><span class="math notranslate nohighlight">\(X \sim P\)</span>: the random variable <span class="math notranslate nohighlight">\(X\)</span> follows distribution
+<span class="math notranslate nohighlight">\(P\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(P(X=x)\)</span>: the probability assigned to the event where random
+variable <span class="math notranslate nohighlight">\(X\)</span> takes value <span class="math notranslate nohighlight">\(x\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(P(X \mid Y)\)</span>: the conditional probability distribution of
+<span class="math notranslate nohighlight">\(X\)</span> given <span class="math notranslate nohighlight">\(Y\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(p(\cdot)\)</span>: a probability density function (PDF) associated with
+distribution <span class="math notranslate nohighlight">\(P\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\({E}[X]\)</span>: expectation of a random variable <span class="math notranslate nohighlight">\(X\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(X \perp Y\)</span>: random variables <span class="math notranslate nohighlight">\(X\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> are
+independent</p></li>
+<li><p><span class="math notranslate nohighlight">\(X \perp Y \mid Z\)</span>: random variables <span class="math notranslate nohighlight">\(X\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> are
+conditionally independent given <span class="math notranslate nohighlight">\(Z\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\sigma_X\)</span>: standard deviation of random variable <span class="math notranslate nohighlight">\(X\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\textrm{Var}(X)\)</span>: variance of random variable <span class="math notranslate nohighlight">\(X\)</span>, equal
+to <span class="math notranslate nohighlight">\(\sigma^2_X\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\textrm{Cov}(X, Y)\)</span>: covariance of random variables <span class="math notranslate nohighlight">\(X\)</span>
+and <span class="math notranslate nohighlight">\(Y\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(\rho(X, Y)\)</span>: the Pearson correlation coefficient between
+<span class="math notranslate nohighlight">\(X\)</span> and <span class="math notranslate nohighlight">\(Y\)</span>, equals
+<span class="math notranslate nohighlight">\(\frac{\textrm{Cov}(X, Y)}{\sigma_X \sigma_Y}\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(H(X)\)</span>: entropy of random variable <span class="math notranslate nohighlight">\(X\)</span></p></li>
+<li><p><span class="math notranslate nohighlight">\(D_{\textrm{KL}}(P\|Q)\)</span>: the KL-divergence (or relative entropy)
+from distribution <span class="math notranslate nohighlight">\(Q\)</span> to distribution <span class="math notranslate nohighlight">\(P\)</span></p></li>
+</ul>
+<p><a class="reference external" href="https://discuss.d2l.ai/t/25">Discussions</a></p>
+</section>
+</section>
+
+
+        </div>
+        <div class="side-doc-outline">
+            <div class="side-doc-outline--content"> 
+<div class="localtoc">
+    <p class="caption">
+      <span class="caption-text">Table Of Contents</span>
+    </p>
+    <ul>
+<li><a class="reference internal" href="#">Notation</a><ul>
+<li><a class="reference internal" href="#numerical-objects">Numerical Objects</a></li>
+<li><a class="reference internal" href="#set-theory">Set Theory</a></li>
+<li><a class="reference internal" href="#functions-and-operators">Functions and Operators</a></li>
+<li><a class="reference internal" href="#calculus">Calculus</a></li>
+<li><a class="reference internal" href="#probability-and-information-theory">Probability and Information Theory</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+            </div>
+        </div>
+
+      <div class="clearer"></div>
+    </div><div class="pagenation">
+     <a id="button-prev" href="../chapter_installation/index.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="P">
+         <i class="pagenation-arrow-L fas fa-arrow-left fa-lg"></i>
+         <div class="pagenation-text">
+            <span class="pagenation-direction">Previous</span>
+            <div>Installation</div>
+         </div>
+     </a>
+     <a id="button-next" href="../chapter_introduction/index.html" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--colored" role="botton" accesskey="N">
+         <i class="pagenation-arrow-R fas fa-arrow-right fa-lg"></i>
+        <div class="pagenation-text">
+            <span class="pagenation-direction">Next</span>
+            <div>1. Introduction</div>
+        </div>
+     </a>
+  </div>
+        
+        </main>
+    </div>
+  </body>
+</html>

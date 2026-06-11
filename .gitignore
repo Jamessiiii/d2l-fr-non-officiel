@@ -1,0 +1,6 @@
+_build/
+.codex_tmp/
+.venv-build/
+docs/.doctrees/
+static/latex_style/
+.DS_Store
