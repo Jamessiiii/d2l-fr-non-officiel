@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regroupement - Dive into Deep Learning FR</title>
+<link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css">
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid #d8dee4;padding:24px 18px;background:#f6f8fa;position:sticky;top:0;height:100vh;overflow:auto}.sidebar h1{font-size:16px;margin:0 0 16px}.sidebar ol{padding-left:22px;line-height:1.55}.sidebar a,.navlinks a{color:#245a9c;text-decoration:none}.content{max-width:980px;padding:32px 44px 56px}.navlinks{display:flex;justify-content:space-between;gap:20px;margin:28px 0}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}img{max-width:100%;height:auto}@media(max-width:760px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid #d8dee4}.content{padding:24px 18px 42px}}</style>
+</head><body><div class="layout"><nav class="sidebar"><h1><a href="../index.html">D2L français</a></h1><ol><li><a href="index.html">Réseaux de neurones convolutifs</a></li>
+<li><a href="why-conv.html">Des couches entièrement connectées aux convolutions</a></li>
+<li><a href="conv-layer.html">Convolutions pour les images</a></li>
+<li><a href="padding-and-strides.html">Remplissage et pas</a></li>
+<li><a href="channels.html">Canaux d&#x27;entrée et de sortie multiples</a></li>
+<li><a href="pooling.html">Regroupement</a></li>
+<li><a href="lenet.html">Réseaux de neurones convolutifs (LeNet)</a></li></ol></nav><main class="content"><div class="navlinks"><a class="prev" href="channels.html">&larr; Canaux d&#x27;entrée et de sortie multiples</a><a class="next" href="lenet.html">Réseaux de neurones convolutifs (LeNet) &rarr;</a></div><div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="regroupement">Regroupement</h1>
+<p><a id="sec_pooling"></a> Dans de nombreux cas, notre tâche finale
+pose une question globale sur l’image, par exemple : <em>contient-elle
+un chat ?</em> Par conséquent, les unités de notre couche finale doivent
+être sensibles à l’ensemble de l’entrée. En agrégeant progressivement
+les informations, produisant des cartes de plus en plus grossières, nous
+atteignons cet objectif d’apprendre finalement une représentation
+globale, tout en conservant tous les avantages des couches convolutives
+aux couches intermédiaires du traitement. Plus nous avançons dans le
+réseau, plus le champ récepteur (par rapport à l’entrée) auquel chaque
+nœud caché est sensible est grand. La réduction de la résolution
+spatiale accélère ce processus, car les noyaux de convolution couvrent
+une surface effective plus grande.</p>
+<p>De plus, lors de la détection de caractéristiques de bas niveau,
+telles que les bords (comme discuté dans la sec_conv_layer), nous
+voulons souvent que nos représentations soient quelque peu invariantes
+par translation. Par exemple, si nous prenons l’image <code>X</code>
+avec une délinéation nette entre le noir et le blanc et décalons l’image
+entière d’un pixel vers la droite, c’est-à-dire
+<code>Z[i, j] = X[i, j + 1]</code>, alors la sortie pour la nouvelle
+image <code>Z</code> pourrait être radicalement différente. Le bord se
+sera décalé d’un pixel. En réalité, les objets n’apparaissent presque
+jamais exactement au même endroit. En fait, même avec un trépied et un
+objet stationnaire, les vibrations de l’appareil photo dues au mouvement
+de l’obturateur pourraient décaler le tout d’un pixel environ (les
+appareils photo haut de gamme sont dotés de fonctions spéciales pour
+résoudre ce problème).</p>
+<p>Cette section présente les <em>couches de regroupement</em>
+(<em>pooling layers</em>), qui servent le double objectif d’atténuer la
+sensibilité des couches convolutives à l’emplacement et de
+sous-échantillonner spatialement les représentations.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> np, npx</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet.gluon <span class="im">import</span> nn</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flax <span class="im">import</span> linen <span class="im">as</span> nn</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span></code></pre></div>
+<h2 id="regroupement-maximal-et-regroupement-moyen">Regroupement maximal
+et regroupement moyen</h2>
+<p>Comme les couches convolutives, les opérateurs de
+<em>regroupement</em> consistent en une fenêtre de forme fixe qui glisse
+sur toutes les régions de l’entrée selon son pas, calculant une seule
+sortie pour chaque emplacement traversé par la fenêtre de forme fixe
+(parfois appelée <em>fenêtre de regroupement</em>). Cependant,
+contrairement au calcul de corrélation croisée des entrées et des noyaux
+dans la couche convolutive, la couche de regroupement ne contient aucun
+paramètre (il n’y a pas de <em>noyau</em>). Au lieu de cela, les
+opérateurs de regroupement sont déterministes, calculant généralement
+soit la valeur maximale, soit la valeur moyenne des éléments de la
+fenêtre de regroupement. Ces opérations sont respectivement appelées
+<em>regroupement maximal</em> (<em>max-pooling</em> en abrégé) et
+<em>regroupement moyen</em> (<em>average pooling</em>).</p>
+<p>Le <em>regroupement moyen</em> est pratiquement aussi ancien que les
+CNN. L’idée est proche du sous-échantillonnage d’une image. Plutôt que
+de simplement prendre la valeur d’un pixel sur deux (ou trois) pour
+l’image à basse résolution, nous pouvons faire la moyenne des pixels
+adjacents pour obtenir une image avec un meilleur rapport signal sur
+bruit puisque nous combinons les informations de plusieurs pixels
+adjacents. Le <em>regroupement maximal</em> a été introduit dans
+[Riesenhuber.Poggio.1999] dans le contexte des neurosciences cognitives
+pour décrire comment l’agrégation d’informations pourrait être agrégée
+de manière hiérarchique dans le but de la reconnaissance d’objets ; il
+existait déjà une version antérieure en reconnaissance vocale
+[Yamaguchi.Sakamoto.Akabane.ea.1990]. Dans presque tous les cas, le
+regroupement maximal, comme on l’appelle aussi, est préférable au
+regroupement moyen.</p>
+<p>Dans les deux cas, comme avec l’opérateur de corrélation croisée,
+nous pouvons considérer que la fenêtre de regroupement commence en haut
+à gauche du tenseur d’entrée et glisse sur celui-ci de gauche à droite
+et de haut en bas. À chaque emplacement touché par la fenêtre de
+regroupement, elle calcule la valeur maximale ou moyenne du sous-tenseur
+d’entrée dans la fenêtre, selon que le regroupement maximal ou moyen est
+utilisé.</p>
+<p><img src="img/pooling.svg"
+alt="Regroupement maximal avec une fenêtre de regroupement de forme 2\times 2. Les parties ombrées correspondent au premier élément de sortie ainsi qu’aux éléments du tenseur d’entrée utilisés pour le calcul de la sortie : \max(0, 1, 3, 4)=4." />
+<a id="fig_pooling"></a> Le tenseur de sortie dans la fig_pooling a une
+hauteur de 2 et une largeur de 2. Les quatre éléments sont dérivés de la
+valeur maximale dans chaque fenêtre de regroupement :</p>
+<p><span class="math display">\[
+\max(0, 1, 3, 4)=4,\\
+\max(1, 2, 4, 5)=5,\\
+\max(3, 4, 6, 7)=7,\\
+\max(4, 5, 7, 8)=8.\\
+\]</span></p>
+<p>Plus généralement, nous pouvons définir une couche de regroupement de
+<span class="math inline">\(p \times q\)</span> en agrégeant sur une
+région de ladite taille. Pour en revenir au problème de la détection de
+bords, nous utilisons la sortie de la couche convolutive comme entrée
+d’un regroupement maximal de <span class="math inline">\(2\times
+2\)</span>. Désignons par <code>X</code> l’entrée de la couche
+convolutive et par <code>Y</code> la sortie de la couche de
+regroupement. Que les valeurs de <code>X[i, j]</code>,
+<code>X[i, j + 1]</code>, <code>X[i+1, j]</code> et
+<code>X[i+1, j + 1]</code> soient différentes ou non, la couche de
+regroupement produit toujours <code>Y[i, j] = 1</code>. C’est-à-dire
+qu’en utilisant la couche de regroupement maximal <span
+class="math inline">\(2\times 2\)</span>, nous pouvons toujours détecter
+si le motif reconnu par la couche convolutive ne se déplace pas de plus
+d’un élément en hauteur ou en largeur.</p>
+<p>Dans le code ci-dessous, nous (<strong>implémentons la propagation
+avant de la couche de regroupement</strong>) dans la fonction
+<code>pool2d</code>. Cette fonction est similaire à la fonction
+<code>corr2d</code> dans la sec_conv_layer. Cependant, aucun noyau n’est
+nécessaire, le calcul de la sortie étant soit le maximum soit la moyenne
+de chaque région de l’entrée.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pool2d(X, pool_size, mode<span class="op">=</span><span class="st">&#39;max&#39;</span>):</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    p_h, p_w <span class="op">=</span> pool_size</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> d2l.zeros((X.shape[<span class="dv">0</span>] <span class="op">-</span> p_h <span class="op">+</span> <span class="dv">1</span>, X.shape[<span class="dv">1</span>] <span class="op">-</span> p_w <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(Y.shape[<span class="dv">0</span>]):</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(Y.shape[<span class="dv">1</span>]):</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> mode <span class="op">==</span> <span class="st">&#39;max&#39;</span>:</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                Y[i, j] <span class="op">=</span> X[i: i <span class="op">+</span> p_h, j: j <span class="op">+</span> p_w].<span class="bu">max</span>()</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> mode <span class="op">==</span> <span class="st">&#39;avg&#39;</span>:</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                Y[i, j] <span class="op">=</span> X[i: i <span class="op">+</span> p_h, j: j <span class="op">+</span> p_w].mean()</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Y</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pool2d(X, pool_size, mode<span class="op">=</span><span class="st">&#39;max&#39;</span>):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    p_h, p_w <span class="op">=</span> pool_size</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> jnp.zeros((X.shape[<span class="dv">0</span>] <span class="op">-</span> p_h <span class="op">+</span> <span class="dv">1</span>, X.shape[<span class="dv">1</span>] <span class="op">-</span> p_w <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(Y.shape[<span class="dv">0</span>]):</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(Y.shape[<span class="dv">1</span>]):</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> mode <span class="op">==</span> <span class="st">&#39;max&#39;</span>:</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                Y <span class="op">=</span> Y.at[i, j].<span class="bu">set</span>(X[i: i <span class="op">+</span> p_h, j: j <span class="op">+</span> p_w].<span class="bu">max</span>())</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> mode <span class="op">==</span> <span class="st">&#39;avg&#39;</span>:</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                Y <span class="op">=</span> Y.at[i, j].<span class="bu">set</span>(X[i: i <span class="op">+</span> p_h, j: j <span class="op">+</span> p_w].mean())</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Y</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pool2d(X, pool_size, mode<span class="op">=</span><span class="st">&#39;max&#39;</span>):</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    p_h, p_w <span class="op">=</span> pool_size</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> tf.Variable(tf.zeros((X.shape[<span class="dv">0</span>] <span class="op">-</span> p_h <span class="op">+</span> <span class="dv">1</span>, X.shape[<span class="dv">1</span>] <span class="op">-</span> p_w <span class="op">+</span><span class="dv">1</span>)))</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(Y.shape[<span class="dv">0</span>]):</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(Y.shape[<span class="dv">1</span>]):</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> mode <span class="op">==</span> <span class="st">&#39;max&#39;</span>:</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>                Y[i, j].assign(tf.reduce_max(X[i: i <span class="op">+</span> p_h, j: j <span class="op">+</span> p_w]))</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">elif</span> mode <span class="op">==</span><span class="st">&#39;avg&#39;</span>:</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>                Y[i, j].assign(tf.reduce_mean(X[i: i <span class="op">+</span> p_h, j: j <span class="op">+</span> p_w]))</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Y</span></code></pre></div>
+<p>Nous pouvons construire le tenseur d’entrée <code>X</code> de la
+fig_pooling pour <strong>valider la sortie de la couche de regroupement
+maximal bidimensionnelle</strong>.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.tensor([[<span class="fl">0.0</span>, <span class="fl">1.0</span>, <span class="fl">2.0</span>], [<span class="fl">3.0</span>, <span class="fl">4.0</span>, <span class="fl">5.0</span>], [<span class="fl">6.0</span>, <span class="fl">7.0</span>, <span class="fl">8.0</span>]])</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>pool2d(X, (<span class="dv">2</span>, <span class="dv">2</span>))</span></code></pre></div>
+<p>De plus, nous pouvons expérimenter avec (<strong>la couche de
+regroupement moyen</strong>).</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>pool2d(X, (<span class="dv">2</span>, <span class="dv">2</span>), <span class="st">&#39;avg&#39;</span>)</span></code></pre></div>
+<h2 id="remplissage-et-pas"><strong>Remplissage et pas</strong></h2>
+<p>Comme pour les couches convolutives, les couches de regroupement
+modifient la forme de la sortie. Et comme précédemment, nous pouvons
+ajuster l’opération pour obtenir une forme de sortie souhaitée en
+ajoutant du remplissage à l’entrée et en ajustant le pas. Nous pouvons
+démontrer l’utilisation du remplissage et des pas dans les couches de
+regroupement via la couche de regroupement maximal bidimensionnelle
+intégrée du framework d’apprentissage profond. Nous construisons d’abord
+un tenseur d’entrée <code>X</code> dont la forme comporte quatre
+dimensions, où le nombre d’exemples (taille de lot) et le nombre de
+canaux sont tous deux de 1.</p>
+<p>:begin_tab:<code>tensorflow</code> Notez que contrairement à d’autres
+frameworks, TensorFlow préfère et est optimisé pour les entrées avec les
+canaux en dernier (<em>channels-last</em>). :end_tab:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.reshape(d2l.arange(<span class="dv">16</span>, dtype<span class="op">=</span>d2l.float32), (<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">4</span>))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>X</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow, jax</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.reshape(d2l.arange(<span class="dv">16</span>, dtype<span class="op">=</span>d2l.float32), (<span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">1</span>))</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>X</span></code></pre></div>
+<p>Comme le regroupement agrège les informations d’une zone,
+(<strong>les frameworks d’apprentissage profond font correspondre par
+défaut les tailles de fenêtre de regroupement et le pas.</strong>) Par
+exemple, si nous utilisons une fenêtre de regroupement de forme
+<code>(3, 3)</code>, nous obtenons un pas de forme <code>(3, 3)</code>
+par défaut.</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> nn.MaxPool2D(<span class="dv">3</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Pooling has no model parameters, hence it needs no initialization</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>pool2d(X)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> nn.MaxPool2d(<span class="dv">3</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Pooling has no model parameters, hence it needs no initialization</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>pool2d(X)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> tf.keras.layers.MaxPool2D(pool_size<span class="op">=</span>[<span class="dv">3</span>, <span class="dv">3</span>])</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Pooling has no model parameters, hence it needs no initialization</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>pool2d(X)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Pooling has no model parameters, hence it needs no initialization</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>nn.max_pool(X, window_shape<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>), strides<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>))</span></code></pre></div>
+<p>Inutile de dire que <strong>le pas et le remplissage peuvent être
+spécifiés manuellement</strong> pour outrepasser les valeurs par défaut
+du framework si nécessaire.</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> nn.MaxPool2D(<span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>, strides<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>pool2d(X)</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> nn.MaxPool2d(<span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>, stride<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>pool2d(X)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>paddings <span class="op">=</span> tf.constant([[<span class="dv">0</span>, <span class="dv">0</span>], [<span class="dv">1</span>,<span class="dv">0</span>], [<span class="dv">1</span>,<span class="dv">0</span>], [<span class="dv">0</span>,<span class="dv">0</span>]])</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>X_padded <span class="op">=</span> tf.pad(X, paddings, <span class="st">&quot;CONSTANT&quot;</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> tf.keras.layers.MaxPool2D(pool_size<span class="op">=</span>[<span class="dv">3</span>, <span class="dv">3</span>], padding<span class="op">=</span><span class="st">&#39;valid&#39;</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>                                   strides<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>pool2d(X_padded)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>X_padded <span class="op">=</span> jnp.pad(X, ((<span class="dv">0</span>, <span class="dv">0</span>), (<span class="dv">1</span>, <span class="dv">0</span>), (<span class="dv">1</span>, <span class="dv">0</span>), (<span class="dv">0</span>, <span class="dv">0</span>)), mode<span class="op">=</span><span class="st">&#39;constant&#39;</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>nn.max_pool(X_padded, window_shape<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>), padding<span class="op">=</span><span class="st">&#39;VALID&#39;</span>, strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span></code></pre></div>
+<p>Bien sûr, nous pouvons spécifier une fenêtre de regroupement
+rectangulaire arbitraire avec respectivement une hauteur et une largeur
+arbitraires, comme le montre l’exemple ci-dessous.</p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> nn.MaxPool2D((<span class="dv">2</span>, <span class="dv">3</span>), padding<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">1</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">3</span>))</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>pool2d(X)</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> nn.MaxPool2d((<span class="dv">2</span>, <span class="dv">3</span>), stride<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">3</span>), padding<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>pool2d(X)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>paddings <span class="op">=</span> tf.constant([[<span class="dv">0</span>, <span class="dv">0</span>], [<span class="dv">0</span>, <span class="dv">0</span>], [<span class="dv">1</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">0</span>]])</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>X_padded <span class="op">=</span> tf.pad(X, paddings, <span class="st">&quot;CONSTANT&quot;</span>)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> tf.keras.layers.MaxPool2D(pool_size<span class="op">=</span>[<span class="dv">2</span>, <span class="dv">3</span>], padding<span class="op">=</span><span class="st">&#39;valid&#39;</span>,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>                                   strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">3</span>))</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>pool2d(X_padded)</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>X_padded <span class="op">=</span> jnp.pad(X, ((<span class="dv">0</span>, <span class="dv">0</span>), (<span class="dv">0</span>, <span class="dv">0</span>), (<span class="dv">1</span>, <span class="dv">1</span>), (<span class="dv">0</span>, <span class="dv">0</span>)), mode<span class="op">=</span><span class="st">&#39;constant&#39;</span>)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>nn.max_pool(X_padded, window_shape<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">3</span>), strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">3</span>), padding<span class="op">=</span><span class="st">&#39;VALID&#39;</span>)</span></code></pre></div>
+<h2 id="canaux-multiples">Canaux multiples</h2>
+<p>Lors du traitement de données d’entrée multicanaux, <strong>la couche
+de regroupement traite chaque canal d’entrée séparément</strong>, plutôt
+que de sommer les entrées sur les canaux comme dans une couche
+convolutive. Cela signifie que le nombre de canaux de sortie pour la
+couche de regroupement est le même que le nombre de canaux d’entrée.
+Ci-dessous, nous allons concaténer les tenseurs <code>X</code> et
+<code>X + 1</code> sur la dimension du canal pour construire une entrée
+avec deux canaux.</p>
+<p>:begin_tab:<code>tensorflow</code> Notez que cela nécessitera une
+concaténation le long de la dernière dimension pour TensorFlow en raison
+de la syntaxe <em>channels-last</em>. :end_tab:</p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.concat((X, X <span class="op">+</span> <span class="dv">1</span>), <span class="dv">1</span>)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>X</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow, jax</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Concatenate along `dim=3` due to channels-last syntax</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.concat([X, X <span class="op">+</span> <span class="dv">1</span>], <span class="dv">3</span>)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>X</span></code></pre></div>
+<p>Comme nous pouvons le voir, le nombre de canaux de sortie est
+toujours de deux après le regroupement.</p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> nn.MaxPool2D(<span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>, strides<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>pool2d(X)</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> nn.MaxPool2d(<span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>, stride<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>pool2d(X)</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>paddings <span class="op">=</span> tf.constant([[<span class="dv">0</span>, <span class="dv">0</span>], [<span class="dv">1</span>,<span class="dv">0</span>], [<span class="dv">1</span>,<span class="dv">0</span>], [<span class="dv">0</span>,<span class="dv">0</span>]])</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>X_padded <span class="op">=</span> tf.pad(X, paddings, <span class="st">&quot;CONSTANT&quot;</span>)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>pool2d <span class="op">=</span> tf.keras.layers.MaxPool2D(pool_size<span class="op">=</span>[<span class="dv">3</span>, <span class="dv">3</span>], padding<span class="op">=</span><span class="st">&#39;valid&#39;</span>,</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>                                   strides<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>pool2d(X_padded)</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>X_padded <span class="op">=</span> jnp.pad(X, ((<span class="dv">0</span>, <span class="dv">0</span>), (<span class="dv">1</span>, <span class="dv">0</span>), (<span class="dv">1</span>, <span class="dv">0</span>), (<span class="dv">0</span>, <span class="dv">0</span>)), mode<span class="op">=</span><span class="st">&#39;constant&#39;</span>)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>nn.max_pool(X_padded, window_shape<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>), padding<span class="op">=</span><span class="st">&#39;VALID&#39;</span>, strides<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">2</span>))</span></code></pre></div>
+<p>:begin_tab:<code>tensorflow</code> Notez que la sortie pour le
+regroupement TensorFlow semble à première vue différente, cependant
+numériquement les mêmes résultats sont présentés que pour MXNet et
+PyTorch. La différence réside dans la dimensionnalité, et la lecture
+verticale de la sortie donne le même résultat que les autres
+implémentations. :end_tab:</p>
+<h2 id="résumé">Résumé</h2>
+<p>Le regroupement est une opération extrêmement simple. Il fait
+exactement ce que son nom indique : agréger les résultats sur une
+fenêtre de valeurs. Toutes les sémantiques de convolution, telles que
+les pas et le remplissage, s’appliquent de la même manière
+qu’auparavant. Notez que le regroupement est indifférent aux canaux,
+c’est-à-dire qu’il laisse le nombre de canaux inchangé et qu’il
+s’applique à chaque canal séparément. Enfin, parmi les deux choix de
+regroupement populaires, le regroupement maximal est préférable au
+regroupement moyen, car il confère un certain degré d’invariance à la
+sortie. Un choix courant consiste à choisir une taille de fenêtre de
+regroupement de <span class="math inline">\(2 \times 2\)</span> pour
+diviser par quatre la résolution spatiale de la sortie.</p>
+<p>Notez qu’il existe de nombreuses autres façons de réduire la
+résolution au-delà du regroupement. Par exemple, dans le regroupement
+stochastique [Zeiler.Fergus.2013] et le regroupement maximal
+fractionnaire [Graham.2014], l’agrégation est combinée à la
+randomisation. Cela peut légèrement améliorer la précision dans certains
+cas. Enfin, comme nous le verrons plus tard avec le mécanisme
+d’attention, il existe des moyens plus raffinés d’agréger les sorties,
+par exemple en utilisant l’alignement entre une requête et des vecteurs
+de représentation.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Implémentez le regroupement moyen via une convolution.</li>
+<li>Prouvez que le regroupement maximal ne peut pas être implémenté par
+une convolution seule.</li>
+<li>Le regroupement maximal peut être réalisé à l’aide d’opérations
+ReLU, c’est-à-dire <span class="math inline">\(\textrm{ReLU}(x) =
+\max(0, x)\)</span>.
+<ol type="1">
+<li>Exprimez <span class="math inline">\(\max (a, b)\)</span> en
+utilisant uniquement des opérations ReLU.</li>
+<li>Utilisez ceci pour implémenter le regroupement maximal au moyen de
+convolutions et de couches ReLU.</li>
+<li>De combien de canaux et de couches avez-vous besoin pour une
+convolution <span class="math inline">\(2 \times 2\)</span> ? Combien
+pour une convolution <span class="math inline">\(3 \times 3\)</span>
+?</li>
+</ol></li>
+<li>Quel est le coût de calcul de la couche de regroupement ? Supposons
+que l’entrée de la couche de regroupement soit de taille <span
+class="math inline">\(c\times h\times w\)</span>, que la fenêtre de
+regroupement ait une forme de <span
+class="math inline">\(p_\textrm{h}\times p_\textrm{w}\)</span> avec un
+remplissage de <span class="math inline">\((p_\textrm{h},
+p_\textrm{w})\)</span> et un pas de <span
+class="math inline">\((s_\textrm{h}, s_\textrm{w})\)</span>.</li>
+<li>Pourquoi vous attendez-vous à ce que le regroupement maximal et le
+regroupement moyen fonctionnent différemment ?</li>
+<li>Avons-nous besoin d’une couche de regroupement minimale séparée ?
+Pouvez-vous la remplacer par une autre opération ?</li>
+<li>Nous pourrions utiliser l’opération softmax pour le regroupement.
+Pourquoi ne serait-elle pas si populaire ?</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/71">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/72">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/274">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/17999">Discussions</a> :end_tab:</p>
+<div class="navlinks"><a class="prev" href="channels.html">&larr; Canaux d&#x27;entrée et de sortie multiples</a><a class="next" href="lenet.html">Réseaux de neurones convolutifs (LeNet) &rarr;</a></div></main></div></body></html>

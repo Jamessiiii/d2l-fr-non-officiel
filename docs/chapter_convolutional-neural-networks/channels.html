@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canaux d&#x27;entrée et de sortie multiples - Dive into Deep Learning FR</title>
+<link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css">
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid #d8dee4;padding:24px 18px;background:#f6f8fa;position:sticky;top:0;height:100vh;overflow:auto}.sidebar h1{font-size:16px;margin:0 0 16px}.sidebar ol{padding-left:22px;line-height:1.55}.sidebar a,.navlinks a{color:#245a9c;text-decoration:none}.content{max-width:980px;padding:32px 44px 56px}.navlinks{display:flex;justify-content:space-between;gap:20px;margin:28px 0}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}img{max-width:100%;height:auto}@media(max-width:760px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid #d8dee4}.content{padding:24px 18px 42px}}</style>
+</head><body><div class="layout"><nav class="sidebar"><h1><a href="../index.html">D2L français</a></h1><ol><li><a href="index.html">Réseaux de neurones convolutifs</a></li>
+<li><a href="why-conv.html">Des couches entièrement connectées aux convolutions</a></li>
+<li><a href="conv-layer.html">Convolutions pour les images</a></li>
+<li><a href="padding-and-strides.html">Remplissage et pas</a></li>
+<li><a href="channels.html">Canaux d&#x27;entrée et de sortie multiples</a></li>
+<li><a href="pooling.html">Regroupement</a></li>
+<li><a href="lenet.html">Réseaux de neurones convolutifs (LeNet)</a></li></ol></nav><main class="content"><div class="navlinks"><a class="prev" href="padding-and-strides.html">&larr; Remplissage et pas</a><a class="next" href="pooling.html">Regroupement &rarr;</a></div><div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="canaux-dentrée-et-de-sortie-multiples">Canaux d’entrée et de
+sortie multiples</h1>
+<p><a id="sec_channels"></a> Bien que nous ayons décrit les multiples
+canaux qui composent chaque image (par exemple, les images couleur
+possèdent les canaux standard RVB pour indiquer la quantité de rouge, de
+vert et de bleu) et les couches convolutives pour plusieurs canaux dans
+subsec_why-conv-channels, jusqu’à présent, nous avons simplifié tous nos
+exemples numériques en travaillant avec un seul canal d’entrée et un
+seul canal de sortie. Cela nous a permis de considérer nos entrées, nos
+noyaux de convolution et nos sorties comme des tenseurs
+bidimensionnels.</p>
+<p>Lorsque nous ajoutons des canaux, nos entrées et nos représentations
+cachées deviennent toutes deux des tenseurs tridimensionnels. Par
+exemple, chaque image d’entrée RVB a une forme de <span
+class="math inline">\(3\times h\times w\)</span>. Nous appelons cet axe,
+d’une taille de 3, la dimension des <em>canaux</em>. La notion de canaux
+est aussi ancienne que les CNN eux-mêmes : par exemple LeNet-5
+[LeCun.Jackel.Bottou.ea.1995] les utilise. Dans cette section, nous
+examinerons de plus près les noyaux de convolution avec plusieurs canaux
+d’entrée et plusieurs canaux de sortie.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> mxnet <span class="im">as</span> d2l</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> np, npx</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> torch <span class="im">as</span> d2l</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> tensorflow <span class="im">as</span> d2l</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span></code></pre></div>
+<h2 id="canaux-dentrée-multiples">Canaux d’entrée multiples</h2>
+<p>Lorsque les données d’entrée contiennent plusieurs canaux, nous
+devons construire un noyau de convolution avec le même nombre de canaux
+d’entrée que les données d’entrée, afin qu’il puisse effectuer une
+corrélation croisée avec les données d’entrée. En supposant que le
+nombre de canaux pour les données d’entrée est <span
+class="math inline">\(c_\textrm{i}\)</span>, le nombre de canaux
+d’entrée du noyau de convolution doit également être <span
+class="math inline">\(c_\textrm{i}\)</span>. Si la forme de la fenêtre
+de notre noyau de convolution est <span
+class="math inline">\(k_\textrm{h}\times k_\textrm{w}\)</span>, alors,
+quand <span class="math inline">\(c_\textrm{i}=1\)</span>, nous pouvons
+considérer notre noyau de convolution comme un simple tenseur
+bidimensionnel de forme <span class="math inline">\(k_\textrm{h}\times
+k_\textrm{w}\)</span>.</p>
+<p>Cependant, quand <span
+class="math inline">\(c_\textrm{i}&gt;1\)</span>, nous avons besoin d’un
+noyau qui contient un tenseur de forme <span
+class="math inline">\(k_\textrm{h}\times k_\textrm{w}\)</span> pour
+<em>chaque</em> canal d’entrée. La concaténation de ces tenseurs <span
+class="math inline">\(c_\textrm{i}\)</span> donne un noyau de
+convolution de forme <span class="math inline">\(c_\textrm{i}\times
+k_\textrm{h}\times k_\textrm{w}\)</span>. Puisque l’entrée et le noyau
+de convolution ont chacun <span
+class="math inline">\(c_\textrm{i}\)</span> canaux, nous pouvons
+effectuer une opération de corrélation croisée sur le tenseur
+bidimensionnel de l’entrée et le tenseur bidimensionnel du noyau de
+convolution pour chaque canal, en additionnant les <span
+class="math inline">\(c_\textrm{i}\)</span> résultats (sommation sur les
+canaux) pour obtenir un tenseur bidimensionnel. C’est le résultat d’une
+corrélation croisée bidimensionnelle entre une entrée multicanal et un
+noyau de convolution à plusieurs canaux d’entrée.</p>
+<p>fig_conv_multi_in fournit un exemple de corrélation croisée
+bidimensionnelle avec deux canaux d’entrée. Les parties ombrées
+représentent le premier élément de sortie ainsi que les éléments des
+tenseurs d’entrée et de noyau utilisés pour le calcul de la sortie :
+<span
+class="math inline">\((1\times1+2\times2+4\times3+5\times4)+(0\times0+1\times1+3\times2+4\times3)=56\)</span>.</p>
+<p><img src="img/conv-multi-in.svg"
+alt="Calcul de corrélation croisée avec deux canaux d’entrée." />
+<a id="fig_conv_multi_in"></a> Pour nous assurer de bien comprendre ce
+qui se passe ici, nous pouvons (<strong>implémenter nous-mêmes des
+opérations de corrélation croisée avec plusieurs canaux
+d’entrée</strong>). Notez que tout ce que nous faisons est d’effectuer
+une opération de corrélation croisée par canal, puis d’additionner les
+résultats.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch, jax</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> corr2d_multi_in(X, K):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Iterate through the 0th dimension (channel) of K first, then add them up</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">sum</span>(d2l.corr2d(x, k) <span class="cf">for</span> x, k <span class="kw">in</span> <span class="bu">zip</span>(X, K))</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> corr2d_multi_in(X, K):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Iterate through the 0th dimension (channel) of K first, then add them up</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tf.reduce_sum([d2l.corr2d(x, k) <span class="cf">for</span> x, k <span class="kw">in</span> <span class="bu">zip</span>(X, K)], axis<span class="op">=</span><span class="dv">0</span>)</span></code></pre></div>
+<p>Nous pouvons construire le tenseur d’entrée <code>X</code> et le
+tenseur de noyau <code>K</code> correspondant aux valeurs de la
+fig_conv_multi_in pour (<strong>valider la sortie</strong>) de
+l’opération de corrélation croisée.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.tensor([[[<span class="fl">0.0</span>, <span class="fl">1.0</span>, <span class="fl">2.0</span>], [<span class="fl">3.0</span>, <span class="fl">4.0</span>, <span class="fl">5.0</span>], [<span class="fl">6.0</span>, <span class="fl">7.0</span>, <span class="fl">8.0</span>]],</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>               [[<span class="fl">1.0</span>, <span class="fl">2.0</span>, <span class="fl">3.0</span>], [<span class="fl">4.0</span>, <span class="fl">5.0</span>, <span class="fl">6.0</span>], [<span class="fl">7.0</span>, <span class="fl">8.0</span>, <span class="fl">9.0</span>]]])</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> d2l.tensor([[[<span class="fl">0.0</span>, <span class="fl">1.0</span>], [<span class="fl">2.0</span>, <span class="fl">3.0</span>]], [[<span class="fl">1.0</span>, <span class="fl">2.0</span>], [<span class="fl">3.0</span>, <span class="fl">4.0</span>]]])</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>corr2d_multi_in(X, K)</span></code></pre></div>
+<h2 id="canaux-de-sortie-multiples">Canaux de sortie multiples</h2>
+<p><a id="subsec_multi-output-channels"></a> Quel que soit le nombre de
+canaux d’entrée, nous avons jusqu’à présent toujours obtenu un seul
+canal de sortie. Cependant, comme nous l’avons vu dans la
+subsec_why-conv-channels, il s’avère essentiel d’avoir plusieurs canaux
+à chaque couche. Dans les architectures de réseaux de neurones les plus
+populaires, nous augmentons en fait la dimension des canaux à mesure que
+nous nous enfonçons dans le réseau de neurones, en effectuant
+généralement un sous-échantillonnage pour échanger la résolution
+spatiale contre une plus grande <em>profondeur de canaux</em>.
+Intuitivement, on pourrait penser que chaque canal répond à un ensemble
+différent de caractéristiques. La réalité est un peu plus complexe que
+cela. Une interprétation naïve suggérerait que les représentations sont
+apprises indépendamment par pixel ou par canal. Au lieu de cela, les
+canaux sont optimisés pour être conjointement utiles. Cela signifie que
+plutôt que de faire correspondre un seul canal à un détecteur de bord,
+cela peut simplement signifier qu’une certaine direction dans l’espace
+des canaux correspond à la détection de bords.</p>
+<p>Désignons par <span class="math inline">\(c_\textrm{i}\)</span> et
+<span class="math inline">\(c_\textrm{o}\)</span> le nombre de canaux
+d’entrée et de sortie, respectivement, et par <span
+class="math inline">\(k_\textrm{h}\)</span> et <span
+class="math inline">\(k_\textrm{w}\)</span> la hauteur et la largeur du
+noyau. Pour obtenir une sortie avec plusieurs canaux, nous pouvons créer
+un tenseur de noyau de forme <span
+class="math inline">\(c_\textrm{i}\times k_\textrm{h}\times
+k_\textrm{w}\)</span> pour <em>chaque</em> canal de sortie. Nous les
+concaténons sur la dimension des canaux de sortie, de sorte que la forme
+du noyau de convolution soit <span
+class="math inline">\(c_\textrm{o}\times c_\textrm{i}\times
+k_\textrm{h}\times k_\textrm{w}\)</span>. Dans les opérations de
+corrélation croisée, le résultat sur chaque canal de sortie est calculé
+à partir du noyau de convolution correspondant à ce canal de sortie et
+utilise les entrées de tous les canaux du tenseur d’entrée.</p>
+<p>Nous implémentons une fonction de corrélation croisée pour
+<strong>calculer la sortie de plusieurs canaux</strong> comme indiqué
+ci-dessous.</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> corr2d_multi_in_out(X, K):</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Iterate through the 0th dimension of K, and each time, perform</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># cross-correlation operations with input X. All of the results are</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># stacked together</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> d2l.stack([corr2d_multi_in(X, k) <span class="cf">for</span> k <span class="kw">in</span> K], <span class="dv">0</span>)</span></code></pre></div>
+<p>Nous construisons un noyau de convolution trivial avec trois canaux
+de sortie en concaténant le tenseur de noyau <code>K</code> avec
+<code>K+1</code> et <code>K+2</code>.</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> d2l.stack((K, K <span class="op">+</span> <span class="dv">1</span>, K <span class="op">+</span> <span class="dv">2</span>), <span class="dv">0</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>K.shape</span></code></pre></div>
+<p>Ci-dessous, nous effectuons des opérations de corrélation croisée sur
+le tenseur d’entrée <code>X</code> avec le tenseur de noyau
+<code>K</code>. Maintenant, la sortie contient trois canaux. Le résultat
+du premier canal est cohérent avec le résultat du tenseur d’entrée
+<code>X</code> précédent et du noyau à plusieurs canaux d’entrée et un
+seul canal de sortie.</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>corr2d_multi_in_out(X, K)</span></code></pre></div>
+<h2 id="couche-convolutive-1times-1">Couche convolutive <span
+class="math inline">\(1\times 1\)</span></h2>
+<p><a id="subsec_1x1"></a> À première vue, une <strong>convolution <span
+class="math inline">\(1 \times 1\)</span></strong>, c’est-à-dire <span
+class="math inline">\(k_\textrm{h} = k_\textrm{w} = 1\)</span>, ne
+semble pas avoir beaucoup de sens. Après tout, une convolution corrèle
+les pixels adjacents. Une convolution <span class="math inline">\(1
+\times 1\)</span> ne le fait évidemment pas. Néanmoins, ce sont des
+opérations populaires qui sont parfois incluses dans la conception de
+réseaux profonds complexes
+[Lin.Chen.Yan.2013,Szegedy.Ioffe.Vanhoucke.ea.2017]. Voyons plus en
+détail ce qu’elle fait réellement.</p>
+<p>Comme la fenêtre minimale est utilisée, la convolution <span
+class="math inline">\(1\times 1\)</span> perd la capacité des couches
+convolutives plus larges à reconnaître des motifs constitués
+d’interactions entre des éléments adjacents dans les dimensions de
+hauteur et de largeur. Le seul calcul de la convolution <span
+class="math inline">\(1\times 1\)</span> se produit sur la dimension des
+canaux.</p>
+<p>La fig_conv_1x1 montre le calcul de corrélation croisée utilisant le
+noyau de convolution <span class="math inline">\(1\times 1\)</span> avec
+3 canaux d’entrée et 2 canaux de sortie. Notez que les entrées et les
+sorties ont les mêmes hauteur et largeur. Chaque élément de la sortie
+est dérivé d’une combinaison linéaire d’éléments <em>à la même
+position</em> dans l’image d’entrée. Vous pourriez considérer la couche
+convolutive <span class="math inline">\(1\times 1\)</span> comme
+constituant une couche entièrement connectée appliquée à chaque
+emplacement de pixel pour transformer les <span
+class="math inline">\(c_\textrm{i}\)</span> valeurs d’entrée
+correspondantes en <span class="math inline">\(c_\textrm{o}\)</span>
+valeurs de sortie. Comme il s’agit toujours d’une couche convolutive,
+les poids sont partagés entre les emplacements de pixels. Ainsi, la
+couche convolutive <span class="math inline">\(1\times 1\)</span>
+nécessite <span class="math inline">\(c_\textrm{o}\times
+c_\textrm{i}\)</span> poids (plus le biais). Notez également que les
+couches convolutives sont généralement suivies par des non-linéarités.
+Cela garantit que les convolutions <span class="math inline">\(1 \times
+1\)</span> ne peuvent pas simplement être fusionnées dans d’autres
+convolutions.</p>
+<p><img src="img/conv-1x1.svg"
+alt="Le calcul de corrélation croisée utilise le noyau de convolution 1\times 1 avec trois canaux d’entrée et deux canaux de sortie. L’entrée et la sortie ont les mêmes hauteur et largeur." />
+<a id="fig_conv_1x1"></a> Vérifions si cela fonctionne en pratique :
+nous implémentons une convolution <span class="math inline">\(1 \times
+1\)</span> en utilisant une couche entièrement connectée. La seule chose
+est que nous devons faire quelques ajustements à la forme des données
+avant et après la multiplication matricielle.</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab <span class="bu">all</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> corr2d_multi_in_out_1x1(X, K):</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    c_i, h, w <span class="op">=</span> X.shape</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    c_o <span class="op">=</span> K.shape[<span class="dv">0</span>]</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> d2l.reshape(X, (c_i, h <span class="op">*</span> w))</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    K <span class="op">=</span> d2l.reshape(K, (c_o, c_i))</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Matrix multiplication in the fully connected layer</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> d2l.matmul(K, X)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> d2l.reshape(Y, (c_o, h, w))</span></code></pre></div>
+<p>Lors de l’exécution de convolutions <span
+class="math inline">\(1\times 1\)</span>, la fonction ci-dessus est
+équivalente à la fonction de corrélation croisée
+<code>corr2d_multi_in_out</code> précédemment implémentée. Vérifions
+cela avec quelques données d’exemple.</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet, pytorch</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.normal(<span class="dv">0</span>, <span class="dv">1</span>, (<span class="dv">3</span>, <span class="dv">3</span>, <span class="dv">3</span>))</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> d2l.normal(<span class="dv">0</span>, <span class="dv">1</span>, (<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">1</span>))</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>Y1 <span class="op">=</span> corr2d_multi_in_out_1x1(X, K)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>Y2 <span class="op">=</span> corr2d_multi_in_out(X, K)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">float</span>(d2l.reduce_sum(d2l.<span class="bu">abs</span>(Y1 <span class="op">-</span> Y2))) <span class="op">&lt;</span> <span class="fl">1e-6</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> d2l.normal((<span class="dv">3</span>, <span class="dv">3</span>, <span class="dv">3</span>), <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> d2l.normal((<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">1</span>), <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>Y1 <span class="op">=</span> corr2d_multi_in_out_1x1(X, K)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>Y2 <span class="op">=</span> corr2d_multi_in_out(X, K)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">float</span>(d2l.reduce_sum(d2l.<span class="bu">abs</span>(Y1 <span class="op">-</span> Y2))) <span class="op">&lt;</span> <span class="fl">1e-6</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> jax.random.normal(jax.random.PRNGKey(d2l.get_seed()), (<span class="dv">3</span>, <span class="dv">3</span>, <span class="dv">3</span>)) <span class="op">+</span> <span class="dv">0</span> <span class="op">*</span> <span class="dv">1</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>K <span class="op">=</span> jax.random.normal(jax.random.PRNGKey(d2l.get_seed()), (<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">1</span>)) <span class="op">+</span> <span class="dv">0</span> <span class="op">*</span> <span class="dv">1</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>Y1 <span class="op">=</span> corr2d_multi_in_out_1x1(X, K)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>Y2 <span class="op">=</span> corr2d_multi_in_out(X, K)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">float</span>(d2l.reduce_sum(d2l.<span class="bu">abs</span>(Y1 <span class="op">-</span> Y2))) <span class="op">&lt;</span> <span class="fl">1e-6</span></span></code></pre></div>
+<h2 id="discussion">Discussion</h2>
+<p>Les canaux nous permettent de combiner le meilleur des deux mondes :
+les MLP qui permettent des non-linéarités significatives et les
+convolutions qui permettent une analyse <em>localisée</em> des
+caractéristiques. En particulier, les canaux permettent au CNN de
+raisonner avec plusieurs caractéristiques, telles que des détecteurs de
+bords et de formes, en même temps. Ils offrent également un compromis
+pratique entre la réduction drastique des paramètres découlant de
+l’invariance par translation et de la localité, et le besoin de modèles
+expressifs et diversifiés en vision par ordinateur.</p>
+<p>Notez cependant que cette flexibilité a un prix. Étant donné une
+image de taille <span class="math inline">\((h \times w)\)</span>, le
+coût du calcul d’une convolution <span class="math inline">\(k \times
+k\)</span> est <span class="math inline">\(\mathcal{O}(h \cdot w \cdot
+k^2)\)</span>. Pour <span class="math inline">\(c_\textrm{i}\)</span> et
+<span class="math inline">\(c_\textrm{o}\)</span> canaux d’entrée et de
+sortie respectivement, cela passe à <span
+class="math inline">\(\mathcal{O}(h \cdot w \cdot k^2 \cdot c_\textrm{i}
+\cdot c_\textrm{o})\)</span>. Pour une image de <span
+class="math inline">\(256 \times 256\)</span> pixels avec un noyau <span
+class="math inline">\(5 \times 5\)</span> et 128 canaux d’entrée et de
+sortie respectivement, cela représente plus de 53 milliards d’opérations
+(nous comptons les multiplications et les additions séparément). Plus
+tard, nous rencontrerons des stratégies efficaces pour réduire ce coût,
+par exemple en exigeant que les opérations par canal soient
+blocs-diagonales, ce qui conduit à des architectures telles que ResNeXt
+[Xie.Girshick.Dollar.ea.2017].</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Supposons que nous ayons deux noyaux de convolution de tailles <span
+class="math inline">\(k_1\)</span> et <span
+class="math inline">\(k_2\)</span>, respectivement (sans non-linéarité
+entre les deux).
+<ol type="1">
+<li>Prouvez que le résultat de l’opération peut être exprimé par une
+seule convolution.</li>
+<li>Quelle est la dimensionnalité de la convolution unique équivalente
+?</li>
+<li>L’inverse est-il vrai, c’est-à-dire pouvez-vous toujours décomposer
+une convolution en deux plus petites ?</li>
+</ol></li>
+<li>Supposons une entrée de forme <span
+class="math inline">\(c_\textrm{i}\times h\times w\)</span> et un noyau
+de convolution de forme <span class="math inline">\(c_\textrm{o}\times
+c_\textrm{i}\times k_\textrm{h}\times k_\textrm{w}\)</span>, un
+remplissage (<em>padding</em>) de <span
+class="math inline">\((p_\textrm{h}, p_\textrm{w})\)</span> et un pas
+(<em>stride</em>) de <span class="math inline">\((s_\textrm{h},
+s_\textrm{w})\)</span>.
+<ol type="1">
+<li>Quel est le coût de calcul (multiplications et additions) pour la
+propagation avant ?</li>
+<li>Quelle est l’empreinte mémoire ?</li>
+<li>Quelle est l’empreinte mémoire pour le calcul arrière ?</li>
+<li>Quel est le coût de calcul pour la rétropropagation ?</li>
+</ol></li>
+<li>Par quel facteur le nombre de calculs augmente-t-il si nous doublons
+à la fois le nombre de canaux d’entrée <span
+class="math inline">\(c_\textrm{i}\)</span> et le nombre de canaux de
+sortie <span class="math inline">\(c_\textrm{o}\)</span> ? Que se
+passe-t-il si nous doublons le remplissage ?</li>
+<li>Les variables <code>Y1</code> et <code>Y2</code> dans le dernier
+exemple de cette section sont-elles exactement les mêmes ? Pourquoi
+?</li>
+<li>Exprimez les convolutions sous forme de multiplication matricielle,
+même lorsque la fenêtre de convolution n’est pas <span
+class="math inline">\(1 \times 1\)</span>.</li>
+<li>Votre tâche consiste à implémenter des convolutions rapides avec un
+noyau <span class="math inline">\(k \times k\)</span>. L’un des
+algorithmes candidats consiste à balayer horizontalement la source, en
+lisant une bande de largeur <span class="math inline">\(k\)</span> et en
+calculant la bande de sortie de largeur <span
+class="math inline">\(1\)</span>, une valeur à la fois. L’alternative
+consiste à lire une bande de largeur <span class="math inline">\(k +
+\Delta\)</span> et à calculer une bande de sortie de largeur <span
+class="math inline">\(\Delta\)</span>. Pourquoi cette dernière solution
+est-elle préférable ? Y a-t-il une limite à la taille de <span
+class="math inline">\(\Delta\)</span> que vous devriez choisir ?</li>
+<li>Supposons que nous ayons une matrice <span class="math inline">\(c
+\times c\)</span>.
+<ol type="1">
+<li>À quel point est-il plus rapide de multiplier par une matrice
+blocs-diagonale si la matrice est divisée en <span
+class="math inline">\(b\)</span> blocs ?</li>
+<li>Quel est l’inconvénient d’avoir <span
+class="math inline">\(b\)</span> blocs ? Comment pourriez-vous y
+remédier, au moins partiellement ?</li>
+</ol></li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/69">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/70">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/273">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/17998">Discussions</a> :end_tab:</p>
+<div class="navlinks"><a class="prev" href="padding-and-strides.html">&larr; Remplissage et pas</a><a class="next" href="pooling.html">Regroupement &rarr;</a></div></main></div></body></html>

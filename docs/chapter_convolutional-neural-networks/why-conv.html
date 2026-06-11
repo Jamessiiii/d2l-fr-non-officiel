@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Des couches entièrement connectées aux convolutions - Dive into Deep Learning FR</title>
+<link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css">
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid #d8dee4;padding:24px 18px;background:#f6f8fa;position:sticky;top:0;height:100vh;overflow:auto}.sidebar h1{font-size:16px;margin:0 0 16px}.sidebar ol{padding-left:22px;line-height:1.55}.sidebar a,.navlinks a{color:#245a9c;text-decoration:none}.content{max-width:980px;padding:32px 44px 56px}.navlinks{display:flex;justify-content:space-between;gap:20px;margin:28px 0}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}img{max-width:100%;height:auto}@media(max-width:760px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid #d8dee4}.content{padding:24px 18px 42px}}</style>
+</head><body><div class="layout"><nav class="sidebar"><h1><a href="../index.html">D2L français</a></h1><ol><li><a href="index.html">Réseaux de neurones convolutifs</a></li>
+<li><a href="why-conv.html">Des couches entièrement connectées aux convolutions</a></li>
+<li><a href="conv-layer.html">Convolutions pour les images</a></li>
+<li><a href="padding-and-strides.html">Remplissage et pas</a></li>
+<li><a href="channels.html">Canaux d&#x27;entrée et de sortie multiples</a></li>
+<li><a href="pooling.html">Regroupement</a></li>
+<li><a href="lenet.html">Réseaux de neurones convolutifs (LeNet)</a></li></ol></nav><main class="content"><div class="navlinks"><a class="prev" href="index.html">&larr; Réseaux de neurones convolutifs</a><a class="next" href="conv-layer.html">Convolutions pour les images &rarr;</a></div><h1 id="des-couches-entièrement-connectées-aux-convolutions">Des couches
+entièrement connectées aux convolutions</h1>
+<p><a id="sec_why-conv"></a> À ce jour, les modèles dont nous avons
+discuté jusqu’à présent restent des options appropriées lorsque nous
+traitons des données tabulaires. Par tabulaires, nous entendons que les
+données se composent de lignes correspondant à des exemples et de
+colonnes correspondant à des caractéristiques. Avec des données
+tabulaires, nous pourrions anticiper que les motifs que nous recherchons
+pourraient impliquer des interactions entre les caractéristiques, mais
+nous ne supposons aucune structure <em>a priori</em> concernant la
+manière dont les caractéristiques interagissent.</p>
+<p>Parfois, nous manquons véritablement de connaissances pour pouvoir
+guider la construction d’architectures plus sophistiquées. Dans ces
+cas-là, un MLP peut être le mieux que nous puissions faire. Cependant,
+pour des données perceptuelles de grande dimension, de tels réseaux sans
+structure peuvent devenir difficiles à gérer.</p>
+<p>Par exemple, revenons à notre exemple courant consistant à distinguer
+les chats des chiens. Supposons que nous fassions un travail minutieux
+de collecte de données, en collectant un jeu de données annoté de
+photographies d’un mégapixel. Cela signifie que chaque entrée du réseau
+possède un million de dimensions. Même une réduction agressive à mille
+dimensions cachées nécessiterait une couche entièrement connectée
+caractérisée par <span class="math inline">\(10^6 \times 10^3 =
+10^9\)</span> paramètres. À moins d’avoir beaucoup de GPU, un talent
+pour l’optimisation distribuée, et une patience extraordinaire,
+l’apprentissage des paramètres de ce réseau pourrait s’avérer
+irréalisable.</p>
+<p>Un lecteur attentif pourrait s’opposer à cet argument au motif qu’une
+résolution d’un mégapixel n’est peut-être pas nécessaire. Cependant,
+bien que nous puissions peut-être nous contenter de cent mille pixels,
+notre couche cachée de taille 1000 sous-estime grossièrement le nombre
+d’unités cachées qu’il faut pour apprendre de bonnes représentations
+d’images, de sorte qu’un système pratique nécessitera toujours des
+milliards de paramètres. De plus, l’apprentissage d’un classificateur en
+ajustant autant de paramètres pourrait nécessiter la collecte d’un
+ensemble de données énorme. Et pourtant, aujourd’hui, les humains comme
+les ordinateurs sont capables de distinguer assez bien les chats des
+chiens, ce qui semble contredire ces intuitions. C’est parce que les
+images présentent une structure riche qui peut être exploitée par les
+humains et les modèles d’apprentissage automatique. Les réseaux de
+neurones convolutifs (CNN) sont une manière créative que l’apprentissage
+automatique a adoptée pour exploiter certaines des structures connues
+dans les images naturelles.</p>
+<h2 id="invariance">Invariance</h2>
+<p>Imaginez que nous voulions détecter un objet dans une image. Il
+semble raisonnable que la méthode que nous utilisons pour reconnaître
+les objets ne soit pas trop préoccupée par l’emplacement précis de
+l’objet dans l’image. Idéalement, notre système devrait exploiter cette
+connaissance. Les cochons ne volent généralement pas et les avions ne
+nagent généralement pas. Néanmoins, nous devrions toujours reconnaître
+un cochon s’il apparaissait en haut de l’image. Nous pouvons nous
+inspirer ici du jeu pour enfants « Où est Charlie » (qui a lui-même
+inspiré de nombreuses imitations réelles, comme celle illustrée dans la
+img_waldo). Le jeu consiste en un certain nombre de scènes chaotiques
+débordantes d’activités. Charlie apparaît quelque part dans chacune,
+généralement tapi dans un endroit improbable. Le but du lecteur est de
+le localiser. Malgré sa tenue caractéristique, cela peut être
+étonnamment difficile, en raison du grand nombre de distractions.
+Cependant, <em>ce à quoi ressemble Charlie</em> ne dépend pas de
+<em>l’endroit où se trouve Charlie</em>. Nous pourrions balayer l’image
+avec un détecteur de Charlie qui pourrait attribuer un score à chaque
+patch, indiquant la probabilité que le patch contienne Charlie. En fait,
+de nombreux algorithmes de détection d’objets et de segmentation sont
+basés sur cette approche [Long.Shelhamer.Darrell.2015]. Les CNN
+systématisent cette idée d’<em>invariance spatiale</em>, l’exploitant
+pour apprendre des représentations utiles avec moins de paramètres.</p>
+<p><img src="img/waldo-football.jpg"
+alt="Pouvez-vous trouver Charlie (image avec l’aimable autorisation de William Murphy (Infomatique)) ?" />
+:width:<code>400px</code> <a id="img_waldo"></a> Nous pouvons maintenant
+rendre ces intuitions plus concrètes en énumérant quelques desiderata
+pour guider notre conception d’une architecture de réseau de neurones
+adaptée à la vision par ordinateur :</p>
+<ol type="1">
+<li>Dans les premières couches, notre réseau devrait répondre de la même
+manière au même patch, quel que soit l’endroit où il apparaît dans
+l’image. Ce principe est appelé <em>invariance par translation</em> (ou
+<em>équivariance par translation</em>).</li>
+<li>Les premières couches du réseau devraient se concentrer sur les
+régions locales, sans tenir compte du contenu de l’image dans les
+régions éloignées. C’est le principe de <em>localité</em>. À terme, ces
+représentations locales peuvent être agrégées pour faire des prédictions
+au niveau de l’image entière.</li>
+<li>Au fur et à mesure que nous avançons, les couches plus profondes
+devraient être capables de capturer des caractéristiques de l’image à
+plus longue portée, d’une manière similaire à la vision de haut niveau
+dans la nature.</li>
+</ol>
+<p>Voyons comment cela se traduit en mathématiques.</p>
+<h2 id="contraindre-le-mlp">Contraindre le MLP</h2>
+<p>Pour commencer, nous pouvons considérer un MLP avec des images
+bidimensionnelles <span class="math inline">\(\mathbf{X}\)</span> comme
+entrées et leurs représentations cachées immédiates <span
+class="math inline">\(\mathbf{H}\)</span> représentées de manière
+similaire par des matrices (ce sont des tenseurs bidimensionnels dans le
+code), où <span class="math inline">\(\mathbf{X}\)</span> et <span
+class="math inline">\(\mathbf{H}\)</span> ont la même forme.
+Réfléchissez-y bien. Nous imaginons maintenant que non seulement les
+entrées mais aussi les représentations cachées possèdent une structure
+spatiale.</p>
+<p>Soient <span class="math inline">\([\mathbf{X}]_{i, j}\)</span> et
+<span class="math inline">\([\mathbf{H}]_{i, j}\)</span> le pixel à
+l’emplacement <span class="math inline">\((i,j)\)</span> dans l’image
+d’entrée et la représentation cachée, respectivement. Par conséquent,
+pour que chacune des unités cachées reçoive une entrée de chacun des
+pixels d’entrée, nous passerions de l’utilisation de matrices de poids
+(comme nous l’avons fait précédemment dans les MLP) à la représentation
+de nos paramètres sous forme de tenseurs de poids de quatrième ordre
+<span class="math inline">\(\mathsf{W}\)</span>. Supposons que <span
+class="math inline">\(\mathbf{U}\)</span> contienne des biais, nous
+pourrions exprimer formellement la couche entièrement connectée
+comme</p>
+<p><span class="math display">\[\begin{aligned}
+\left[\mathbf{H}\right]_{i, j} &amp;= [\mathbf{U}]_{i, j} + \sum_k
+\sum_l[\mathsf{W}]_{i, j, k, l}  [\mathbf{X}]_{k, l}\\
+&amp;=  [\mathbf{U}]_{i, j} +
+\sum_a \sum_b [\mathsf{V}]_{i, j, a, b}  [\mathbf{X}]_{i+a,
+j+b}.\end{aligned}\]</span></p>
+<p>Le passage de <span class="math inline">\(\mathsf{W}\)</span> à <span
+class="math inline">\(\mathsf{V}\)</span> est purement cosmétique pour
+l’instant puisqu’il existe une correspondance biunivoque entre les
+coefficients des deux tenseurs de quatrième ordre. Nous réindexons
+simplement les indices <span class="math inline">\((k, l)\)</span> de
+sorte que <span class="math inline">\(k = i+a\)</span> et <span
+class="math inline">\(l = j+b\)</span>. En d’autres termes, nous posons
+<span class="math inline">\([\mathsf{V}]_{i, j, a, b} = [\mathsf{W}]_{i,
+j, i+a, j+b}.\)</span> Les indices <span
+class="math inline">\(a\)</span> et <span
+class="math inline">\(b\)</span> parcourent des décalages positifs et
+négatifs, couvrant l’image entière. Pour tout emplacement donné (<span
+class="math inline">\(i\)</span>, <span
+class="math inline">\(j\)</span>) dans la représentation cachée <span
+class="math inline">\([\mathbf{H}]_{i, j}\)</span>, nous calculons sa
+valeur en sommant sur les pixels de <span
+class="math inline">\(x\)</span>, centrés autour de <span
+class="math inline">\((i, j)\)</span> et pondérés par <span
+class="math inline">\([\mathsf{V}]_{i, j, a, b}\)</span>. Avant de
+continuer, considérons le nombre total de paramètres requis pour une
+<em>seule</em> couche dans cette paramétrisation : une image de <span
+class="math inline">\(1000 \times 1000\)</span> (1 mégapixel) est mise
+en correspondance avec une représentation cachée de <span
+class="math inline">\(1000 \times 1000\)</span>. Cela nécessite <span
+class="math inline">\(10^{12}\)</span> paramètres, bien au-delà de ce
+que les ordinateurs peuvent actuellement gérer.</p>
+<h3 id="invariance-par-translation">Invariance par translation</h3>
+<p>Invoquons maintenant le premier principe établi ci-dessus :
+l’invariance par translation [Zhang.ea.1988]. Cela implique qu’un
+décalage de l’entrée <span class="math inline">\(\mathbf{X}\)</span>
+devrait simplement conduire à un décalage de la représentation cachée
+<span class="math inline">\(\mathbf{H}\)</span>. Ceci n’est possible que
+si <span class="math inline">\(\mathsf{V}\)</span> et <span
+class="math inline">\(\mathbf{U}\)</span> ne dépendent pas réellement de
+<span class="math inline">\((i, j)\)</span>. À ce titre, nous avons
+<span class="math inline">\([\mathsf{V}]_{i, j, a, b} = [\mathbf{V}]_{a,
+b}\)</span> et <span class="math inline">\(\mathbf{U}\)</span> est une
+constante, disons <span class="math inline">\(u\)</span>. En
+conséquence, nous pouvons simplifier la définition de <span
+class="math inline">\(\mathbf{H}\)</span> :</p>
+<p><span class="math display">\[[\mathbf{H}]_{i, j} = u + \sum_a\sum_b
+[\mathbf{V}]_{a, b}  [\mathbf{X}]_{i+a, j+b}.\]</span></p>
+<p>C’est une <em>convolution</em> ! Nous pondérons effectivement les
+pixels en <span class="math inline">\((i+a, j+b)\)</span> au voisinage
+de l’emplacement <span class="math inline">\((i, j)\)</span> avec les
+coefficients <span class="math inline">\([\mathbf{V}]_{a, b}\)</span>
+pour obtenir la valeur <span class="math inline">\([\mathbf{H}]_{i,
+j}\)</span>. Notez que <span class="math inline">\([\mathbf{V}]_{a,
+b}\)</span> nécessite beaucoup moins de coefficients que <span
+class="math inline">\([\mathsf{V}]_{i, j, a, b}\)</span> puisqu’il ne
+dépend plus de l’emplacement dans l’image. Par conséquent, le nombre de
+paramètres requis n’est plus de <span
+class="math inline">\(10^{12}\)</span> mais d’un nombre beaucoup plus
+raisonnable de <span class="math inline">\(4 \times 10^6\)</span> : nous
+avons toujours la dépendance envers <span class="math inline">\(a, b \in
+(-1000, 1000)\)</span>. En bref, nous avons fait des progrès
+significatifs. Les réseaux de neurones à retard temporel (TDNN) sont
+parmi les premiers exemples à exploiter cette idée
+[Waibel.Hanazawa.Hinton.ea.1989].</p>
+<h3 id="localité">Localité</h3>
+<p>Invoquons maintenant le deuxième principe : la localité. Comme motivé
+plus haut, nous pensons que nous ne devrions pas avoir à regarder très
+loin de l’emplacement <span class="math inline">\((i, j)\)</span> afin
+de glaner des informations pertinentes pour évaluer ce qui se passe en
+<span class="math inline">\([\mathbf{H}]_{i, j}\)</span>. Cela signifie
+qu’en dehors d’une certaine plage <span class="math inline">\(|a|&gt;
+\Delta\)</span> ou <span class="math inline">\(|b| &gt; \Delta\)</span>,
+nous devrions poser <span class="math inline">\([\mathbf{V}]_{a, b} =
+0\)</span>. De manière équivalente, nous pouvons réécrire <span
+class="math inline">\([\mathbf{H}]_{i, j}\)</span> comme</p>
+<p><span class="math display">\[[\mathbf{H}]_{i, j} = u + \sum_{a =
+-\Delta}^{\Delta} \sum_{b = -\Delta}^{\Delta} [\mathbf{V}]_{a,
+b}  [\mathbf{X}]_{i+a, j+b}.\]</span>
+:eqlabel:<code>eq_conv-layer</code></p>
+<p>Cela réduit le nombre de paramètres de <span class="math inline">\(4
+\times 10^6\)</span> à <span class="math inline">\(4 \Delta^2\)</span>,
+où <span class="math inline">\(\Delta\)</span> est généralement
+inférieur à <span class="math inline">\(10\)</span>. À ce titre, nous
+avons réduit le nombre de paramètres de quatre autres ordres de
+grandeur. Notez que l’ :eqref:<code>eq_conv-layer</code> est ce que l’on
+appelle, en résumé, une <em>couche convolutive</em>. Les <em>réseaux de
+neurones convolutifs</em> (CNN) sont une famille spéciale de réseaux de
+neurones qui contiennent des couches convolutives. Dans la communauté de
+recherche en apprentissage profond, <span
+class="math inline">\(\mathbf{V}\)</span> est appelé un <em>noyau de
+convolution</em>, un <em>filtre</em>, ou simplement les <em>poids</em>
+de la couche qui sont des paramètres apprenables.</p>
+<p>Alors qu’auparavant, nous aurions pu avoir besoin de milliards de
+paramètres pour représenter une seule couche dans un réseau de
+traitement d’images, nous n’en avons plus besoin que de quelques
+centaines, sans modifier la dimensionnalité des entrées ni des
+représentations cachées. Le prix payé pour cette réduction drastique des
+paramètres est que nos caractéristiques sont désormais invariantes par
+translation et que notre couche ne peut incorporer que des informations
+locales, lors de la détermination de la valeur de chaque activation
+cachée. Tout apprentissage dépend de l’imposition d’un biais inductif.
+Lorsque ce biais concorde avec la réalité, nous obtenons des modèles
+économes en échantillons qui se généralisent bien aux données
+invisibles. Mais bien sûr, si ces biais ne concordent pas avec la
+réalité, par exemple si les images s’avéraient ne pas être invariantes
+par translation, nos modèles pourraient avoir du mal même à s’ajuster à
+nos données d’entraînement.</p>
+<p>Cette réduction spectaculaire des paramètres nous amène à notre
+dernier desideratum, à savoir que les couches plus profondes devraient
+représenter des aspects plus vastes et plus complexes d’une image. Cela
+peut être réalisé en intercalant des non-linéarités et des couches
+convolutives de manière répétée.</p>
+<h2 id="convolutions">Convolutions</h2>
+<p>Passons brièvement en revue pourquoi l’
+:eqref:<code>eq_conv-layer</code> est appelée une convolution. En
+mathématiques, la <em>convolution</em> entre deux fonctions
+[Rudin.1973], disons <span class="math inline">\(f, g: \mathbb{R}^d \to
+\mathbb{R}\)</span> est définie comme</p>
+<p><span class="math display">\[(f * g)(\mathbf{x}) = \int f(\mathbf{z})
+g(\mathbf{x}-\mathbf{z}) d\mathbf{z}.\]</span></p>
+<p>C’est-à-dire que nous mesurons le chevauchement entre <span
+class="math inline">\(f\)</span> et <span
+class="math inline">\(g\)</span> lorsqu’une fonction est « inversée » et
+décalée de <span class="math inline">\(\mathbf{x}\)</span>. Chaque fois
+que nous avons des objets discrets, l’intégrale se transforme en somme.
+Par exemple, pour des vecteurs issus de l’ensemble des vecteurs de
+dimension infinie sommables au carré avec l’indice parcourant <span
+class="math inline">\(\mathbb{Z}\)</span>, nous obtenons la définition
+suivante :</p>
+<p><span class="math display">\[(f * g)(i) = \sum_a f(a)
+g(i-a).\]</span></p>
+<p>Pour les tenseurs bidimensionnels, nous avons une somme
+correspondante avec les indices <span class="math inline">\((a,
+b)\)</span> pour <span class="math inline">\(f\)</span> et <span
+class="math inline">\((i-a, j-b)\)</span> pour <span
+class="math inline">\(g\)</span>, respectivement :</p>
+<p><span class="math display">\[(f * g)(i, j) = \sum_a\sum_b f(a, b)
+g(i-a, j-b).\]</span> :eqlabel:<code>eq_2d-conv-discrete</code></p>
+<p>Cela ressemble à l’ :eqref:<code>eq_conv-layer</code>, avec une
+différence majeure. Au lieu d’utiliser <span class="math inline">\((i+a,
+j+b)\)</span>, nous utilisons la différence. Notez cependant que cette
+distinction est principalement cosmétique puisque nous pouvons toujours
+faire correspondre la notation entre l’
+:eqref:<code>eq_conv-layer</code> et l’
+:eqref:<code>eq_2d-conv-discrete</code>. Notre définition originale dans
+l’ :eqref:<code>eq_conv-layer</code> décrit plus proprement une
+<em>corrélation croisée</em>. Nous y reviendrons dans la section
+suivante.</p>
+<h2 id="canaux">Canaux</h2>
+<p><a id="subsec_why-conv-channels"></a> Revenons à notre détecteur de
+Charlie, voyons à quoi cela ressemble. La couche convolutive choisit des
+fenêtres d’une taille donnée et pondère les intensités selon le filtre
+<span class="math inline">\(\mathsf{V}\)</span>, comme illustré dans la
+fig_waldo_mask. Nous pourrions viser à apprendre un modèle tel que là où
+la « charlitude » est la plus élevée, nous devrions trouver un pic dans
+les représentations des couches cachées.</p>
+<p><img src="img/waldo-mask.jpg"
+alt="Détecter Charlie (image avec l’aimable autorisation de William Murphy (Infomatique))." />
+:width:<code>400px</code> <a id="fig_waldo_mask"></a> Il y a juste un
+problème avec cette approche. Jusqu’à présent, nous avons allègrement
+ignoré que les images se composent de trois canaux : rouge, vert et
+bleu. En somme, les images ne sont pas des objets bidimensionnels mais
+plutôt des tenseurs de troisième ordre, caractérisés par une hauteur,
+une largeur et un canal, par exemple avec une forme de <span
+class="math inline">\(1024 \times 1024 \times 3\)</span> pixels. Alors
+que les deux premiers de ces axes concernent les relations spatiales, le
+troisième peut être considéré comme l’attribution d’une représentation
+multidimensionnelle à chaque emplacement de pixel. Nous indexons donc
+<span class="math inline">\(\mathsf{X}\)</span> comme <span
+class="math inline">\([\mathsf{X}]_{i, j, k}\)</span>. Le filtre
+convolutif doit s’adapter en conséquence. Au lieu de <span
+class="math inline">\([\mathbf{V}]_{a,b}\)</span>, nous avons maintenant
+<span class="math inline">\([\mathsf{V}]_{a,b,c}\)</span>.</p>
+<p>De plus, tout comme notre entrée est constituée d’un tenseur de
+troisième ordre, il s’avère que c’est une bonne idée de formuler de la
+même manière nos représentations cachées sous forme de tenseurs de
+troisième ordre <span class="math inline">\(\mathsf{H}\)</span>. En
+d’autres termes, plutôt que d’avoir une seule représentation cachée
+correspondant à chaque emplacement spatial, nous voulons un vecteur
+entier de représentations cachées correspondant à chaque emplacement
+spatial. On pourrait imaginer les représentations cachées comme
+comprenant un certain nombre de grilles bidimensionnelles empilées les
+unes sur les autres. Comme pour les entrées, on les appelle parfois des
+<em>canaux</em>. Elles sont aussi parfois appelées <em>feature maps</em>
+(ou cartes de caractéristiques), car chacune fournit un ensemble
+spatialisé de caractéristiques apprises pour la couche suivante.
+Intuitivement, vous pourriez imaginer qu’aux couches inférieures plus
+proches des entrées, certains canaux pourraient se spécialiser dans la
+reconnaissance des bords tandis que d’autres pourraient reconnaître des
+textures.</p>
+<p>Pour prendre en charge plusieurs canaux à la fois dans les entrées
+(<span class="math inline">\(\mathsf{X}\)</span>) et dans les
+représentations cachées (<span
+class="math inline">\(\mathsf{H}\)</span>), nous pouvons ajouter une
+quatrième coordonnée à <span class="math inline">\(\mathsf{V}\)</span> :
+<span class="math inline">\([\mathsf{V}]_{a, b, c, d}\)</span>. En
+mettant tout cela ensemble, nous avons :</p>
+<p><span class="math display">\[[\mathsf{H}]_{i,j,d} = \sum_{a =
+-\Delta}^{\Delta} \sum_{b = -\Delta}^{\Delta} \sum_c [\mathsf{V}]_{a, b,
+c, d} [\mathsf{X}]_{i+a, j+b, c},\]</span>
+:eqlabel:<code>eq_conv-layer-channels</code></p>
+<p>où <span class="math inline">\(d\)</span> indexe les canaux de sortie
+dans les représentations cachées <span
+class="math inline">\(\mathsf{H}\)</span>. La couche convolutive
+suivante continuera à prendre un tenseur de troisième ordre, <span
+class="math inline">\(\mathsf{H}\)</span>, comme entrée. Nous adoptons
+l’ :eqref:<code>eq_conv-layer-channels</code>, en raison de sa
+généralité, comme la définition d’une couche convolutive pour plusieurs
+canaux, où <span class="math inline">\(\mathsf{V}\)</span> est un noyau
+ou filtre de la couche.</p>
+<p>Il reste encore de nombreuses opérations que nous devons aborder. Par
+exemple, nous devons comprendre comment combiner toutes les
+représentations cachées en une seule sortie, par exemple, s’il y a un
+Charlie <em>n’importe où</em> dans l’image. Nous devons également
+décider comment calculer les choses efficacement, comment combiner
+plusieurs couches, quelles fonctions d’activation sont appropriées, et
+comment faire des choix de conception raisonnables pour produire des
+réseaux efficaces en pratique. Nous abordons ces questions dans la suite
+du chapitre.</p>
+<h2 id="résumé-et-discussion">Résumé et discussion</h2>
+<p>Dans cette section, nous avons dérivé la structure des réseaux de
+neurones convolutifs à partir de principes fondamentaux. Bien qu’il ne
+soit pas certain que ce soit la voie empruntée pour l’invention des CNN,
+il est satisfaisant de savoir qu’ils sont le <em>bon</em> choix lors de
+l’application de principes raisonnables sur le fonctionnement des
+algorithmes de traitement d’images et de vision par ordinateur, du moins
+aux niveaux inférieurs. En particulier, l’invariance par translation
+dans les images implique que tous les patchs d’une image seront traités
+de la même manière. La localité signifie que seul un petit voisinage de
+pixels sera utilisé pour calculer les représentations cachées
+correspondantes. Certaines des premières références aux CNN se
+présentent sous la forme du Neocognitron [Fukushima.1982].</p>
+<p>Un deuxième principe que nous avons rencontré dans notre raisonnement
+est la manière de réduire le nombre de paramètres dans une classe de
+fonctions sans limiter son pouvoir expressif, du moins chaque fois que
+certaines hypothèses sur le modèle sont vérifiées. Nous avons vu une
+réduction spectaculaire de la complexité suite à cette restriction,
+transformant des problèmes informatiquement et statistiquement
+irréalisables en modèles traitables.</p>
+<p>L’ajout de canaux nous a permis de réintroduire une partie de la
+complexité qui avait été perdue en raison des restrictions imposées au
+noyau de convolution par la localité et l’invariance par translation.
+Notez qu’il est tout à fait naturel d’ajouter des canaux autres que le
+rouge, le vert et le bleu. De nombreuses images satellites, en
+particulier pour l’agriculture et la météorologie, possèdent des
+dizaines à des centaines de canaux, générant à la place des images
+hyperspectrales. Elles rapportent des données sur de nombreuses
+longueurs d’onde différentes. Dans ce qui suit, nous verrons comment
+utiliser efficacement les convolutions pour manipuler la dimensionnalité
+des images sur lesquelles elles opèrent, comment passer de
+représentations basées sur l’emplacement à des représentations basées
+sur les canaux, et comment gérer efficacement un grand nombre de
+catégories.</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Supposons que la taille du noyau de convolution soit <span
+class="math inline">\(\Delta = 0\)</span>. Montrez que dans ce cas, le
+noyau de convolution implémente un MLP indépendamment pour chaque
+ensemble de canaux. Cela conduit aux architectures Network in Network
+[Lin.Chen.Yan.2013].</li>
+<li>Les données audio sont souvent représentées comme une séquence
+unidimensionnelle.
+<ol type="1">
+<li>Quand pourriez-vous vouloir imposer la localité et l’invariance par
+translation pour l’audio ?</li>
+<li>Dérivez les opérations de convolution pour l’audio.</li>
+<li>Pouvez-vous traiter l’audio en utilisant les mêmes outils que la
+vision par ordinateur ? Indice : utilisez le spectrogramme.</li>
+</ol></li>
+<li>Pourquoi l’invariance par translation pourrait-elle finalement ne
+pas être une bonne idée ? Donnez un exemple.</li>
+<li>Pensez-vous que les couches convolutives pourraient également être
+applicables aux données textuelles ? Quels problèmes pourriez-vous
+rencontrer avec le langage ?</li>
+<li>Que se passe-t-il avec les convolutions lorsqu’un objet se trouve à
+la bordure d’une image ?</li>
+<li>Prouvez que la convolution est symétrique, c’est-à-dire <span
+class="math inline">\(f * g = g * f\)</span>.</li>
+</ol>
+<p><a href="https://discuss.d2l.ai/t/64">Discussions</a></p>
+<div class="navlinks"><a class="prev" href="index.html">&larr; Réseaux de neurones convolutifs</a><a class="next" href="conv-layer.html">Convolutions pour les images &rarr;</a></div></main></div></body></html>

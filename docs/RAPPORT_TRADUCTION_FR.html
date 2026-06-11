@@ -43,6 +43,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <li><code>docs/chapter_linear-classification/index.html</code></li>
 <li><code>docs/chapter_multilayer-perceptrons/index.html</code></li>
 <li><code>docs/chapter_builders-guide/index.html</code></li>
+<li><code>docs/chapter_convolutional-neural-networks/index.html</code></li>
 </ul>
 <p>Vérifications locales effectuées sur
 <code>http://localhost:4173</code> :</p>
@@ -161,6 +162,21 @@ français par <code>builders_guide_custom_layer.txt</code>.</li>
 français par <code>builders_guide_read_write.txt</code>.</li>
 <li><code>chapter_builders-guide/use-gpu.md</code> : traduit en français
 par <code>builders_guide_use_gpu.txt</code>.</li>
+<li><code>chapter_convolutional-neural-networks/index.md</code> :
+traduit en français par <code>cnn_index.txt</code>.</li>
+<li><code>chapter_convolutional-neural-networks/why-conv.md</code> :
+traduit en français par <code>cnn_retry_why_conv.txt</code>.</li>
+<li><code>chapter_convolutional-neural-networks/conv-layer.md</code> :
+traduit en français par <code>cnn_retry_conv_layer.txt</code>.</li>
+<li><code>chapter_convolutional-neural-networks/padding-and-strides.md</code>
+: traduit en français par
+<code>cnn_retry_padding_and_strides.txt</code>.</li>
+<li><code>chapter_convolutional-neural-networks/channels.md</code> :
+traduit en français par <code>cnn_retry_channels.txt</code>.</li>
+<li><code>chapter_convolutional-neural-networks/pooling.md</code> :
+traduit en français par <code>cnn_retry_pooling.txt</code>.</li>
+<li><code>chapter_convolutional-neural-networks/lenet.md</code> :
+traduit en français par <code>cnn_retry_lenet.txt</code>.</li>
 </ul>
 <p>Ajouts manuels de structure française :</p>
 <ul>
@@ -192,6 +208,14 @@ figures utilisées par <code>chapter_linear-classification</code>.</li>
 utilisées par <code>chapter_multilayer-perceptrons</code>.</li>
 <li><code>img/blocks.svg</code>, <code>img/copyto.svg</code> : figures
 utilisées par <code>chapter_builders-guide</code>.</li>
+<li><code>img/conv-multi-in.svg</code>, <code>img/conv-1x1.svg</code>,
+<code>img/correlation.svg</code>, <code>img/field-visual.png</code>,
+<code>img/lenet.svg</code>, <code>img/lenet-vert.svg</code>,
+<code>img/conv-reuse.svg</code>, <code>img/conv-pad.svg</code>,
+<code>img/conv-stride.svg</code>, <code>img/pooling.svg</code>,
+<code>img/waldo-football.jpg</code>, <code>img/waldo-mask.jpg</code> :
+figures utilisées par
+<code>chapter_convolutional-neural-networks</code>.</li>
 </ul>
 <h2 id="non-traduit-restant-à-faire">Non traduit / restant à faire</h2>
 <p>Les chapitres copiés dans cette version partielle ont été traduits.
@@ -271,6 +295,16 @@ restaurés depuis le dépôt original anglais. Les notebooks et pages HTML
 publiques ont été générés à partir des sources Markdown traduites, avec
 MathJax et les images locales, car le pipeline D2L-Book/Sphinx complet
 reste instable dans cette session.</p>
+<p>Pour <code>chapter_convolutional-neural-networks</code>, les agents
+Gemini ont d’abord été lancés en vague parallèle. Un agent a rencontré
+<code>MODEL_CAPACITY_EXHAUSTED</code> et deux agents sont restés bloqués
+sur une invite interactive d’authentification. Les sections restantes
+ont donc été relancées une par une depuis le dossier parent contenant
+<code>d2l-fr</code> et <code>d2l-en</code>, afin de permettre à Gemini
+d’inspecter les sources relatives sans chemin absolu. Les blocs de code
+fenced ont ensuite été restaurés depuis les sources officielles brutes.
+Les notebooks et pages HTML publiques ont été générés à partir des
+sources Markdown traduites, avec MathJax et les images locales.</p>
 <h2 id="limites-du-build-partiel">Limites du build partiel</h2>
 <p>Le dernier build Sphinx HTML a réussi avec 11 avertissements. Un
 build complet précédent du même état avait listé 88 avertissements

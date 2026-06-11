@@ -41,6 +41,7 @@ Le build HTML final a réussi et produit notamment :
 - `docs/chapter_linear-classification/index.html`
 - `docs/chapter_multilayer-perceptrons/index.html`
 - `docs/chapter_builders-guide/index.html`
+- `docs/chapter_convolutional-neural-networks/index.html`
 
 Vérifications locales effectuées sur `http://localhost:4173` :
 
@@ -99,6 +100,13 @@ Traduction réalisée par agent Gemini :
 - `chapter_builders-guide/custom-layer.md` : traduit en français par `builders_guide_custom_layer.txt`.
 - `chapter_builders-guide/read-write.md` : traduit en français par `builders_guide_read_write.txt`.
 - `chapter_builders-guide/use-gpu.md` : traduit en français par `builders_guide_use_gpu.txt`.
+- `chapter_convolutional-neural-networks/index.md` : traduit en français par `cnn_index.txt`.
+- `chapter_convolutional-neural-networks/why-conv.md` : traduit en français par `cnn_retry_why_conv.txt`.
+- `chapter_convolutional-neural-networks/conv-layer.md` : traduit en français par `cnn_retry_conv_layer.txt`.
+- `chapter_convolutional-neural-networks/padding-and-strides.md` : traduit en français par `cnn_retry_padding_and_strides.txt`.
+- `chapter_convolutional-neural-networks/channels.md` : traduit en français par `cnn_retry_channels.txt`.
+- `chapter_convolutional-neural-networks/pooling.md` : traduit en français par `cnn_retry_pooling.txt`.
+- `chapter_convolutional-neural-networks/lenet.md` : traduit en français par `cnn_retry_lenet.txt`.
 
 Ajouts manuels de structure française :
 
@@ -113,6 +121,7 @@ Ajouts manuels de structure française :
 - `img/softmaxreg.svg`, `img/cat-dog-train.png`, `img/cat-dog-test.png`, `img/popvssoda.png` : figures utilisées par `chapter_linear-classification`.
 - `img/dropout2.svg`, `img/forward.svg`, `img/house-pricing.png`, `img/kaggle-submit2.png`, `img/kaggle.png`, `img/mlp.svg` : figures utilisées par `chapter_multilayer-perceptrons`.
 - `img/blocks.svg`, `img/copyto.svg` : figures utilisées par `chapter_builders-guide`.
+- `img/conv-multi-in.svg`, `img/conv-1x1.svg`, `img/correlation.svg`, `img/field-visual.png`, `img/lenet.svg`, `img/lenet-vert.svg`, `img/conv-reuse.svg`, `img/conv-pad.svg`, `img/conv-stride.svg`, `img/pooling.svg`, `img/waldo-football.jpg`, `img/waldo-mask.jpg` : figures utilisées par `chapter_convolutional-neural-networks`.
 
 ## Non traduit / restant à faire
 
@@ -151,6 +160,8 @@ Pour `chapter_linear-classification`, huit agents Gemini ont été lancés en de
 Pour `chapter_multilayer-perceptrons`, huit agents Gemini ont été lancés en deux vagues. Les blocs de code fenced ont ensuite été restaurés depuis le dépôt original anglais. Le build D2L-Book local étant instable dans cette session, les notebooks et pages HTML publiques ont été générés à partir des sources Markdown traduites, avec MathJax et les images locales. Cette solution garde les sources françaises et le site consultable, mais le pipeline Sphinx complet devra être stabilisé avant la version finale.
 
 Pour `chapter_builders-guide`, huit agents Gemini ont été lancés en deux vagues. Les blocs de code fenced ont ensuite été restaurés depuis le dépôt original anglais. Les notebooks et pages HTML publiques ont été générés à partir des sources Markdown traduites, avec MathJax et les images locales, car le pipeline D2L-Book/Sphinx complet reste instable dans cette session.
+
+Pour `chapter_convolutional-neural-networks`, les agents Gemini ont d'abord été lancés en vague parallèle. Un agent a rencontré `MODEL_CAPACITY_EXHAUSTED` et deux agents sont restés bloqués sur une invite interactive d'authentification. Les sections restantes ont donc été relancées une par une depuis le dossier parent contenant `d2l-fr` et `d2l-en`, afin de permettre à Gemini d'inspecter les sources relatives sans chemin absolu. Les blocs de code fenced ont ensuite été restaurés depuis les sources officielles brutes. Les notebooks et pages HTML publiques ont été générés à partir des sources Markdown traduites, avec MathJax et les images locales.
 
 ## Limites du build partiel
 

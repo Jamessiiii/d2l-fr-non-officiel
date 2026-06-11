@@ -27,4 +27,5 @@ chapter_linear-regression/index
 chapter_linear-classification/index
 chapter_multilayer-perceptrons/index
 chapter_builders-guide/index
+chapter_convolutional-neural-networks/index
 ```

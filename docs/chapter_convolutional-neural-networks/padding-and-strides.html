@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remplissage et pas - Dive into Deep Learning FR</title>
+<link rel="stylesheet" href="../_static/basic.css"><link rel="stylesheet" href="../_static/d2l.css">
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20242a;background:#fff}.layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);min-height:100vh}.sidebar{border-right:1px solid #d8dee4;padding:24px 18px;background:#f6f8fa;position:sticky;top:0;height:100vh;overflow:auto}.sidebar h1{font-size:16px;margin:0 0 16px}.sidebar ol{padding-left:22px;line-height:1.55}.sidebar a,.navlinks a{color:#245a9c;text-decoration:none}.content{max-width:980px;padding:32px 44px 56px}.navlinks{display:flex;justify-content:space-between;gap:20px;margin:28px 0}pre{overflow:auto;padding:12px;background:#f6f8fa;border:1px solid #d8dee4;border-radius:6px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}img{max-width:100%;height:auto}@media(max-width:760px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid #d8dee4}.content{padding:24px 18px 42px}}</style>
+</head><body><div class="layout"><nav class="sidebar"><h1><a href="../index.html">D2L français</a></h1><ol><li><a href="index.html">Réseaux de neurones convolutifs</a></li>
+<li><a href="why-conv.html">Des couches entièrement connectées aux convolutions</a></li>
+<li><a href="conv-layer.html">Convolutions pour les images</a></li>
+<li><a href="padding-and-strides.html">Remplissage et pas</a></li>
+<li><a href="channels.html">Canaux d&#x27;entrée et de sortie multiples</a></li>
+<li><a href="pooling.html">Regroupement</a></li>
+<li><a href="lenet.html">Réseaux de neurones convolutifs (LeNet)</a></li></ol></nav><main class="content"><div class="navlinks"><a class="prev" href="conv-layer.html">&larr; Convolutions pour les images</a><a class="next" href="channels.html">Canaux d&#x27;entrée et de sortie multiples &rarr;</a></div><div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext d2lbook.tab</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tab.interact_select([<span class="st">&#39;mxnet&#39;</span>, <span class="st">&#39;pytorch&#39;</span>, <span class="st">&#39;tensorflow&#39;</span>, <span class="st">&#39;jax&#39;</span>])</span></code></pre></div>
+<h1 id="remplissage-et-pas">Remplissage et pas</h1>
+<p><a id="sec_padding"></a> Rappelez-vous l’exemple d’une convolution
+dans la fig_correlation. L’entrée avait une hauteur et une largeur de 3
+et le noyau de convolution avait une hauteur et une largeur de 2,
+produisant une représentation en sortie de dimension <span
+class="math inline">\(2\times2\)</span>. En supposant que la forme de
+l’entrée soit <span class="math inline">\(n_\textrm{h}\times
+n_\textrm{w}\)</span> et que la forme du noyau de convolution soit <span
+class="math inline">\(k_\textrm{h}\times k_\textrm{w}\)</span>, la forme
+de la sortie sera <span
+class="math inline">\((n_\textrm{h}-k_\textrm{h}+1) \times
+(n_\textrm{w}-k_\textrm{w}+1)\)</span> : nous ne pouvons faire glisser
+le noyau de convolution que jusqu’à ce qu’il n’y ait plus de pixels sur
+lesquels appliquer la convolution.</p>
+<p>Dans ce qui suit, nous explorerons un certain nombre de techniques,
+notamment le remplissage et les convolutions à pas (strided
+convolutions), qui offrent plus de contrôle sur la taille de la sortie.
+Comme motivation, notez que puisque les noyaux ont généralement une
+largeur et une hauteur supérieures à 1, après avoir appliqué de
+nombreuses convolutions successives, nous avons tendance à nous
+retrouver avec des sorties considérablement plus petites que notre
+entrée. Si nous commençons par une image de <span
+class="math inline">\(240 \times 240\)</span> pixels, dix couches de
+convolutions <span class="math inline">\(5 \times 5\)</span> réduisent
+l’image à <span class="math inline">\(200 \times 200\)</span> pixels,
+supprimant <span class="math inline">\(30 \%\)</span> de l’image et, par
+la même occasion, effaçant toute information intéressante sur les bords
+de l’image originale. Le <em>remplissage</em> (padding) est l’outil le
+plus populaire pour gérer ce problème. Dans d’autres cas, nous pouvons
+vouloir réduire considérablement la dimensionnalité, par exemple si nous
+trouvons la résolution d’entrée originale trop encombrante. Les
+<em>convolutions à pas</em> sont une technique populaire qui peut aider
+dans ces cas-là.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet <span class="im">import</span> np, npx</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mxnet.gluon <span class="im">import</span> nn</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>npx.set_np()</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch <span class="im">import</span> nn</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tensorflow <span class="im">as</span> tf</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> d2l <span class="im">import</span> jax <span class="im">as</span> d2l</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flax <span class="im">import</span> linen <span class="im">as</span> nn</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jax <span class="im">import</span> numpy <span class="im">as</span> jnp</span></code></pre></div>
+<h2 id="remplissage">Remplissage</h2>
+<p>Comme décrit plus haut, un problème délicat lors de l’application de
+couches convolutives est que nous avons tendance à perdre des pixels sur
+le périmètre de notre image. Considérez la img_conv_reuse qui illustre
+l’utilisation des pixels en fonction de la taille du noyau de
+convolution et de la position dans l’image. Les pixels dans les coins
+sont à peine utilisés.</p>
+<p><img src="img/conv-reuse.svg"
+alt="Utilisation des pixels pour des convolutions de taille respective 1 \times 1, 2 \times 2 et 3 \times 3." />
+<a id="img_conv_reuse"></a> Comme nous utilisons généralement de petits
+noyaux, pour une convolution donnée, nous pourrions ne perdre que
+quelques pixels, mais cela peut s’accumuler à mesure que nous appliquons
+de nombreuses couches convolutives successives. Une solution simple à ce
+problème consiste à ajouter des pixels supplémentaires de remplissage
+autour de la bordure de notre image d’entrée, augmentant ainsi la taille
+effective de l’image. Généralement, nous fixons la valeur des pixels
+supplémentaires à zéro. Dans la img_conv_pad, nous appliquons un
+remplissage à une entrée <span class="math inline">\(3 \times
+3\)</span>, augmentant sa taille à <span class="math inline">\(5 \times
+5\)</span>. La sortie correspondante passe alors à une matrice <span
+class="math inline">\(4 \times 4\)</span>. Les portions ombrées
+représentent le premier élément de sortie ainsi que les éléments des
+tenseurs d’entrée et de noyau utilisés pour le calcul de la sortie :
+<span
+class="math inline">\(0\times0+0\times1+0\times2+0\times3=0\)</span>.</p>
+<p><img src="img/conv-pad.svg"
+alt="Corrélation croisée bidimensionnelle avec remplissage." />
+<a id="img_conv_pad"></a> En général, si nous ajoutons un total de <span
+class="math inline">\(p_\textrm{h}\)</span> lignes de remplissage
+(environ la moitié en haut et la moitié en bas) et un total de <span
+class="math inline">\(p_\textrm{w}\)</span> colonnes de remplissage
+(environ la moitié à gauche et la moitié à droite), la forme de la
+sortie sera</p>
+<p><span
+class="math display">\[(n_\textrm{h}-k_\textrm{h}+p_\textrm{h}+1)\times(n_\textrm{w}-k_\textrm{w}+p_\textrm{w}+1).\]</span></p>
+<p>Cela signifie que la hauteur et la largeur de la sortie augmenteront
+respectivement de <span class="math inline">\(p_\textrm{h}\)</span> et
+<span class="math inline">\(p_\textrm{w}\)</span>.</p>
+<p>Dans de nombreux cas, nous voudrons fixer <span
+class="math inline">\(p_\textrm{h}=k_\textrm{h}-1\)</span> et <span
+class="math inline">\(p_\textrm{w}=k_\textrm{w}-1\)</span> pour donner à
+l’entrée et à la sortie les mêmes hauteur et largeur. Cela facilitera la
+prédiction de la forme de sortie de chaque couche lors de la
+construction du réseau. En supposant que <span
+class="math inline">\(k_\textrm{h}\)</span> soit impair ici, nous
+ajouterons <span class="math inline">\(p_\textrm{h}/2\)</span> lignes de
+chaque côté de la hauteur. Si <span
+class="math inline">\(k_\textrm{h}\)</span> est pair, une possibilité
+est d’ajouter <span class="math inline">\(\lceil
+p_\textrm{h}/2\rceil\)</span> lignes en haut de l’entrée et <span
+class="math inline">\(\lfloor p_\textrm{h}/2\rfloor\)</span> lignes en
+bas. Nous remplirons les deux côtés de la largeur de la même
+manière.</p>
+<p>Les CNN utilisent couramment des noyaux de convolution avec des
+valeurs de hauteur et de largeur impaires, telles que 1, 3, 5 ou 7. Le
+choix de tailles de noyau impaires présente l’avantage de pouvoir
+préserver la dimensionnalité tout en ajoutant le même nombre de lignes
+en haut et en bas, et le même nombre de colonnes à gauche et à
+droite.</p>
+<p>De plus, cette pratique consistant à utiliser des noyaux impairs et
+un remplissage pour préserver précisément la dimensionnalité offre un
+avantage pratique. Pour tout tenseur bidimensionnel <code>X</code>,
+lorsque la taille du noyau est impaire et que le nombre de lignes et de
+colonnes de remplissage de tous les côtés est le même, produisant ainsi
+une sortie de même hauteur et largeur que l’entrée, nous savons que la
+sortie <code>Y[i, j]</code> est calculée par corrélation croisée de
+l’entrée et du noyau de convolution avec la fenêtre centrée sur
+<code>X[i, j]</code>.</p>
+<p>Dans l’exemple suivant, nous créons une couche convolutive
+bidimensionnelle avec une hauteur et une largeur de 3 et
+(<strong>appliquons 1 pixel de remplissage de tous les côtés.</strong>)
+Étant donné une entrée d’une hauteur et d’une largeur de 8, nous
+constatons que la hauteur et la largeur de la sortie sont également de
+8.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We define a helper function to calculate convolutions. It initializes </span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># the convolutional layer weights and performs corresponding dimensionality </span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># elevations and reductions on the input and output</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> comp_conv2d(conv2d, X):</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    conv2d.initialize()</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># (1, 1) indicates that batch size and the number of channels are both 1</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> X.reshape((<span class="dv">1</span>, <span class="dv">1</span>) <span class="op">+</span> X.shape)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> conv2d(X)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Strip the first two dimensions: examples and channels</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Y.reshape(Y.shape[<span class="dv">2</span>:])</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 row and column is padded on either side, so a total of 2 rows or columns are added</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.Conv2D(<span class="dv">1</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> np.random.uniform(size<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">8</span>))</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We define a helper function to calculate convolutions. It initializes the</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># convolutional layer weights and performs corresponding dimensionality</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># elevations and reductions on the input and output</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> comp_conv2d(conv2d, X):</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># (1, 1) indicates that batch size and the number of channels are both 1</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> X.reshape((<span class="dv">1</span>, <span class="dv">1</span>) <span class="op">+</span> X.shape)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> conv2d(X)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Strip the first two dimensions: examples and channels</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Y.reshape(Y.shape[<span class="dv">2</span>:])</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 row and column is padded on either side, so a total of 2 rows or columns</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co"># are added</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.LazyConv2d(<span class="dv">1</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> torch.rand(size<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">8</span>))</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We define a helper function to calculate convolutions. It initializes</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># the convolutional layer weights and performs corresponding dimensionality</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># elevations and reductions on the input and output</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> comp_conv2d(conv2d, X):</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># (1, 1) indicates that batch size and the number of channels are both 1</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> tf.reshape(X, (<span class="dv">1</span>, ) <span class="op">+</span> X.shape <span class="op">+</span> (<span class="dv">1</span>, ))</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    Y <span class="op">=</span> conv2d(X)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Strip the first two dimensions: examples and channels</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> tf.reshape(Y, Y.shape[<span class="dv">1</span>:<span class="dv">3</span>])</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 row and column is padded on either side, so a total of 2 rows or columns</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co"># are added</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> tf.keras.layers.Conv2D(<span class="dv">1</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="st">&#39;same&#39;</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> tf.random.uniform(shape<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">8</span>))</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We define a helper function to calculate convolutions. It initializes</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># the convolutional layer weights and performs corresponding dimensionality</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># elevations and reductions on the input and output</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> comp_conv2d(conv2d, X):</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># (1, X.shape, 1) indicates that batch size and the number of channels are both 1</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    key <span class="op">=</span> jax.random.PRNGKey(d2l.get_seed())</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> X.reshape((<span class="dv">1</span>,) <span class="op">+</span> X.shape <span class="op">+</span> (<span class="dv">1</span>,))</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    Y, _ <span class="op">=</span> conv2d.init_with_output(key, X)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Strip the dimensions: examples and channels</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> Y.reshape(Y.shape[<span class="dv">1</span>:<span class="dv">3</span>])</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 row and column is padded on either side, so a total of 2 rows or columns are added</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.Conv(<span class="dv">1</span>, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>), padding<span class="op">=</span><span class="st">&#39;SAME&#39;</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> jax.random.uniform(jax.random.PRNGKey(d2l.get_seed()), shape<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">8</span>))</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<p>Lorsque la hauteur et la largeur du noyau de convolution sont
+différentes, nous pouvons faire en sorte que la sortie et l’entrée aient
+les mêmes hauteur et largeur en <strong>définissant des nombres de
+remplissage différents pour la hauteur et la largeur.</strong></p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We use a convolution kernel with height 5 and width 3. The padding on</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># either side of the height and width are 2 and 1, respectively</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.Conv2D(<span class="dv">1</span>, kernel_size<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">3</span>), padding<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">1</span>))</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We use a convolution kernel with height 5 and width 3. The padding on either</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># side of the height and width are 2 and 1, respectively</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.LazyConv2d(<span class="dv">1</span>, kernel_size<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">3</span>), padding<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">1</span>))</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We use a convolution kernel with height 5 and width 3. The padding on</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># either side of the height and width are 2 and 1, respectively</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> tf.keras.layers.Conv2D(<span class="dv">1</span>, kernel_size<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">3</span>), padding<span class="op">=</span><span class="st">&#39;same&#39;</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We use a convolution kernel with height 5 and width 3. The padding on</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># either side of the height and width are 2 and 1, respectively</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.Conv(<span class="dv">1</span>, kernel_size<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">3</span>), padding<span class="op">=</span>(<span class="dv">2</span>, <span class="dv">1</span>))</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<h2 id="pas">Pas</h2>
+<p>Lors du calcul de la corrélation croisée, nous commençons avec la
+fenêtre de convolution dans le coin supérieur gauche du tenseur
+d’entrée, puis nous la faisons glisser sur tous les emplacements vers le
+bas et vers la droite. Dans les exemples précédents, nous avons fait
+glisser par défaut un élément à la fois. Cependant, parfois, soit pour
+l’efficacité de calcul, soit parce que nous souhaitons
+sous-échantillonner, nous déplaçons notre fenêtre de plus d’un élément à
+la fois, en sautant les emplacements intermédiaires. C’est
+particulièrement utile si le noyau de convolution est grand car il
+capture une large zone de l’image sous-jacente.</p>
+<p>Nous appelons <em>pas</em> (stride) le nombre de lignes et de
+colonnes parcourues par glissement. Jusqu’à présent, nous avons utilisé
+des pas de 1, tant pour la hauteur que pour la largeur. Parfois, nous
+pouvons vouloir utiliser un pas plus grand. La img_conv_stride montre
+une opération de corrélation croisée bidimensionnelle avec un pas de 3
+verticalement et 2 horizontalement. Les portions ombrées sont les
+éléments de sortie ainsi que les éléments des tenseurs d’entrée et de
+noyau utilisés pour le calcul de la sortie : <span
+class="math inline">\(0\times0+0\times1+1\times2+2\times3=8\)</span>,
+<span
+class="math inline">\(0\times0+6\times1+0\times2+0\times3=6\)</span>.
+Nous pouvons voir que lorsque le deuxième élément de la première colonne
+est généré, la fenêtre de convolution glisse de trois lignes vers le
+bas. La fenêtre de convolution glisse de deux colonnes vers la droite
+lorsque le deuxième élément de la première ligne est généré. Lorsque la
+fenêtre de convolution continue de glisser de deux colonnes vers la
+droite sur l’entrée, il n’y a pas de sortie car l’élément d’entrée ne
+peut pas remplir la fenêtre (à moins d’ajouter une autre colonne de
+remplissage).</p>
+<p><img src="img/conv-stride.svg"
+alt="Corrélation croisée avec des pas de 3 et 2 pour la hauteur et la largeur, respectivement." />
+<a id="img_conv_stride"></a> En général, lorsque le pas pour la hauteur
+est <span class="math inline">\(s_\textrm{h}\)</span> et le pas pour la
+largeur est <span class="math inline">\(s_\textrm{w}\)</span>, la forme
+de la sortie est</p>
+<p><span
+class="math display">\[\lfloor(n_\textrm{h}-k_\textrm{h}+p_\textrm{h}+s_\textrm{h})/s_\textrm{h}\rfloor
+\times
+\lfloor(n_\textrm{w}-k_\textrm{w}+p_\textrm{w}+s_\textrm{w})/s_\textrm{w}\rfloor.\]</span></p>
+<p>Si nous fixons <span
+class="math inline">\(p_\textrm{h}=k_\textrm{h}-1\)</span> and <span
+class="math inline">\(p_\textrm{w}=k_\textrm{w}-1\)</span>, alors la
+forme de la sortie peut être simplifiée en <span
+class="math inline">\(\lfloor(n_\textrm{h}+s_\textrm{h}-1)/s_\textrm{h}\rfloor
+\times
+\lfloor(n_\textrm{w}+s_\textrm{w}-1)/s_\textrm{w}\rfloor\)</span>. Pour
+aller plus loin, si la hauteur et la largeur de l’entrée sont divisibles
+par les pas sur la hauteur et la largeur, alors la forme de la sortie
+sera <span class="math inline">\((n_\textrm{h}/s_\textrm{h}) \times
+(n_\textrm{w}/s_\textrm{w})\)</span>.</p>
+<p>Ci-dessous, nous <strong>fixons les pas sur la hauteur et la largeur
+à 2</strong>, réduisant ainsi de moitié la hauteur et la largeur de
+l’entrée.</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.Conv2D(<span class="dv">1</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>, strides<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.LazyConv2d(<span class="dv">1</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="dv">1</span>, stride<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> tf.keras.layers.Conv2D(<span class="dv">1</span>, kernel_size<span class="op">=</span><span class="dv">3</span>, padding<span class="op">=</span><span class="st">&#39;same&#39;</span>, strides<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.Conv(<span class="dv">1</span>, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">3</span>), padding<span class="op">=</span><span class="dv">1</span>, strides<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<p>Voyons (<strong>un exemple légèrement plus complexe</strong>).</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab mxnet</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.Conv2D(<span class="dv">1</span>, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">5</span>), padding<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">1</span>), strides<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">4</span>))</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab pytorch</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.LazyConv2d(<span class="dv">1</span>, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">5</span>), padding<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">1</span>), stride<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">4</span>))</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab tensorflow</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> tf.keras.layers.Conv2D(<span class="dv">1</span>, kernel_size<span class="op">=</span>(<span class="dv">3</span>,<span class="dv">5</span>), padding<span class="op">=</span><span class="st">&#39;valid&#39;</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>                                strides<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">4</span>))</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="op">%%</span>tab jax</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>conv2d <span class="op">=</span> nn.Conv(<span class="dv">1</span>, kernel_size<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">5</span>), padding<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">1</span>), strides<span class="op">=</span>(<span class="dv">3</span>, <span class="dv">4</span>))</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>comp_conv2d(conv2d, X).shape</span></code></pre></div>
+<h2 id="résumé-et-discussion">Résumé et discussion</h2>
+<p>Le remplissage peut augmenter la hauteur et la largeur de la sortie.
+Ceci est souvent utilisé pour donner à la sortie les mêmes hauteur et
+largeur qu’à l’entrée afin d’éviter une réduction indésirable de la
+sortie. De plus, cela garantit que tous les pixels sont utilisés avec la
+même fréquence. Généralement, nous choisissons un remplissage symétrique
+des deux côtés de la hauteur et de la largeur de l’entrée. Dans ce cas,
+nous parlons de remplissage <span class="math inline">\((p_\textrm{h},
+p_\textrm{w})\)</span>. Le plus souvent, nous fixons <span
+class="math inline">\(p_\textrm{h} = p_\textrm{w}\)</span>, auquel cas
+nous indiquons simplement que nous choisissons un remplissage <span
+class="math inline">\(p\)</span>.</p>
+<p>Une convention similaire s’applique aux pas. Lorsque le pas
+horizontal <span class="math inline">\(s_\textrm{h}\)</span> et le pas
+vertical <span class="math inline">\(s_\textrm{w}\)</span>
+correspondent, nous parlons simplement de pas <span
+class="math inline">\(s\)</span>. Le pas peut réduire la résolution de
+la sortie, par exemple en réduisant la hauteur et la largeur de la
+sortie à seulement <span class="math inline">\(1/n\)</span> de la
+hauteur et de la largeur de l’entrée pour <span class="math inline">\(n
+&gt; 1\)</span>. Par défaut, le remplissage est de 0 et le pas est de
+1.</p>
+<p>Jusqu’à présent, tous les remplissages dont nous avons discuté
+consistaient simplement à étendre les images avec des zéros. Cela
+présente un avantage de calcul significatif car c’est trivial à
+réaliser. De plus, les opérateurs peuvent être conçus pour tirer parti
+de ce remplissage implicitement sans avoir besoin d’allouer de la
+mémoire supplémentaire. En même temps, cela permet aux CNN d’encoder des
+informations de position implicites dans une image, simplement en
+apprenant où se trouve l’« espace blanc ». Il existe de nombreuses
+alternatives au remplissage par des zéros.
+[Alsallakh.Kokhlikyan.Miglani.ea.2020] en a fourni un aperçu complet
+(bien que sans cas clair quant au moment d’utiliser des remplissages non
+nuls, sauf en cas d’apparition d’artefacts).</p>
+<h2 id="exercices">Exercices</h2>
+<ol type="1">
+<li>Étant donné le dernier exemple de code de cette section avec une
+taille de noyau de <span class="math inline">\((3, 5)\)</span>, un
+remplissage de <span class="math inline">\((0, 1)\)</span> et un pas de
+<span class="math inline">\((3, 4)\)</span>, calculez la forme de la
+sortie pour vérifier si elle est cohérente avec le résultat
+expérimental.</li>
+<li>Pour les signaux audio, à quoi correspond un pas de 2 ?</li>
+<li>Implémentez le remplissage miroir (mirror padding), c’est-à-dire un
+remplissage où les valeurs de bordure sont simplement reflétées pour
+étendre les tenseurs.</li>
+<li>Quels sont les avantages de calcul d’un pas supérieur à 1 ?</li>
+<li>Quels pourraient être les avantages statistiques d’un pas supérieur
+à 1 ?</li>
+<li>Comment implémenteriez-vous un pas de <span
+class="math inline">\(\frac{1}{2}\)</span> ? À quoi cela correspond-il ?
+Quand cela serait-il utile ?</li>
+</ol>
+<p>:begin_tab:<code>mxnet</code> <a
+href="https://discuss.d2l.ai/t/67">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>pytorch</code> <a
+href="https://discuss.d2l.ai/t/68">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>tensorflow</code> <a
+href="https://discuss.d2l.ai/t/272">Discussions</a> :end_tab:</p>
+<p>:begin_tab:<code>jax</code> <a
+href="https://discuss.d2l.ai/t/17997">Discussions</a> :end_tab:</p>
+<div class="navlinks"><a class="prev" href="conv-layer.html">&larr; Convolutions pour les images</a><a class="next" href="channels.html">Canaux d&#x27;entrée et de sortie multiples &rarr;</a></div></main></div></body></html>
